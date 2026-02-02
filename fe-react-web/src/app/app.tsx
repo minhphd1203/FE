@@ -6,6 +6,7 @@ import { AuthProvider } from '../providers/AuthProvider';
 import { GuestGuard } from '../guards/GuestGuard';
 import { AuthGuard } from '../guards/AuthGuard';
 import { LoginPage } from '../pages/auth/LoginPage';
+import { RegisterPage } from '../pages/auth/RegisterPage';
 import { HomePage } from '../pages/HomePage';
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
             {/* Guest routes */}
             <Route element={<GuestGuard />}>
               <Route path="/auth/login" element={<LoginPage />} />
+              <Route path="/auth/register" element={<RegisterPage />} />
             </Route>
 
             {/* Protected routes */}
