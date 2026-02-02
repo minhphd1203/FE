@@ -122,11 +122,6 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        <p className="text-center mt-6">
-          <Link to="/" className="text-sm text-gray-500 hover:text-[#f57224]">
-            ← Về trang chủ
-          </Link>
-        </p>
       </main>
     </div>
   );
