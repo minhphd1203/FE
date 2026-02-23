@@ -11,7 +11,7 @@ export const registerSchema = z
     email: z.string().email('Email không hợp lệ'),
     password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
     confirmPassword: z.string(),
-    role: z.enum(['customer', 'seller']).optional().default('customer'),
+    role: z.enum(['customer', 'seller']),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu không khớp',

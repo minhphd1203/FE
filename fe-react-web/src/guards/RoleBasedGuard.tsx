@@ -3,7 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '../redux/hooks';
 
 interface RoleBasedGuardProps {
-  allowedRoles: Array<'admin' | 'customer' | 'seller'>;
+  allowedRoles: Array<'admin' | 'inspector' | 'customer' | 'seller'>;
 }
 
 export const RoleBasedGuard: React.FC<RoleBasedGuardProps> = ({
