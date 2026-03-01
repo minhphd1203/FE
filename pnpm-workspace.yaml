@@ -1,2 +1,11 @@
-packages: 
-  - "apps/*"
+packages:
+  - apps/*
+
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - '@swc/core'
+  - cypress
+  - esbuild
+  - nx
+  - protobufjs
+  - unrs-resolver
