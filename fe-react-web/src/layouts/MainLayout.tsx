@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { GoogleIcon } from '../components/GoogleIcon';
-import { ChevronRight } from 'lucide-react';
+import {
+  ChevronRight,
+  Heart,
+  Bell,
+  MessageCircle,
+  ChevronDown,
+} from 'lucide-react';
 import {
   UTILITIES,
   ACCOUNT_MENU_TOP,
@@ -14,7 +20,7 @@ export const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f4f4]">
-      {/* ========== HEADER (giống Chợ Tốt) ========== */}
+      {/* ========== HEADER (nền trắng, icon, nút) ========== */}
       <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -27,7 +33,7 @@ export const MainLayout: React.FC = () => {
 
             {/* Ô tìm kiếm chính */}
             <div className="flex-1 w-full sm:max-w-xl">
-              <div className="relative flex rounded-lg overflow-hidden border border-gray-200 bg-gray-50 focus-within:border-[#f57224] focus-within:ring-1 focus-within:ring-[#f57224]">
+              <div className="relative flex rounded-lg overflow-hidden border border-gray-200 bg-white focus-within:border-[#f57224] focus-within:ring-1 focus-within:ring-[#f57224]">
                 <input
                   type="text"
                   placeholder="Tìm xe đạp, phụ kiện..."
@@ -42,27 +48,58 @@ export const MainLayout: React.FC = () => {
               </div>
             </div>
 
-            {/* Khu vực + Đăng tin + Đăng nhập */}
+            {/* Khu vực bên phải: Heart, Bell, Liên hệ, Quản lý tin, Đăng tin, Avatar */}
             <div className="flex items-center gap-2 shrink-0">
-              <select className="py-2 px-3 border border-gray-200 rounded-lg text-gray-700 text-sm bg-white cursor-pointer hover:border-[#f57224]">
+              <select className="py-2 px-3 border border-gray-200 rounded-full text-gray-700 text-sm bg-white cursor-pointer hover:border-[#f57224] hidden sm:block">
                 <option>Toàn quốc</option>
                 <option>Hồ Chí Minh</option>
                 <option>Hà Nội</option>
                 <option>Đà Nẵng</option>
               </select>
               <Link
-                to="/dang-tin"
-                className="py-2.5 px-4 bg-[#f57224] text-white font-semibold rounded-lg hover:bg-[#e0651a] transition-colors whitespace-nowrap"
+                to="/tin-dang-da-luu"
+                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                title="Tin đăng đã lưu"
               >
-                + Đăng tin
+                <Heart className="w-5 h-5 text-gray-800" />
               </Link>
               <button
                 type="button"
-                onClick={() => setShowLoginModal(true)}
-                className="py-2.5 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
+                className="relative p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                title="Thông báo"
               >
-                Đăng nhập
+                <Bell className="w-5 h-5 text-gray-800" />
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                  2
+                </span>
               </button>
+              <Link
+                to="/lien-he"
+                className="flex items-center gap-2 py-2 px-3 rounded-full border border-gray-200 bg-gray-50 text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Liên hệ
+              </Link>
+              <Link
+                to="/dang-tin"
+                className="py-2.5 px-4 bg-gray-900 text-white font-semibold rounded-full hover:bg-gray-800 transition-colors whitespace-nowrap"
+              >
+                Đăng tin
+              </Link>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowLoginModal(true)}
+                  className="flex items-center gap-1.5 p-1 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#c2410c] flex items-center justify-center text-white font-semibold text-sm">
+                    P
+                  </div>
+                  <div className="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                    <ChevronDown className="w-4 h-4 text-gray-800" />
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>

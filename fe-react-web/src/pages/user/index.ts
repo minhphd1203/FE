@@ -7,3 +7,4 @@ export * from './OffersPage';
 export * from './MyOffersPage';
 export * from './SettingsPage';
 export * from './HelpPage';
+export * from './UserAccountPage';

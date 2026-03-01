@@ -18,10 +18,10 @@ import {
 const MOCK_LISTINGS = [
   {
     id: '1',
-    title: 'Xe dap dia hinh Giant Talon 3 size M',
-    seller: 'Nguyen Van A',
-    price: 8500000,
-    category: 'Xe dap dia hinh',
+    title: 'Xe đạp địa hình Giant Talon 3 size M',
+    seller: 'Nguyễn Văn A',
+    price: 8_500_000,
+    category: 'Xe đạp địa hình',
     status: 'active' as const,
     views: 234,
     image:
@@ -30,10 +30,10 @@ const MOCK_LISTINGS = [
   },
   {
     id: '2',
-    title: 'Xe dap dua Pinarello F12 carbon',
-    seller: 'Tran Thi B',
-    price: 45000000,
-    category: 'Xe dap dua',
+    title: 'Xe đua Pinarello F12 carbon',
+    seller: 'Trần Thị B',
+    price: 45_000_000,
+    category: 'Xe đua',
     status: 'pending' as const,
     views: 0,
     image:
@@ -42,10 +42,10 @@ const MOCK_LISTINGS = [
   },
   {
     id: '3',
-    title: 'Xe dap dien Nijia Pro 2024',
-    seller: 'Le Van C',
-    price: 12000000,
-    category: 'Xe dap dien',
+    title: 'Xe đạp điện Nijia Pro 2024',
+    seller: 'Lê Văn C',
+    price: 12_000_000,
+    category: 'Xe đạp điện',
     status: 'active' as const,
     views: 567,
     image:
@@ -54,10 +54,10 @@ const MOCK_LISTINGS = [
   },
   {
     id: '4',
-    title: 'Xe dap gap Brompton M6L',
-    seller: 'Pham Thi D',
-    price: 35000000,
-    category: 'Xe dap gap',
+    title: 'Xe đạp gấp Brompton M6L',
+    seller: 'Phạm Thị D',
+    price: 35_000_000,
+    category: 'Xe đạp gấp',
     status: 'sold' as const,
     views: 890,
     image:
@@ -66,10 +66,10 @@ const MOCK_LISTINGS = [
   },
   {
     id: '5',
-    title: 'Bo phu kien xe dap the thao',
-    seller: 'Hoang Van E',
-    price: 1200000,
-    category: 'Phu kien',
+    title: 'Bộ phụ kiện xe đạp thể thao',
+    seller: 'Hoàng Văn E',
+    price: 1_200_000,
+    category: 'Phụ kiện',
     status: 'rejected' as const,
     views: 45,
     image:
@@ -78,10 +78,10 @@ const MOCK_LISTINGS = [
   },
   {
     id: '6',
-    title: 'Xe dap tre em 16 inch mau hong',
-    seller: 'Vu Thi F',
-    price: 2500000,
-    category: 'Xe dap tre em',
+    title: 'Xe đạp trẻ em 16 inch màu hồng',
+    seller: 'Vũ Thị F',
+    price: 2_500_000,
+    category: 'Xe đạp trẻ em',
     status: 'pending' as const,
     views: 0,
     image:
@@ -100,28 +100,28 @@ const getStatusBadge = (status: string) => {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
           <CheckCircle className="w-3 h-3" />
-          Dang hien
+          Đang hiển
         </span>
       );
     case 'pending':
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
           <Clock className="w-3 h-3" />
-          Cho duyet
+          Chờ duyệt
         </span>
       );
     case 'sold':
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
           <ShoppingCart className="w-3 h-3" />
-          Da ban
+          Đã bán
         </span>
       );
     case 'rejected':
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
           <XCircle className="w-3 h-3" />
-          Tu choi
+          Từ chối
         </span>
       );
     default:
@@ -170,15 +170,15 @@ export const AdminListingsPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quan ly tin dang</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý tin đăng</h1>
           <p className="text-gray-500 mt-1">
-            Duyet va quan ly cac tin dang tren he thong
+            Duyệt và quản lý các tin đăng trên hệ thống
           </p>
         </div>
         {pendingCount > 0 && (
           <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-yellow-50 border border-yellow-200 text-yellow-700 font-medium rounded-lg">
             <Clock className="w-5 h-5" />
-            {pendingCount} tin dang cho duyet
+            {pendingCount} tin đăng chờ duyệt
           </div>
         )}
       </div>
@@ -191,7 +191,7 @@ export const AdminListingsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tim kiem theo tieu de, nguoi ban..."
+              placeholder="Tìm kiếm theo tiêu đề, người bán..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
@@ -206,13 +206,13 @@ export const AdminListingsPage: React.FC = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
               className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224] bg-white"
             >
-              <option value="all">Tat ca danh muc</option>
-              <option value="Xe dap dia hinh">Xe dap dia hinh</option>
-              <option value="Xe dap dua">Xe dap dua</option>
-              <option value="Xe dap dien">Xe dap dien</option>
-              <option value="Xe dap gap">Xe dap gap</option>
-              <option value="Xe dap tre em">Xe dap tre em</option>
-              <option value="Phu kien">Phu kien</option>
+              <option value="all">Tất cả danh mục</option>
+              <option value="Xe đạp địa hình">Xe đạp địa hình</option>
+              <option value="Xe đua">Xe đua</option>
+              <option value="Xe đạp điện">Xe đạp điện</option>
+              <option value="Xe đạp gấp">Xe đạp gấp</option>
+              <option value="Xe đạp trẻ em">Xe đạp trẻ em</option>
+              <option value="Phụ kiện">Phụ kiện</option>
             </select>
           </div>
 
@@ -222,11 +222,11 @@ export const AdminListingsPage: React.FC = () => {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224] bg-white"
           >
-            <option value="all">Tat ca trang thai</option>
-            <option value="active">Dang hien</option>
-            <option value="pending">Cho duyet</option>
-            <option value="sold">Da ban</option>
-            <option value="rejected">Tu choi</option>
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Đang hiển</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="sold">Đã bán</option>
+            <option value="rejected">Từ chối</option>
           </select>
         </div>
       </div>
@@ -235,14 +235,14 @@ export const AdminListingsPage: React.FC = () => {
       {selectedListings.length > 0 && (
         <div className="bg-[#f57224]/10 border border-[#f57224]/20 rounded-lg p-4 flex items-center justify-between">
           <span className="text-sm font-medium text-[#f57224]">
-            Da chon {selectedListings.length} tin dang
+            Đã chọn {selectedListings.length} tin đăng
           </span>
           <div className="flex items-center gap-2">
             <button className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600">
-              Duyet tat ca
+              Duyệt tất cả
             </button>
             <button className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600">
-              Tu choi tat ca
+              Từ chối tất cả
             </button>
           </div>
         </div>
@@ -266,25 +266,25 @@ export const AdminListingsPage: React.FC = () => {
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Tin dang
+                  Tin đăng
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Nguoi ban
+                  Người bán
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Gia
+                  Giá
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Danh muc
+                  Danh mục
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Trang thai
+                  Trạng thái
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Luot xem
+                  Lượt xem
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Thao tac
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -369,29 +369,29 @@ export const AdminListingsPage: React.FC = () => {
                             <div className="py-1">
                               <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <Eye className="w-4 h-4" />
-                                Xem chi tiet
+                                Xem chi tiết
                               </button>
                               {listing.status === 'pending' && (
                                 <>
                                   <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-green-600 hover:bg-green-50">
                                     <CheckCircle className="w-4 h-4" />
-                                    Duyet tin
+                                    Duyệt tin
                                   </button>
                                   <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                     <XCircle className="w-4 h-4" />
-                                    Tu choi
+                                    Từ chối
                                   </button>
                                 </>
                               )}
                               {listing.status === 'active' && (
                                 <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50">
                                   <XCircle className="w-4 h-4" />
-                                  An tin
+                                  Ẩn tin
                                 </button>
                               )}
                               <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                 <Trash2 className="w-4 h-4" />
-                                Xoa tin
+                                Xóa tin
                               </button>
                             </div>
                           </div>
@@ -408,8 +408,8 @@ export const AdminListingsPage: React.FC = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
           <p className="text-sm text-gray-500">
-            Hien thi 1-{filteredListings.length} trong tong so{' '}
-            {MOCK_LISTINGS.length} tin dang
+            Hiển thị 1-{filteredListings.length} trong tổng số{' '}
+            {MOCK_LISTINGS.length} tin đăng
           </p>
           <div className="flex items-center gap-2">
             <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">

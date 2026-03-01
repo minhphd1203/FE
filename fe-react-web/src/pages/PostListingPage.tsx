@@ -32,8 +32,10 @@ export const PostListingPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Mock submission
-    alert('Đăng tin thành công! Tin của bạn đang được duyệt.');
-    navigate('/');
+    alert(
+      'Đăng tin thành công! Tin của bạn đang được duyệt. Chuyển đến trang thanh toán dịch vụ.',
+    );
+    navigate('/thanh-toan');
   };
 
   return (
