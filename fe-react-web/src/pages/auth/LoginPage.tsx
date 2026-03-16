@@ -31,7 +31,20 @@ export const LoginPage: React.FC = () => {
           token,
         }),
       );
-      navigate(user.role === 'admin' ? '/admin' : '/tai-khoan');
+      // Điều hướng theo role (theo BE):
+      // - admin -> /admin
+      // - inspector -> /inspector
+      // - còn lại -> /
+      const role = (user.role || 'buyer').toLowerCase();
+      const email = (user.email || '').toLowerCase();
+
+      if (role === 'admin' || email === 'admin@beswp.com') {
+        navigate('/admin', { replace: true });
+      } else if (role === 'inspector' || email.startsWith('inspector')) {
+        navigate('/inspector', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data

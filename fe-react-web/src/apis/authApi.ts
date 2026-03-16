@@ -36,17 +36,11 @@ export const authApi = {
     return { token: data.token, user: data.user };
   },
 
-  register: async (payload: RegisterData): Promise<AuthResponse> => {
-    const response = await apiClient.post<{
-      success: boolean;
-      data: { token: string; user: AuthResponse['user'] };
-      message?: string;
-    }>('/auth/register', payload);
-    const { data } = response.data;
-    if (!data?.token || !data?.user) {
-      throw new Error(response.data.message || 'Đăng ký tài khoản thất bại');
-    }
-    return { token: data.token, user: data.user };
+  register: async (payload: RegisterData): Promise<void> => {
+    // Nhiều backend chỉ trả 201 + message, không trả token/user.
+    // Với flow hiện tại: đăng ký xong chuyển sang trang đăng nhập,
+    // nên chỉ cần request thành công là đủ.
+    await apiClient.post('/auth/register', payload);
   },
 
   logout: async (): Promise<void> => {

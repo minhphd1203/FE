@@ -5,6 +5,7 @@ import { ReactQueryProvider } from '../providers/ReactQueryProvider';
 import { AuthProvider } from '../providers/AuthProvider';
 import { GuestGuard } from '../guards/GuestGuard';
 import { AuthGuard } from '../guards/AuthGuard';
+import { RoleGuard } from '../guards/RoleGuard';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { HomePage } from '../pages/HomePage';
@@ -107,23 +108,30 @@ export function App() {
             </Route>
 
             {/* Admin routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-              <Route path="listings" element={<AdminListingsPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
+            <Route element={<RoleGuard allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="listings" element={<AdminListingsPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
             </Route>
 
             {/* Inspector routes */}
-            <Route path="/inspector" element={<InspectorLayout />}>
-              <Route index element={<InspectionListPage />} />
-              <Route path="inspection/:id" element={<InspectionDetailPage />} />
-              <Route path="history" element={<InspectionHistoryPage />} />
-              <Route
-                path="history/:id"
-                element={<InspectionHistoryDetailPage />}
-              />
-              <Route path="dashboard" element={<InspectorStatsPage />} />
+            <Route element={<RoleGuard allowedRoles={['inspector']} />}>
+              <Route path="/inspector" element={<InspectorLayout />}>
+                <Route index element={<InspectionListPage />} />
+                <Route
+                  path="inspection/:id"
+                  element={<InspectionDetailPage />}
+                />
+                <Route path="history" element={<InspectionHistoryPage />} />
+                <Route
+                  path="history/:id"
+                  element={<InspectionHistoryDetailPage />}
+                />
+                <Route path="dashboard" element={<InspectorStatsPage />} />
+              </Route>
             </Route>
           </Routes>
         </AuthProvider>
