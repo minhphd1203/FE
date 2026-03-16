@@ -9,7 +9,7 @@ export interface RegisterData {
   email: string;
   password: string;
   name: string;
-  role?: 'customer' | 'seller';
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -17,20 +17,36 @@ export interface AuthResponse {
     id: string;
     email: string;
     name: string;
-    role: 'admin' | 'customer' | 'seller';
+    role: string; // admin | buyer | inspector | seller
   };
   token: string;
 }
 
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/login', credentials);
-    return response.data;
+    const response = await apiClient.post<{
+      success: boolean;
+      data: { token: string; user: AuthResponse['user'] };
+      message?: string;
+    }>('/auth/login', credentials);
+    const { data } = response.data;
+    if (!data?.token || !data?.user) {
+      throw new Error(response.data.message || 'Đăng nhập thất bại');
+    }
+    return { token: data.token, user: data.user };
   },
 
-  register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/register', data);
-    return response.data;
+  register: async (payload: RegisterData): Promise<AuthResponse> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      data: { token: string; user: AuthResponse['user'] };
+      message?: string;
+    }>('/auth/register', payload);
+    const { data } = response.data;
+    if (!data?.token || !data?.user) {
+      throw new Error(response.data.message || 'Đăng ký tài khoản thất bại');
+    }
+    return { token: data.token, user: data.user };
   },
 
   logout: async (): Promise<void> => {

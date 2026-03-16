@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useAppDispatch } from '../../redux/hooks';
+import { setCredentials } from '../../redux/slices/authSlice';
+import { authApi } from '../../apis/authApi';
 import { GoogleIcon } from '../../components/GoogleIcon';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '../../schema/validation';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const [error, setError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -16,10 +21,24 @@ export const LoginPage: React.FC = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log('Login data:', data);
-    // TODO: Implement login logic thực tế
-    // Hiện tại mock: đăng nhập xong chuyển tới trang tài khoản giống ảnh 2
-    navigate('/tai-khoan');
+    setError(null);
+    try {
+      const { user, token } = await authApi.login(data);
+      localStorage.setItem('token', token);
+      dispatch(
+        setCredentials({
+          user: { ...user, role: user.role || 'buyer' },
+          token,
+        }),
+      );
+      navigate(user.role === 'admin' ? '/admin' : '/tai-khoan');
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ||
+        'Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.';
+      setError(msg);
+    }
   };
 
   return (
@@ -54,6 +73,11 @@ export const LoginPage: React.FC = () => {
             className="px-6 pb-6 space-y-4"
             onSubmit={handleSubmit(onSubmit)}
           >
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                {error}
+              </p>
+            )}
             <div>
               <label
                 htmlFor="email"

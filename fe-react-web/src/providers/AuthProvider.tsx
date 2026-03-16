@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { authApi } from '../apis/authApi';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -13,20 +14,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any | null>(null);
 
   useEffect(() => {
     // Check token from localStorage
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
-      // TODO: Fetch user info
+      // TODO: Optionally call authApi.getCurrentUser to hydrate user
     }
   }, []);
 
   const login = async (email: string, password: string) => {
-    // TODO: Implement login logic
-    console.log('Login:', email, password);
+    const { token, user } = await authApi.login({ email, password });
+    localStorage.setItem('token', token);
+    setUser(user);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {

@@ -11,7 +11,11 @@ export const registerSchema = z
     email: z.string().email('Email không hợp lệ'),
     password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
     confirmPassword: z.string(),
-    role: z.enum(['customer', 'seller']),
+    phone: z
+      .string()
+      .min(8, 'Số điện thoại phải có ít nhất 8 ký tự')
+      .max(15, 'Số điện thoại quá dài')
+      .optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu không khớp',
