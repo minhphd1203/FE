@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAppDispatch } from '../../redux/hooks';
 import { setCredentials } from '../../redux/slices/authSlice';
@@ -10,6 +10,7 @@ import { loginSchema, type LoginFormData } from '../../schema/validation';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const [error, setError] = useState<string | null>(null);
   const {
@@ -31,6 +32,7 @@ export const LoginPage: React.FC = () => {
           token,
         }),
       );
+
       // Điều hướng theo role (theo BE):
       // - admin -> /admin
       // - inspector -> /inspector
@@ -38,13 +40,26 @@ export const LoginPage: React.FC = () => {
       const role = (user.role || 'buyer').toLowerCase();
       const email = (user.email || '').toLowerCase();
 
-      if (role === 'admin' || email === 'admin@beswp.com') {
-        navigate('/admin', { replace: true });
-      } else if (role === 'inspector' || email.startsWith('inspector')) {
-        navigate('/inspector', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+      const fromPath = (location.state as any)?.from as string | undefined;
+      const safeFrom =
+        fromPath &&
+        !fromPath.startsWith('/auth') &&
+        !fromPath.startsWith('/register')
+          ? fromPath
+          : undefined;
+
+      const redirectTo =
+        safeFrom &&
+        ((safeFrom.startsWith('/admin') && role === 'admin') ||
+          (safeFrom.startsWith('/inspector') && role === 'inspector'))
+          ? safeFrom
+          : role === 'admin' || email === 'admin@beswp.com'
+            ? '/admin/settings'
+            : role === 'inspector' || email.startsWith('inspector')
+              ? '/inspector'
+              : '/';
+
+      navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data

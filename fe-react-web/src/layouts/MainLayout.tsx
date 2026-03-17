@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
-import { GoogleIcon } from '../components/GoogleIcon';
+import React, { useEffect } from 'react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
   Heart,
@@ -14,9 +13,35 @@ import {
   ACCOUNT_MENU_OFFERS,
   ACCOUNT_MENU_OTHER,
 } from '../constants/data';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { setCredentials, logout } from '../redux/slices/authSlice';
+import { authApi } from '../apis/authApi';
 
 export const MainLayout: React.FC = () => {
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  // Hydrate user from token on initial load (so UI shows real info when already logged in)
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !isAuthenticated) {
+      authApi
+        .getCurrentUser()
+        .then((userData) => {
+          dispatch(setCredentials({ user: userData, token }));
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+        });
+    }
+  }, [dispatch, isAuthenticated]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem('token');
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f4f4]">
@@ -89,11 +114,23 @@ export const MainLayout: React.FC = () => {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setShowLoginModal(true)}
+                  onClick={() =>
+                    isAuthenticated
+                      ? navigate(
+                          user?.role?.toLowerCase() === 'admin'
+                            ? '/admin/settings'
+                            : '/tai-khoan',
+                        )
+                      : navigate('/auth/login')
+                  }
                   className="flex items-center gap-1.5 p-1 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
                   <div className="w-9 h-9 rounded-full bg-[#c2410c] flex items-center justify-center text-white font-semibold text-sm">
-                    P
+                    {isAuthenticated
+                      ? (user?.name?.charAt(0) || user?.email?.charAt(0) || 'U')
+                          .toString()
+                          .toUpperCase()
+                      : 'P'}
                   </div>
                   <div className="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
                     <ChevronDown className="w-4 h-4 text-gray-800" />
@@ -106,48 +143,83 @@ export const MainLayout: React.FC = () => {
       </header>
 
       {/* Popup Đăng nhập / Tài khoản (giống Chợ Tốt) */}
-      {showLoginModal && (
+      {false && (
         <>
-          <div
-            className="fixed inset-0 bg-black/30 z-40"
-            onClick={() => setShowLoginModal(false)}
-            aria-hidden
-          />
+          <div className="fixed inset-0 bg-black/30 z-40" aria-hidden />
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col mx-4">
             <div className="bg-white rounded-2xl shadow-xl overflow-y-auto overflow-x-hidden flex flex-col max-h-[90vh]">
               {/* Phần trên: Mua thì hời, bán thì lời + Nút */}
               <div className="p-6 relative">
                 <div className="pr-16">
                   <h3 className="text-xl font-bold text-gray-900">
-                    Mua thì hời, bán thì lời.
+                    {isAuthenticated
+                      ? `Xin chào, ${user?.name || user?.email}`
+                      : 'Mua thì hời, bán thì lời.'}
                   </h3>
-                  <p className="text-gray-500 mt-1">Đăng nhập cái đã!</p>
+                  <p className="text-gray-500 mt-1">
+                    {isAuthenticated
+                      ? 'Thông tin tài khoản của bạn'
+                      : 'Đăng nhập cái đã!'}
+                  </p>
                 </div>
                 {/* Nhân vật cam (minh họa) */}
                 <div className="absolute right-4 top-4 w-14 h-14 rounded-full bg-[#f57224]/20 flex items-center justify-center text-3xl">
                   🐣
                 </div>
-                <div className="flex gap-3 mt-4">
-                  <Link
-                    to="/auth/register"
-                    className="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-center font-medium text-gray-800 hover:bg-gray-50"
-                  >
-                    Tạo tài khoản
-                  </Link>
-                  <Link
-                    to="/auth/login"
-                    className="flex-1 py-2.5 px-4 bg-[#facc15] text-gray-900 font-semibold rounded-lg text-center hover:bg-[#eab308]"
-                  >
-                    Đăng nhập
-                  </Link>
-                </div>
-                <a
-                  href="/api/auth/google"
-                  className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-gray-700 font-medium hover:bg-gray-50 text-sm"
-                >
-                  <GoogleIcon className="w-5 h-5 shrink-0" />
-                  Đăng nhập với Google
-                </a>
+                {isAuthenticated ? (
+                  <>
+                    <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.name || user?.email}
+                      </p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                      {user?.role && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Vai trò: {user.role}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                      <Link
+                        to="/tai-khoan"
+                        className="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-center font-medium text-gray-800 hover:bg-gray-50"
+                      >
+                        Quản lý tài khoản
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex-1 py-2.5 px-4 bg-[#facc15] text-gray-900 font-semibold rounded-lg text-center hover:bg-[#eab308]"
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex gap-3 mt-4">
+                      <Link
+                        to="/auth/register"
+                        className="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-center font-medium text-gray-800 hover:bg-gray-50"
+                      >
+                        Tạo tài khoản
+                      </Link>
+                      <Link
+                        to="/auth/login"
+                        className="flex-1 py-2.5 px-4 bg-[#facc15] text-gray-900 font-semibold rounded-lg text-center hover:bg-[#eab308]"
+                      >
+                        Đăng nhập
+                      </Link>
+                    </div>
+                    <a
+                      href="/api/auth/google"
+                      className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-gray-700 font-medium hover:bg-gray-50 text-sm"
+                    >
+                      <GoogleIcon className="w-5 h-5 shrink-0" />
+                      Đăng nhập với Google
+                    </a>
+                  </>
+                )}
               </div>
               {/* Tiện ích */}
               <div className="border-t border-gray-100 px-6 py-4">

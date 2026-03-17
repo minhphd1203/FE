@@ -44,6 +44,60 @@ export interface AdminBike {
   category?: { id: string; name: string };
 }
 
+export interface AdminTransaction {
+  id: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string | null;
+  bike?: {
+    id: string;
+    title: string;
+    price: number;
+  };
+  buyer?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+  };
+  seller?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+  };
+}
+
+export interface AdminReport {
+  id: string;
+  status: 'pending' | 'resolved' | 'closed';
+  reason: string;
+  resolution?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string | null;
+  reporter?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  reportedUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  reportedBike?: {
+    id: string;
+    title: string;
+  };
+  resolver?: {
+    id: string;
+    name: string;
+  };
+}
+
 /** Query params cho getBikes */
 export interface GetBikesParams {
   search?: string;
@@ -124,6 +178,53 @@ export const adminApi = {
   deleteUser: async (userId: string): Promise<ApiResponse<AdminUser>> => {
     const { data } = await apiClient.delete<ApiResponse<AdminUser>>(
       `/admin/v1/user/${userId}`,
+    );
+    return data;
+  },
+
+  /** GET /api/admin/v1/transaction - Lấy danh sách giao dịch */
+  getTransactions: async (params?: {
+    status?: 'pending' | 'completed' | 'cancelled';
+    sort?: 'newest' | 'oldest';
+  }): Promise<ApiResponse<AdminTransaction[]>> => {
+    const { data } = await apiClient.get<ApiResponse<AdminTransaction[]>>(
+      '/admin/v1/transaction',
+      { params },
+    );
+    return data;
+  },
+
+  /** PUT /api/admin/v1/transaction/:id - Cập nhật trạng thái giao dịch */
+  updateTransaction: async (
+    transactionId: string,
+    body: { status?: 'pending' | 'completed' | 'cancelled'; notes?: string },
+  ): Promise<ApiResponse<AdminTransaction>> => {
+    const { data } = await apiClient.put<ApiResponse<AdminTransaction>>(
+      `/admin/v1/transaction/${transactionId}`,
+      body,
+    );
+    return data;
+  },
+
+  /** GET /api/admin/v1/report - Lấy danh sách báo cáo */
+  getReports: async (params?: {
+    status?: 'pending' | 'resolved' | 'closed';
+  }): Promise<ApiResponse<AdminReport[]>> => {
+    const { data } = await apiClient.get<ApiResponse<AdminReport[]>>(
+      '/admin/v1/report',
+      { params },
+    );
+    return data;
+  },
+
+  /** POST /api/admin/v1/report/:id/resolve - Giải quyết báo cáo */
+  resolveReport: async (
+    reportId: string,
+    body: { resolution: string; status?: 'resolved' | 'closed' },
+  ): Promise<ApiResponse<AdminReport>> => {
+    const { data } = await apiClient.post<ApiResponse<AdminReport>>(
+      `/admin/v1/report/${reportId}/resolve`,
+      body,
     );
     return data;
   },

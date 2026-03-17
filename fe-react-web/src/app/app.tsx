@@ -20,6 +20,8 @@ import {
   AdminDashboardPage,
   AdminUsersPage,
   AdminListingsPage,
+  AdminTransactionsPage,
+  AdminReportsPage,
   AdminSettingsPage,
 } from '../pages/admin';
 import {
@@ -113,6 +115,11 @@ export function App() {
                 <Route index element={<AdminDashboardPage />} />
                 <Route path="users" element={<AdminUsersPage />} />
                 <Route path="listings" element={<AdminListingsPage />} />
+                <Route
+                  path="transactions"
+                  element={<AdminTransactionsPage />}
+                />
+                <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
             </Route>

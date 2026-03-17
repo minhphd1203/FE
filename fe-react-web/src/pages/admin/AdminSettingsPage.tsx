@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { logout } from '../../redux/slices/authSlice';
 import { Save, Settings, DollarSign, Shield, Bell, Lock } from 'lucide-react';
 
 export const AdminSettingsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [siteName, setSiteName] = useState('Chợ Xe Đạp');
   const [listingFee, setListingFee] = useState('15000');
@@ -11,8 +18,60 @@ export const AdminSettingsPage: React.FC = () => {
     alert('Đã lưu cài đặt hệ thống thành công!');
   };
 
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem('token');
+    navigate('/auth/login');
+  };
+
+  const displayName = user?.name || user?.email || 'Administrator';
+
   return (
     <div className="space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 rounded-full bg-[#f57224] flex items-center justify-center text-white font-semibold text-2xl">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-gray-900">
+                {displayName}
+              </p>
+              <p className="text-sm text-gray-500">{user?.email}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <button
+              onClick={() => navigate('/tai-khoan')}
+              className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Quay lại tài khoản
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              Đăng xuất
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl bg-[#fff7e6] border border-[#facc15]/60 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium text-gray-500">Đồng Tốt</p>
+            <p className="mt-1 text-3xl font-bold text-gray-900">0</p>
+          </div>
+          <button
+            onClick={() => navigate('/thanh-toan')}
+            className="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#facc15] text-sm font-semibold text-gray-900 hover:bg-[#eab308] transition-colors"
+          >
+            Nạp ngay
+          </button>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Cài đặt hệ thống</h1>

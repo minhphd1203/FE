@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../redux/hooks';
 
 interface RoleGuardProps {
@@ -12,9 +12,12 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   redirectTo = '/',
 }) => {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
+    return (
+      <Navigate to="/auth/login" replace state={{ from: location.pathname }} />
+    );
   }
 
   const role = user?.role?.toLowerCase();
