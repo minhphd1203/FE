@@ -1,17 +1,49 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, CreditCard, Banknote, ShieldCheck, Clock } from 'lucide-react';
+import { createTransaction, createPaymentUrl } from '../apis/paymentApi';
+import { useLocation } from 'react-router-dom';
 
 type PaymentMethod = 'wallet' | 'bank' | 'cod';
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const [method, setMethod] = useState<PaymentMethod>('wallet');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const { bikeId, amount } = location.state || {};
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Nếu không có dữ liệu, quay lại trang đăng tin
+  if (!bikeId || !amount) {
+    navigate('/dang-tin');
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock thanh toán thành công -> chuyển sang trang xác nhận
-    navigate('/thanh-toan/thanh-cong');
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Tạo transaction
+      const transactionRes = await createTransaction({
+        bikeId,
+        amount,
+        notes: 'Thanh toán dịch vụ đăng tin',
+      });
+      const transactionId = transactionRes.data.id;
+      // 2. Tạo paymentUrl
+      const paymentRes = await createPaymentUrl(transactionId);
+      const paymentUrl = paymentRes.data.paymentUrl;
+      // 3. Redirect sang VNPay
+      window.location.href = paymentUrl;
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,6 +62,9 @@ export const CheckoutPage: React.FC = () => {
         <ShieldCheck className="w-7 h-7 text-emerald-500" />
       </div>
 
+      {error && (
+        <div className="text-red-500 text-sm text-center mb-2">{error}</div>
+      )}
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {/* Tóm tắt đơn hàng */}
         <section className="rounded-lg border border-gray-100 bg-gray-50 p-4 space-y-3">
@@ -38,7 +73,7 @@ export const CheckoutPage: React.FC = () => {
               Gói đẩy tin nổi bật 7 ngày
             </span>
             <span className="text-sm font-semibold text-[#f57224]">
-              25.000 đ
+              {amount} đ
             </span>
           </div>
           <p className="text-xs text-gray-500">
@@ -51,7 +86,7 @@ export const CheckoutPage: React.FC = () => {
               Thời gian hiệu lực: 7 ngày kể từ khi thanh toán.
             </span>
             <span className="text-sm font-bold text-gray-900">
-              Tổng: 25.000 đ
+              Tổng: {amount} đ
             </span>
           </div>
         </section>
@@ -175,8 +210,9 @@ export const CheckoutPage: React.FC = () => {
           <button
             type="submit"
             className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-[#f57224] text-white hover:bg-[#e0651a] shadow-sm transition-colors"
+            disabled={loading}
           >
-            Xác nhận thanh toán
+            {loading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
           </button>
         </div>
       </form>

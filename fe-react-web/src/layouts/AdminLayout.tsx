@@ -20,6 +20,7 @@ const SIDEBAR_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
   { label: 'Người dùng', icon: Users, href: '/admin/users' },
   { label: 'Tin đăng', icon: Bike, href: '/admin/listings' },
+  { label: 'Danh mục xe', icon: Bike, href: '/admin/categories' },
   { label: 'Giao dịch', icon: DollarSign, href: '/admin/transactions' },
   { label: 'Báo cáo', icon: FileText, href: '/admin/reports' },
   { label: 'Cài đặt', icon: Settings, href: '/admin/settings' },

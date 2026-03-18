@@ -1,59 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Eye, Upload, CheckCircle } from 'lucide-react';
-
-const VEHICLES_TO_INSPECT = [
-  {
-    id: 1,
-    title: 'Xe đạp địa hình Giant Talon 3',
-    seller: 'Nguyễn Văn A',
-    price: '8.500.000 đ',
-    condition: 'Mới',
-    submittedDate: '2 giờ trước',
-    status: 'pending',
-    images: [],
-  },
-  {
-    id: 2,
-    title: 'Xe đạp đua Pinarello F12',
-    seller: 'Trần Thị B',
-    price: '45.000.000 đ',
-    condition: 'Tốt',
-    submittedDate: '3 giờ trước',
-    status: 'pending',
-    images: [],
-  },
-  {
-    id: 3,
-    title: 'Xe đạp điện Nijia Pro',
-    seller: 'Lê Văn C',
-    price: '12.000.000 đ',
-    condition: 'Bình thường',
-    submittedDate: '5 giờ trước',
-    status: 'pending',
-    images: [],
-  },
-  {
-    id: 4,
-    title: 'Xe đạp gấp Brompton',
-    seller: 'Phạm Thị D',
-    price: '35.000.000 đ',
-    condition: 'Mới',
-    submittedDate: '6 giờ trước',
-    status: 'pending',
-    images: [],
-  },
-  {
-    id: 5,
-    title: 'Bộ phụ kiện xe đạp thể thao',
-    seller: 'Hoàng Văn E',
-    price: '1.200.000 đ',
-    condition: 'Như mới',
-    submittedDate: '8 giờ trước',
-    status: 'pending',
-    images: [],
-  },
-];
+import { getPendingBikes } from '../../apis/inspectorApi';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -84,6 +32,20 @@ const getStatusBadge = (status: string) => {
 };
 
 export const InspectionListPage: React.FC = () => {
+  const [bikes, setBikes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPendingBikes()
+      .then((res) => setBikes(res.data || []))
+      .catch((err) => setError('Không thể tải danh sách xe chờ kiểm định'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Đang tải danh sách xe...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -115,7 +77,7 @@ export const InspectionListPage: React.FC = () => {
 
       {/* Vehicles Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {VEHICLES_TO_INSPECT.map((vehicle) => (
+        {bikes.map((vehicle) => (
           <Link
             key={vehicle.id}
             to={`/inspector/inspection/${vehicle.id}`}
@@ -130,7 +92,9 @@ export const InspectionListPage: React.FC = () => {
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
                     Người bán:{' '}
-                    <span className="font-medium">{vehicle.seller}</span>
+                    <span className="font-medium">
+                      {vehicle.sellerName || vehicle.seller || '-'}
+                    </span>
                   </p>
                 </div>
                 {getStatusBadge(vehicle.status)}
@@ -146,7 +110,7 @@ export const InspectionListPage: React.FC = () => {
                     Giá
                   </p>
                   <p className="text-lg font-bold text-[#f57224] mt-1">
-                    {vehicle.price}
+                    {vehicle.price ? vehicle.price + ' đ' : '-'}
                   </p>
                 </div>
                 <div>
@@ -154,14 +118,14 @@ export const InspectionListPage: React.FC = () => {
                     Tình trạng
                   </p>
                   <p className="text-lg font-bold text-gray-900 mt-1">
-                    {vehicle.condition}
+                    {vehicle.condition || '-'}
                   </p>
                 </div>
               </div>
 
               {/* Submission Time */}
               <p className="text-xs text-gray-500">
-                Gửi từ {vehicle.submittedDate}
+                Gửi từ {vehicle.submittedDate || '-'}
               </p>
 
               {/* Action Button */}

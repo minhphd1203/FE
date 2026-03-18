@@ -1,13 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, Clock } from 'lucide-react';
+import { getInspectorDashboard } from '../../apis/inspectorApi';
 
 export const InspectorStatsPage: React.FC = () => {
-  // Mock counts - replace with real data later
-  const counts = {
-    inspected: 156,
-    pending: 24,
-  };
+  const [counts, setCounts] = useState({ inspected: 0, pending: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getInspectorDashboard()
+      .then((res) =>
+        setCounts({
+          inspected: res.data?.inspected || 0,
+          pending: res.data?.pending || 0,
+        }),
+      )
+      .catch(() => setError('Không thể tải thống kê kiểm định'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Đang tải thống kê...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
     <div className="space-y-6">

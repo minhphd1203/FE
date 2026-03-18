@@ -1,44 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
-
-const INSPECTION_HISTORY = [
-  {
-    id: 1,
-    title: 'Xe đạp mountain bike Merida Big Nine',
-    seller: 'Phạm Văn K',
-    price: '18.500.000 đ',
-    condition: 'Tốt',
-    inspectionDate: '1 giờ trước',
-    status: 'approved',
-    notes: 'Bàn đạp thay mới, phanh OK',
-  },
-  {
-    id: 2,
-    title: 'Xe đạp fixed gear single speed',
-    seller: 'Lê Thị L',
-    price: '6.500.000 đ',
-    condition: 'Bình thường',
-    inspectionDate: '2 giờ trước',
-    status: 'approved',
-    notes: 'Khung có vết xước nhỏ',
-  },
-  {
-    id: 3,
-    title: 'Xe đạp địa hình Trek X-Caliber 8',
-    seller: 'Trần Văn M',
-    price: '22.000.000 đ',
-    condition: 'Tốt',
-    inspectionDate: '3 giờ trước',
-    status: 'approved',
-    notes: 'Hệ thống chuyển số hoạt động trơn',
-  },
-];
+import { getInspectionDetails } from '../../apis/inspectorApi';
 
 export const InspectionHistoryDetailPage: React.FC = () => {
   const { id } = useParams();
-  const item = INSPECTION_HISTORY.find((x) => String(x.id) === String(id));
+  const [item, setItem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!id) return;
+    getInspectionDetails(id)
+      .then((res) => setItem(res.data))
+      .catch(() => setError('Không thể tải chi tiết kiểm định'))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <div>Đang tải chi tiết kiểm định...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
   if (!item) {
     return (
       <div>
@@ -62,7 +42,6 @@ export const InspectionHistoryDetailPage: React.FC = () => {
           Xem thông tin kiểm định đã hoàn thành
         </p>
       </div>
-
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-start gap-6">
           <div className="flex-1">
@@ -70,27 +49,27 @@ export const InspectionHistoryDetailPage: React.FC = () => {
               {item.title}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Người bán: {item.seller}
+              Người bán: {item.sellerName || item.seller || '-'}
             </p>
             <p className="text-sm text-gray-600 mt-1">
               Giá:{' '}
-              <span className="font-semibold text-[#f57224]">{item.price}</span>
+              <span className="font-semibold text-[#f57224]">
+                {item.price ? item.price + ' đ' : '-'}
+              </span>
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Tình trạng: {item.condition}
+              Tình trạng: {item.condition || '-'}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              Thời gian kiểm định: {item.inspectionDate}
+              Thời gian kiểm định: {item.inspectionDate || '-'}
             </p>
-
             <div className="mt-4">
               <h3 className="text-sm font-medium text-gray-700">
                 Ghi chú kiểm định
               </h3>
-              <p className="text-sm text-gray-600 mt-2">{item.notes}</p>
+              <p className="text-sm text-gray-600 mt-2">{item.notes || '-'}</p>
             </div>
           </div>
-
           <div className="w-48">
             <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
               <CheckCircle className="w-4 h-4" /> Đã kiểm

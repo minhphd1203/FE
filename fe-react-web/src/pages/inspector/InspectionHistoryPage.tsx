@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
+import { getInspectionHistory } from '../../apis/inspectorApi';
 
 const INSPECTION_HISTORY = [
   {
@@ -92,6 +93,20 @@ const getStatusBadge = (status: string) => {
 };
 
 export const InspectionHistoryPage: React.FC = () => {
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getInspectionHistory()
+      .then((res) => setHistory(res.data || []))
+      .catch(() => setError('Không thể tải lịch sử kiểm định'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>Đang tải lịch sử kiểm định...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -119,70 +134,49 @@ export const InspectionHistoryPage: React.FC = () => {
         </select>
       </div>
 
-      {/* History Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Tiêu đề
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Người bán
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Giá
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Tình trạng
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Thời gian kiểm định
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {INSPECTION_HISTORY.map((item) => (
-                <tr
-                  key={item.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    {item.title}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {item.seller}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-[#f57224]">
-                    {item.price}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {item.condition}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {item.inspectionDate}
-                  </td>
-                  <td className="px-6 py-4">{getStatusBadge(item.status)}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <Link
-                      to={`/inspector/history/${item.id}`}
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      Xem chi tiết
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Lịch sử kiểm định */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {history.map((item) => (
+          <Link
+            key={item.id}
+            to={`/inspector/history/${item.id}`}
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                {item.title}
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Người bán:{' '}
+                <span className="font-medium">
+                  {item.sellerName || item.seller || '-'}
+                </span>
+              </p>
+              <div className="grid grid-cols-2 gap-4 my-2">
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase">
+                    Giá
+                  </p>
+                  <p className="text-lg font-bold text-[#f57224] mt-1">
+                    {item.price ? item.price + ' đ' : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase">
+                    Tình trạng
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">
+                    {item.condition || '-'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Thời gian kiểm định: {item.inspectionDate || '-'}
+              </p>
+              {getStatusBadge(item.status)}
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

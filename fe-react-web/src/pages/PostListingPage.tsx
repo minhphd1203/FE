@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '../constants/data';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
 export const PostListingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,11 +32,13 @@ export const PostListingPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock submission
+    // Giả lập tạo bikeId và lấy amount
+    const bikeId = uuidv4();
+    const amount = Number(formData.price);
     alert(
       'Đăng tin thành công! Tin của bạn đang được duyệt. Chuyển đến trang thanh toán dịch vụ.',
     );
-    navigate('/thanh-toan');
+    navigate('/thanh-toan', { state: { bikeId, amount } });
   };
 
   return (

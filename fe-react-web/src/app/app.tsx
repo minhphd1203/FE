@@ -24,6 +24,7 @@ import {
   AdminReportsPage,
   AdminSettingsPage,
 } from '../pages/admin';
+import { AdminCategoriesPage } from '../pages/admin/AdminCategoriesPage';
 import {
   SavedListingsPage,
   SavedSearchesPage,
@@ -119,6 +120,7 @@ export function App() {
                   path="transactions"
                   element={<AdminTransactionsPage />}
                 />
+                <Route path="categories" element={<AdminCategoriesPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>

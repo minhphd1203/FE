@@ -228,4 +228,44 @@ export const adminApi = {
     );
     return data;
   },
+  /** CATEGORY MANAGEMENT */
+  /** GET /api/admin/v1/category - Lấy danh sách danh mục xe */
+  getCategories: async (): Promise<ApiResponse<AdminCategory[]>> => {
+    const { data } =
+      await apiClient.get<ApiResponse<AdminCategory[]>>('/admin/v1/category');
+    return data;
+  },
+
+  /** POST /api/admin/v1/category - Tạo mới danh mục xe */
+  createCategory: async (body: {
+    name: string;
+    slug: string;
+    description?: string;
+  }): Promise<ApiResponse<AdminCategory>> => {
+    const { data } = await apiClient.post<ApiResponse<AdminCategory>>(
+      '/admin/v1/category',
+      body,
+    );
+    return data;
+  },
+
+  /** PUT /api/admin/v1/category/:id - Cập nhật danh mục xe */
+  updateCategory: async (
+    id: string,
+    body: { name?: string; slug?: string; description?: string },
+  ): Promise<ApiResponse<AdminCategory>> => {
+    const { data } = await apiClient.put<ApiResponse<AdminCategory>>(
+      `/admin/v1/category/${id}`,
+      body,
+    );
+    return data;
+  },
+
+  /** DELETE /api/admin/v1/category/:id - Xóa danh mục xe */
+  deleteCategory: async (id: string): Promise<ApiResponse<AdminCategory>> => {
+    const { data } = await apiClient.delete<ApiResponse<AdminCategory>>(
+      `/admin/v1/category/${id}`,
+    );
+    return data;
+  },
 };

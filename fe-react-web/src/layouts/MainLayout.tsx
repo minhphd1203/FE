@@ -114,15 +114,20 @@ export const MainLayout: React.FC = () => {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() =>
-                    isAuthenticated
-                      ? navigate(
-                          user?.role?.toLowerCase() === 'admin'
-                            ? '/admin/settings'
-                            : '/tai-khoan',
-                        )
-                      : navigate('/auth/login')
-                  }
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      navigate('/auth/login');
+                      return;
+                    }
+                    const role = user?.role?.toLowerCase();
+                    if (role === 'admin') {
+                      navigate('/admin/settings');
+                    } else if (role === 'inspector') {
+                      navigate('/inspector');
+                    } else {
+                      navigate('/tai-khoan');
+                    }
+                  }}
                   className="flex items-center gap-1.5 p-1 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
                   <div className="w-9 h-9 rounded-full bg-[#c2410c] flex items-center justify-center text-white font-semibold text-sm">

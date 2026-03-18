@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -8,6 +8,11 @@ import {
   Image as ImageIcon,
   X,
 } from 'lucide-react';
+import {
+  getBikeDetails,
+  startInspection,
+  submitInspection,
+} from '../../apis/inspectorApi';
 
 const VEHICLE_DETAILS: Record<
   string,
@@ -81,7 +86,19 @@ interface InspectionFormData {
 export const InspectionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const vehicle = VEHICLE_DETAILS[id || '1'];
+  const [vehicle, setVehicle] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [inspectionStarted, setInspectionStarted] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    getBikeDetails(id)
+      .then((res) => setVehicle(res.data))
+      .catch(() => setError('Không thể tải thông tin xe'))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const [formData, setFormData] = useState<InspectionFormData>({
     overallCondition: '',
@@ -131,28 +148,39 @@ export const InspectionDetailPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleStartInspection = async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      await startInspection(id);
+      setInspectionStarted(true);
+    } catch {
+      setError('Không thể bắt đầu kiểm định');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setError(null);
+    try {
+      await submitInspection(id!, formData);
       setShowSuccess(true);
-
       setTimeout(() => {
         navigate('/inspector');
       }, 2000);
-    }, 1500);
+    } catch {
+      setError('Không thể gửi kiểm định');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (!vehicle) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Xe không tìm thấy</p>
-      </div>
-    );
-  }
+  if (loading) return <div>Đang tải thông tin xe...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!vehicle) return <div>Không tìm thấy xe</div>;
 
   if (showSuccess) {
     return (
@@ -421,6 +449,17 @@ export const InspectionDetailPage: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Nút bắt đầu kiểm định */}
+      {!inspectionStarted && (
+        <button
+          onClick={handleStartInspection}
+          className="mb-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          disabled={loading}
+        >
+          Bắt đầu kiểm định
+        </button>
+      )}
     </div>
   );
 };
