@@ -1,3 +1,12 @@
+export interface AdminCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 import apiClient from './apiClient';
 
 /** BE response wrapper */

@@ -136,47 +136,51 @@ export const InspectionHistoryPage: React.FC = () => {
 
       {/* Lịch sử kiểm định */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {history.map((item) => (
-          <Link
-            key={item.id}
-            to={`/inspector/history/${item.id}`}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-          >
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
-                {item.title}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Người bán:{' '}
-                <span className="font-medium">
-                  {item.sellerName || item.seller || '-'}
-                </span>
-              </p>
-              <div className="grid grid-cols-2 gap-4 my-2">
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase">
-                    Giá
-                  </p>
-                  <p className="text-lg font-bold text-[#f57224] mt-1">
-                    {item.price ? item.price + ' đ' : '-'}
-                  </p>
+        {history.map((item) => {
+          const inspection = item.inspection || {};
+          return (
+            <Link
+              key={inspection.id}
+              to={`/inspector/history/${inspection.id}`}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+            >
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  {item.bikeTitle || '-'}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Người bán:{' '}
+                  <span className="font-medium">{item.sellerName || '-'}</span>
+                </p>
+                <div className="grid grid-cols-2 gap-4 my-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">
+                      Giá
+                    </p>
+                    <p className="text-lg font-bold text-[#f57224] mt-1">
+                      {inspection.price ? inspection.price + ' đ' : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">
+                      Tình trạng
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 mt-1">
+                      {inspection.condition || '-'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase">
-                    Tình trạng
-                  </p>
-                  <p className="text-lg font-bold text-gray-900 mt-1">
-                    {item.condition || '-'}
-                  </p>
-                </div>
+                <p className="text-xs text-gray-500">
+                  Thời gian kiểm định:{' '}
+                  {inspection.completedAt
+                    ? new Date(inspection.completedAt).toLocaleString()
+                    : '-'}
+                </p>
+                {getStatusBadge(inspection.status)}
               </div>
-              <p className="text-xs text-gray-500">
-                Thời gian kiểm định: {item.inspectionDate || '-'}
-              </p>
-              {getStatusBadge(item.status)}
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
