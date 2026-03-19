@@ -37,6 +37,13 @@ import {
   HelpPage,
   UserAccountPage,
 } from '../pages/user';
+import { ListingDetailPage } from '../pages/ListingDetailPage';
+
+import { ReportViolationPage } from '../pages/ReportViolationPage';
+import { MessageSellerPage } from '../pages/MessageSellerPage';
+import { WishlistPage } from '../pages/WishlistPage';
+import { BuyerTransactionsPage } from '../pages/BuyerTransactionsPage';
+import { ReviewSellerPage } from '../pages/ReviewSellerPage';
 import { AllListingsPage } from '../pages/AllListingsPage';
 import { InspectorStatsPage } from '../pages/inspector/InspectorStatsPage';
 import { InspectionListPage } from '../pages/inspector/InspectionListPage';
@@ -79,12 +86,18 @@ export function App() {
               />
               <Route path="danh-muc/:slug" element={<CategoryPage />} />
               <Route path="tat-ca-tin-dang" element={<AllListingsPage />} />
+              <Route path="tin-dang/:id" element={<ListingDetailPage />} />
 
               {/* User / account utility pages */}
               <Route path="tin-dang-da-luu" element={<SavedListingsPage />} />
               <Route path="tim-kiem-da-luu" element={<SavedSearchesPage />} />
               <Route path="lich-su-xem-tin" element={<ViewHistoryPage />} />
               <Route path="danh-gia-tu-toi" element={<MyReviewsPage />} />
+              <Route path="bao-cao-vi-pham" element={<ReportViolationPage />} />
+              <Route path="nhan-tin-seller" element={<MessageSellerPage />} />
+              <Route path="yeu-thich" element={<WishlistPage />} />
+              <Route path="don-mua" element={<BuyerTransactionsPage />} />
+              <Route path="danh-gia-seller" element={<ReviewSellerPage />} />
               <Route
                 path="lich-su-giao-dich"
                 element={<TransactionHistoryPage />}

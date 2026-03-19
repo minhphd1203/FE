@@ -1,5 +1,7 @@
 import apiClient from './apiClient';
 
+import { searchBikes, SearchBikesParams } from '../api/bikeApi';
+
 // Inspector APIs
 export const getInspectorDashboard = async () => {
   const res = await apiClient.get('/inspector/v1/dashboard');
@@ -38,6 +40,11 @@ export const getInspectionDetails = async (inspectionId: string) => {
   const res = await apiClient.get(`/inspector/v1/inspections/${inspectionId}`);
   return res.data;
 };
+
+// Gọi API search bikes cho inspector (có thể tái sử dụng cho FE)
+export async function fetchBikesForInspector(params: SearchBikesParams) {
+  return searchBikes(params);
+}
 
 export const updateInspection = async (inspectionId: string, data: any) => {
   const res = await apiClient.put(

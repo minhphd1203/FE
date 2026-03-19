@@ -1,12 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, Clock } from 'lucide-react';
-import { getInspectorDashboard } from '../../apis/inspectorApi';
+import {
+  getInspectorDashboard,
+  fetchBikesForInspector,
+} from '../../apis/inspectorApi';
 
 export const InspectorStatsPage: React.FC = () => {
   const [counts, setCounts] = useState({ inspected: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Ví dụ: Gọi API search bikes khi mount (có thể xóa hoặc thay đổi logic tuỳ ý)
+  useEffect(() => {
+    // Gọi thử API search bikes với params mẫu
+    fetchBikesForInspector({ brand: '', model: '', page: 1, limit: 5 })
+      .then((data) => {
+        // Xử lý dữ liệu nếu cần
+        // console.log('Bikes:', data);
+      })
+      .catch((err) => {
+        // console.log('Lỗi fetch bikes:', err);
+      });
+  }, []);
 
   useEffect(() => {
     getInspectorDashboard()

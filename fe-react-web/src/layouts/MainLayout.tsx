@@ -81,12 +81,69 @@ export const MainLayout: React.FC = () => {
                 <option>Hà Nội</option>
                 <option>Đà Nẵng</option>
               </select>
+              {/* Nút Yêu thích */}
               <Link
-                to="/tin-dang-da-luu"
+                to="/yeu-thich"
                 className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Tin đăng đã lưu"
+                title="Yêu thích"
               >
                 <Heart className="w-5 h-5 text-gray-800" />
+              </Link>
+              {/* Nút Đơn mua */}
+              <Link
+                to="/don-mua"
+                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                title="Đơn mua"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A1 1 0 007 17h10a1 1 0 00.95-.68L21 13M7 13V6h10v7"></path>
+                </svg>
+              </Link>
+              {/* Nút Báo cáo vi phạm */}
+              <Link
+                to="/bao-cao-vi-pham"
+                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                title="Báo cáo vi phạm"
+              >
+                <svg
+                  className="w-5 h-5 text-yellow-600"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </Link>
+              {/* Nút Nhắn tin Seller */}
+              <Link
+                to="/nhan-tin-seller"
+                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                title="Nhắn tin Seller"
+              >
+                <MessageCircle className="w-5 h-5 text-gray-800" />
+              </Link>
+              {/* Nút Đánh giá Seller */}
+              <Link
+                to="/danh-gia-seller"
+                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                title="Đánh giá Seller"
+              >
+                <svg
+                  className="w-5 h-5 text-yellow-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+                </svg>
               </Link>
               <button
                 type="button"

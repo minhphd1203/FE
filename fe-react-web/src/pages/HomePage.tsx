@@ -1,8 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CATEGORIES, MOCK_LISTINGS } from '../constants/data';
+import { fetchRecommendedBikes } from '../api/recommendedBikes';
+import { login } from '../api/auth';
+import { Bicycle } from '../types';
 
 export const HomePage: React.FC = () => {
+  const [recommended, setRecommended] = useState<Bicycle[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Bạn chưa đăng nhập.');
+          setLoading(false);
+          return;
+        }
+        const res = await fetchRecommendedBikes(10, token);
+        setRecommended(res.data);
+      } catch (err: any) {
+        setError(err.message || 'Lỗi không xác định');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <>
       {/* ========== DANH MỤC (grid icon + text như Chợ Tốt) ========== */}
@@ -34,7 +63,7 @@ export const HomePage: React.FC = () => {
       <section className="bg-white rounded-xl shadow-sm p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
-            Tin đăng mới nhất
+            Tin đăng gợi ý mới nhất
           </h2>
           <Link
             to="/tat-ca-tin-dang"
@@ -43,37 +72,47 @@ export const HomePage: React.FC = () => {
             Xem tất cả
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {MOCK_LISTINGS.map((item) => (
-            <Link
-              key={item.id}
-              to={`/tin-dang/${item.id}`}
-              className="block bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Ảnh: có image thì hiển thị ảnh, không thì placeholder */}
-              <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-4xl text-gray-300">🚲</span>
-                )}
-              </div>
-              <div className="p-3">
-                <p className="font-semibold text-[#f57224] text-sm mb-1">
-                  {item.price}
-                </p>
-                <p className="text-gray-800 text-sm line-clamp-2 mb-1">
-                  {item.title}
-                </p>
-                <p className="text-gray-500 text-xs">{item.location}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {loading ? (
+          <div>Đang tải...</div>
+        ) : error ? (
+          <div className="text-red-500">{error}</div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {recommended.map((item) => (
+              <Link
+                key={item.id}
+                to={`/tin-dang/${item.id}`}
+                className="block bg-white border border-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {item.images && item.images.length > 0 ? (
+                    <img
+                      src={item.images[0]}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl text-gray-300">🚲</span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="font-semibold text-[#f57224] text-sm mb-1">
+                    {item.price?.toLocaleString('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    })}
+                  </p>
+                  <p className="text-gray-800 text-sm line-clamp-2 mb-1">
+                    {item.title}
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    {item.seller?.name || ''}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Gợi ý xem thêm */}

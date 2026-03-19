@@ -26,6 +26,8 @@ export const LoginPage: React.FC = () => {
     try {
       const { user, token } = await authApi.login(data);
       localStorage.setItem('token', token);
+      localStorage.setItem('role', (user.role || 'buyer').toLowerCase());
+
       dispatch(
         setCredentials({
           user: { ...user, role: user.role || 'buyer' },
@@ -33,31 +35,15 @@ export const LoginPage: React.FC = () => {
         }),
       );
 
-      // Điều hướng theo role (theo BE):
-      // - admin -> /admin
-      // - inspector -> /inspector
-      // - còn lại -> /
+      // Fetch role from API response and redirect accordingly
       const role = (user.role || 'buyer').toLowerCase();
-      const email = (user.email || '').toLowerCase();
+      let redirectTo = '/';
 
-      const fromPath = (location.state as any)?.from as string | undefined;
-      const safeFrom =
-        fromPath &&
-        !fromPath.startsWith('/auth') &&
-        !fromPath.startsWith('/register')
-          ? fromPath
-          : undefined;
-
-      const redirectTo =
-        safeFrom &&
-        ((safeFrom.startsWith('/admin') && role === 'admin') ||
-          (safeFrom.startsWith('/inspector') && role === 'inspector'))
-          ? safeFrom
-          : role === 'admin' || email === 'admin@beswp.com'
-            ? '/admin/settings'
-            : role === 'inspector' || email.startsWith('inspector')
-              ? '/inspector'
-              : '/';
+      if (role === 'admin') {
+        redirectTo = '/admin/settings';
+      } else if (role === 'inspector') {
+        redirectTo = '/inspector/dashboard';
+      }
 
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
