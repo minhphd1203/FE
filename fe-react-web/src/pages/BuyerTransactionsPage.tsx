@@ -41,22 +41,24 @@ export const BuyerTransactionsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Đơn mua của tôi</h1>
-      {success && <div className="text-green-600 mb-2">{success}</div>}
-      {error && <div className="text-red-600 mb-2">{error}</div>}
-      <p className="text-sm text-gray-500 mb-4">
+    <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Đơn mua của tôi</h1>
+      <p className="text-sm text-gray-500 mb-5">
         Để tạo đơn mua, vào chi tiết tin đăng và bấm nút <b>Đặt mua</b>.
       </p>
+      {success && <div className="text-green-600 text-sm mb-3">{success}</div>}
+      {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       <div>
         {transactions.length === 0 ? (
-          <div className="text-gray-400">Chưa có đơn mua nào.</div>
+          <div className="text-gray-400 py-8 text-center border border-dashed rounded-xl">
+            Chưa có đơn mua nào.
+          </div>
         ) : (
-          <ul>
+          <ul className="space-y-3">
             {transactions.map((item: any) => (
               <li
                 key={item.id}
-                className="flex justify-between items-center border-b py-2"
+                className="flex justify-between items-center border border-gray-100 rounded-xl p-4"
               >
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800">
@@ -68,7 +70,7 @@ export const BuyerTransactionsPage: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  className="text-red-500 hover:underline"
+                  className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg"
                   onClick={() => handleCancel(item.id)}
                   disabled={loading}
                 >

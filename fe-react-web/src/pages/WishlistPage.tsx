@@ -48,21 +48,26 @@ export const WishlistPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Danh sách yêu thích</h1>
-      {success && <div className="text-green-600 mb-2">{success}</div>}
-      {error && <div className="text-red-600 mb-2">{error}</div>}
+    <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">
+        Danh sách yêu thích
+      </h1>
+      <p className="text-sm text-gray-500 mb-5">
+        Các tin bạn quan tâm sẽ xuất hiện ở đây để tiện theo dõi.
+      </p>
+      {success && <div className="text-green-600 text-sm mb-3">{success}</div>}
+      {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       <div>
         {wishlist.length === 0 ? (
-          <div className="text-gray-400">
+          <div className="text-gray-400 py-8 text-center border border-dashed rounded-xl">
             Chưa có xe nào trong danh sách yêu thích.
           </div>
         ) : (
-          <ul>
+          <ul className="space-y-3">
             {wishlist.map((item: any) => (
               <li
                 key={item.id}
-                className="flex justify-between items-center border-b py-2"
+                className="flex justify-between items-center border border-gray-100 rounded-xl p-4"
               >
                 <div className="min-w-0">
                   <Link
@@ -71,7 +76,7 @@ export const WishlistPage: React.FC = () => {
                   >
                     {item.title || item.name || item.model || item.id}
                   </Link>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-[#f57224] font-semibold mt-1">
                     {item.price
                       ? Number(item.price).toLocaleString('vi-VN', {
                           style: 'currency',
@@ -81,7 +86,7 @@ export const WishlistPage: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  className="text-red-500 hover:underline ml-3"
+                  className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg ml-3"
                   onClick={() => handleRemove(item.id)}
                   disabled={loading}
                 >

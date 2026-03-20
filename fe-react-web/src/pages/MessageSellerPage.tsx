@@ -44,13 +44,20 @@ export const MessageSellerPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Nhắn tin cho Seller</h1>
+    <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">
+        Nhắn tin cho seller
+      </h1>
+      <p className="text-sm text-gray-500 mb-6">
+        Liên hệ người bán để hỏi thêm thông tin trước khi chốt đơn.
+      </p>
       <form onSubmit={handleSend} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">Seller ID</label>
+          <label className="block mb-1 font-medium text-gray-700">
+            Seller ID
+          </label>
           <input
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
             value={sellerId}
             onChange={(e) => setSellerId(e.target.value)}
             required
@@ -58,9 +65,11 @@ export const MessageSellerPage: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Nội dung tin nhắn</label>
+          <label className="block mb-1 font-medium text-gray-700">
+            Nội dung tin nhắn
+          </label>
           <textarea
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
@@ -68,36 +77,45 @@ export const MessageSellerPage: React.FC = () => {
             required
           />
         </div>
-        <button
-          type="submit"
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          disabled={loading}
-        >
-          {loading ? 'Đang gửi...' : 'Gửi tin nhắn'}
-        </button>
-        <button
-          type="button"
-          className="ml-2 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-          onClick={handleLoadMessages}
-          disabled={loading || !sellerId}
-        >
-          Xem lịch sử tin nhắn
-        </button>
-        {success && (
-          <div className="text-green-600 mt-2">Gửi tin nhắn thành công!</div>
-        )}
-        {error && <div className="text-red-600 mt-2">{error}</div>}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="submit"
+            className="bg-[#f57224] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#e0651a] disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? 'Đang gửi...' : 'Gửi tin nhắn'}
+          </button>
+          <button
+            type="button"
+            className="bg-gray-100 px-5 py-2.5 rounded-xl hover:bg-gray-200 text-gray-700 font-medium disabled:opacity-60"
+            onClick={handleLoadMessages}
+            disabled={loading || !sellerId}
+          >
+            Xem lịch sử
+          </button>
+          {success && (
+            <div className="text-green-600 text-sm">
+              Gửi tin nhắn thành công!
+            </div>
+          )}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
+        </div>
       </form>
       <div className="mt-6">
-        <h2 className="font-semibold mb-2">Lịch sử tin nhắn</h2>
-        <div className="bg-gray-50 rounded p-3 min-h-[60px] max-h-60 overflow-y-auto">
+        <h2 className="font-semibold mb-2 text-gray-800">Lịch sử tin nhắn</h2>
+        <div className="bg-gray-50 rounded-xl p-3 min-h-[80px] max-h-72 overflow-y-auto border border-gray-100">
           {messages.length === 0 ? (
             <div className="text-gray-400">Chưa có tin nhắn</div>
           ) : (
             messages.map((msg, idx) => (
-              <div key={idx} className="mb-2">
-                <span className="font-medium">{msg.sender || 'Bạn'}:</span>{' '}
-                {msg.message}
+              <div
+                key={idx}
+                className="mb-2 p-2 rounded-lg bg-white border border-gray-100"
+              >
+                <span className="font-medium text-gray-800">
+                  {msg.sender || 'Bạn'}:
+                </span>{' '}
+                <span className="text-gray-700">{msg.message}</span>
               </div>
             ))
           )}

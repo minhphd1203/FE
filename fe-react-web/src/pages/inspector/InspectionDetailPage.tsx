@@ -14,72 +14,15 @@ import {
   submitInspection,
 } from '../../apis/inspectorApi';
 
-const VEHICLE_DETAILS: Record<
-  string,
-  {
-    id: number;
-    title: string;
-    seller: string;
-    price: string;
-    condition: string;
-    submittedDate: string;
-    description: string;
-  }
-> = {
-  '1': {
-    id: 1,
-    title: 'Xe đạp địa hình Giant Talon 3',
-    seller: 'Nguyễn Văn A',
-    price: '8.500.000 đ',
-    condition: 'Mới',
-    submittedDate: '2 giờ trước',
-    description: 'Xe đạp địa hình chất lượng cao, khung nhôm, bánh 29 inch',
-  },
-  '2': {
-    id: 2,
-    title: 'Xe đạp đua Pinarello F12',
-    seller: 'Trần Thị B',
-    price: '45.000.000 đ',
-    condition: 'Tốt',
-    submittedDate: '3 giờ trước',
-    description: 'Xe đạp đua carbon chuyên nghiệp, khung F12 mới nhất',
-  },
-  '3': {
-    id: 3,
-    title: 'Xe đạp điện Nijia Pro',
-    seller: 'Lê Văn C',
-    price: '12.000.000 đ',
-    condition: 'Bình thường',
-    submittedDate: '5 giờ trước',
-    description: 'Xe đạp điện với pin đầy đủ, mô tơ mạnh mẽ',
-  },
-  '4': {
-    id: 4,
-    title: 'Xe đạp gấp Brompton',
-    seller: 'Phạm Thị D',
-    price: '35.000.000 đ',
-    condition: 'Mới',
-    submittedDate: '6 giờ trước',
-    description: 'Xe đạp gấp cao cấp, nhẹ, dễ mang theo',
-  },
-  '5': {
-    id: 5,
-    title: 'Bộ phụ kiện xe đạp thể thao',
-    seller: 'Hoàng Văn E',
-    price: '1.200.000 đ',
-    condition: 'Như mới',
-    submittedDate: '8 giờ trước',
-    description: 'Bộ phụ kiện bao gồm yên, tay lái, phanh, số',
-  },
-};
-
 interface InspectionFormData {
+  status: 'passed' | 'failed' | '';
   overallCondition: string;
   frameCondition: string;
   wheelCondition: string;
   brakeCondition: string;
-  drivetrain: string;
-  additionalNotes: string;
+  drivetrainCondition: string;
+  inspectionNote: string;
+  recommendation: string;
   images: File[];
 }
 
@@ -101,12 +44,14 @@ export const InspectionDetailPage: React.FC = () => {
   }, [id]);
 
   const [formData, setFormData] = useState<InspectionFormData>({
+    status: '',
     overallCondition: '',
     frameCondition: '',
     wheelCondition: '',
     brakeCondition: '',
-    drivetrain: '',
-    additionalNotes: '',
+    drivetrainCondition: '',
+    inspectionNote: '',
+    recommendation: '',
     images: [],
   });
 
@@ -166,13 +111,24 @@ export const InspectionDetailPage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await submitInspection(id!, formData);
+      const payload = {
+        status: formData.status,
+        overallCondition: formData.overallCondition,
+        frameCondition: formData.frameCondition,
+        wheelCondition: formData.wheelCondition,
+        brakeCondition: formData.brakeCondition,
+        drivetrainCondition: formData.drivetrainCondition,
+        inspectionNote: formData.inspectionNote,
+        recommendation: formData.recommendation,
+        inspectionImages: uploadedImages,
+      };
+      await submitInspection(id!, payload);
       setShowSuccess(true);
       setTimeout(() => {
         navigate('/inspector');
       }, 2000);
-    } catch {
-      setError('Không thể gửi kiểm định');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Không thể gửi kiểm định');
     } finally {
       setIsSubmitting(false);
     }
@@ -218,13 +174,15 @@ export const InspectionDetailPage: React.FC = () => {
           <div>
             <p className="text-sm text-gray-600">Người bán</p>
             <p className="text-lg font-semibold text-gray-900">
-              {vehicle.seller}
+              {vehicle.seller?.name || vehicle.sellerName || '-'}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Giá</p>
             <p className="text-lg font-semibold text-[#f57224]">
-              {vehicle.price}
+              {vehicle.price
+                ? Number(vehicle.price).toLocaleString('vi-VN') + ' đ'
+                : '-'}
             </p>
           </div>
           <div>
@@ -252,6 +210,24 @@ export const InspectionDetailPage: React.FC = () => {
           </h2>
 
           <div className="space-y-4">
+            {/* Inspection Result */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Kết quả kiểm định *
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+              >
+                <option value="">Chọn kết quả</option>
+                <option value="passed">Đạt</option>
+                <option value="failed">Không đạt</option>
+              </select>
+            </div>
+
             {/* Overall Condition */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -335,8 +311,8 @@ export const InspectionDetailPage: React.FC = () => {
                 Tình trạng truyền động *
               </label>
               <select
-                name="drivetrain"
-                value={formData.drivetrain}
+                name="drivetrainCondition"
+                value={formData.drivetrainCondition}
                 onChange={handleInputChange}
                 required
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
@@ -354,11 +330,25 @@ export const InspectionDetailPage: React.FC = () => {
                 Ghi chú thêm
               </label>
               <textarea
-                name="additionalNotes"
-                value={formData.additionalNotes}
+                name="inspectionNote"
+                value={formData.inspectionNote}
                 onChange={handleInputChange}
                 placeholder="Nhập bất kỳ nhận xét hoặc vấn đề khác..."
                 rows={4}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224] resize-none"
+              ></textarea>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Khuyến nghị
+              </label>
+              <textarea
+                name="recommendation"
+                value={formData.recommendation}
+                onChange={handleInputChange}
+                placeholder="Khuyến nghị dành cho buyer/seller..."
+                rows={3}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224] resize-none"
               ></textarea>
             </div>

@@ -30,13 +30,18 @@ export const ReviewSellerPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Đánh giá Seller</h1>
+    <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+      <h1 className="text-2xl font-bold text-gray-900">Đánh giá seller</h1>
+      <p className="text-sm text-gray-500 mt-1 mb-6">
+        Chia sẻ trải nghiệm của bạn sau khi giao dịch hoàn tất.
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block mb-1 font-medium">Seller ID</label>
+          <label className="block mb-1 font-medium text-gray-700">
+            Seller ID
+          </label>
           <input
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
             value={sellerId}
             onChange={(e) => setSellerId(e.target.value)}
             required
@@ -44,9 +49,9 @@ export const ReviewSellerPage: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Số sao</label>
+          <label className="block mb-1 font-medium text-gray-700">Số sao</label>
           <select
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
             value={rating}
             onChange={(e) => setRating(Number(e.target.value))}
           >
@@ -58,9 +63,11 @@ export const ReviewSellerPage: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block mb-1 font-medium">Nhận xét</label>
+          <label className="block mb-1 font-medium text-gray-700">
+            Nhận xét
+          </label>
           <textarea
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
@@ -68,17 +75,21 @@ export const ReviewSellerPage: React.FC = () => {
             required
           />
         </div>
-        <button
-          type="submit"
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          disabled={loading}
-        >
-          {loading ? 'Đang gửi...' : 'Gửi đánh giá'}
-        </button>
-        {success && (
-          <div className="text-green-600 mt-2">Gửi đánh giá thành công!</div>
-        )}
-        {error && <div className="text-red-600 mt-2">{error}</div>}
+        <div className="pt-2 flex items-center gap-3">
+          <button
+            type="submit"
+            className="bg-[#f57224] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#e0651a] disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? 'Đang gửi...' : 'Gửi đánh giá'}
+          </button>
+          {success && (
+            <div className="text-green-600 text-sm">
+              Gửi đánh giá thành công!
+            </div>
+          )}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
+        </div>
       </form>
     </div>
   );

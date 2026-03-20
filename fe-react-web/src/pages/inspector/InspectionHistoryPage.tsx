@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 import { getInspectionHistory } from '../../apis/inspectorApi';
 
 const INSPECTION_HISTORY = [
@@ -78,17 +78,50 @@ const INSPECTION_HISTORY = [
   },
 ];
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status?: string) => {
   switch (status) {
-    case 'approved':
+    case 'passed':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
           <CheckCircle className="w-3 h-3" />
-          Đã kiểm
+          Đạt
+        </span>
+      );
+    case 'failed':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+          <XCircle className="w-3 h-3" />
+          Không đạt
         </span>
       );
     default:
       return null;
+  }
+};
+
+const formatPrice = (price?: number) => {
+  if (typeof price !== 'number') return '-';
+  return `${new Intl.NumberFormat('vi-VN').format(price)} đ`;
+};
+
+const formatInspectionTime = (value?: string) => {
+  if (!value) return '-';
+  return new Date(value).toLocaleString('vi-VN');
+};
+
+const getConditionLabel = (value?: string) => {
+  if (!value) return '-';
+  switch (value) {
+    case 'excellent':
+      return 'Tuyệt vời';
+    case 'good':
+      return 'Tốt';
+    case 'fair':
+      return 'Trung bình';
+    case 'poor':
+      return 'Kém';
+    default:
+      return value;
   }
 };
 
@@ -158,7 +191,7 @@ export const InspectionHistoryPage: React.FC = () => {
                       Giá
                     </p>
                     <p className="text-lg font-bold text-[#f57224] mt-1">
-                      {inspection.price ? inspection.price + ' đ' : '-'}
+                      {formatPrice(item.bikePrice)}
                     </p>
                   </div>
                   <div>
@@ -166,15 +199,17 @@ export const InspectionHistoryPage: React.FC = () => {
                       Tình trạng
                     </p>
                     <p className="text-lg font-bold text-gray-900 mt-1">
-                      {inspection.condition || '-'}
+                      {getConditionLabel(
+                        inspection.overallCondition || item.bikeCondition,
+                      )}
                     </p>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">
                   Thời gian kiểm định:{' '}
-                  {inspection.completedAt
-                    ? new Date(inspection.completedAt).toLocaleString()
-                    : '-'}
+                  {formatInspectionTime(
+                    inspection.updatedAt || inspection.createdAt,
+                  )}
                 </p>
                 {getStatusBadge(inspection.status)}
               </div>

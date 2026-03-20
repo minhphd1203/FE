@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Wallet, CreditCard, Banknote, ShieldCheck, Clock } from 'lucide-react';
 import { createTransaction, createPaymentUrl } from '../apis/paymentApi';
 import { useLocation } from 'react-router-dom';
+import { getTransactions } from '../api/buyerApi';
 
 type PaymentMethod = 'wallet' | 'bank' | 'cod';
 
@@ -45,9 +46,37 @@ export const CheckoutPage: React.FC = () => {
       const paymentUrl = paymentRes.data.paymentUrl;
       window.location.href = paymentUrl;
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
-      );
+      const apiMessage =
+        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+
+      // Nếu đã có đơn pending cho bike này, tái sử dụng transaction đó để tạo link VNPay
+      const hasExistingPendingOrder =
+        typeof apiMessage === 'string' &&
+        apiMessage.toLowerCase().includes('đơn đặt mua đang chờ xử lý');
+
+      if (hasExistingPendingOrder && method !== 'cod') {
+        try {
+          const transactions = await getTransactions();
+          const pending = (
+            Array.isArray(transactions) ? transactions : []
+          ).find((trx: any) => {
+            const trxBikeId = trx?.bikeId || trx?.bike?.id;
+            const trxStatus = (trx?.status || '').toLowerCase();
+            return trxBikeId === bikeId && trxStatus === 'pending';
+          });
+
+          if (pending?.id) {
+            const paymentRes = await createPaymentUrl(pending.id);
+            const paymentUrl = paymentRes.data.paymentUrl;
+            window.location.href = paymentUrl;
+            return;
+          }
+        } catch {
+          // fallback về message bên dưới
+        }
+      }
+
+      setError(apiMessage);
     } finally {
       setLoading(false);
     }

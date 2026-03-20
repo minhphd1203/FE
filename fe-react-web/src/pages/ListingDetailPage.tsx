@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
-import {
-  addToWishlist,
-  createTransaction,
-  getBikeDetails,
-  type BuyerBike,
-} from '../api/buyerApi';
+import { addToWishlist, getBikeDetails, type BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [listing, setListing] = useState<BuyerBike | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,22 +72,13 @@ export const ListingDetailPage: React.FC = () => {
   };
 
   const handleBuyNow = async () => {
-    if (!listing?.id) return;
-    setActionLoading(true);
-    setActionMessage(null);
-    try {
-      await createTransaction({
+    if (!listing?.id || !listing?.price) return;
+    navigate('/thanh-toan', {
+      state: {
         bikeId: listing.id,
-        amount: listing.price || 0,
-      });
-      setActionMessage('Đặt mua thành công. Kiểm tra mục Đơn mua của tôi.');
-    } catch (err: any) {
-      setActionMessage(
-        err?.response?.data?.message || 'Không thể tạo đơn mua.',
-      );
-    } finally {
-      setActionLoading(false);
-    }
+        amount: listing.price,
+      },
+    });
   };
 
   return (
