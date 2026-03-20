@@ -1,5 +1,54 @@
 import apiClient from './apiClient';
 
+export interface ProfileUser {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string | null;
+  role: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+export const profileApi = {
+  // GET /api/profile/v1/info
+  getMyProfile: async (): Promise<ProfileUser> => {
+    const response =
+      await apiClient.get<ApiResponse<ProfileUser>>('/profile/v1/info');
+    return response.data.data;
+  },
+
+  // POST /api/profile/v1/upgrade-seller
+  upgradeSeller: async (): Promise<ProfileUser> => {
+    const response = await apiClient.post<ApiResponse<ProfileUser>>(
+      '/profile/v1/upgrade-seller',
+    );
+    return response.data.data;
+  },
+
+  // POST /api/profile/v1/downgrade-seller
+  downgradeSeller: async (): Promise<ProfileUser> => {
+    const response = await apiClient.post<ApiResponse<ProfileUser>>(
+      '/profile/v1/downgrade-seller',
+    );
+    return response.data.data;
+  },
+
+  // GET /api/profile/v1/{userId}
+  getProfileByUserId: async (userId: string): Promise<ProfileUser> => {
+    const response = await apiClient.get<ApiResponse<ProfileUser>>(
+      `/profile/v1/${userId}`,
+    );
+    return response.data.data;
+  },
+};
+
+import apiClient from './apiClient';
+
 // Profile APIs
 export const getCurrentUserProfile = async () => {
   const res = await apiClient.get('/api/profile/v1/info');

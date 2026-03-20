@@ -29,6 +29,12 @@ export interface PaymentStatusResponse {
   };
 }
 
+type ApiEnvelope<T> = {
+  success?: boolean;
+  data?: T;
+  message?: string;
+};
+
 export const createTransaction = async (payload: CreateTransactionRequest) => {
   const res = await apiClient.post<CreateTransactionResponse>(
     '/buyer/v1/transactions',
@@ -47,6 +53,27 @@ export const createPaymentUrl = async (transactionId: string) => {
 export const getPaymentStatus = async (transactionId: string) => {
   const res = await apiClient.get<PaymentStatusResponse>(
     `/payment/v1/status/${transactionId}`,
+  );
+  return res.data;
+};
+
+// GET /api/payment/v1/vnpay-return
+export const getVnpayReturnResult = async (
+  queryString: string,
+): Promise<ApiEnvelope<{ status?: string; transactionId?: string }>> => {
+  const suffix = queryString.startsWith('?') ? queryString : `?${queryString}`;
+  const res = await apiClient.get<
+    ApiEnvelope<{ status?: string; transactionId?: string }>
+  >(`/payment/v1/vnpay-return${suffix}`);
+  return res.data;
+};
+
+// POST /api/payment/v1/create-remaining/{depositTransactionId}
+export const createRemainingPaymentUrl = async (
+  depositTransactionId: string,
+) => {
+  const res = await apiClient.post<CreatePaymentUrlResponse>(
+    `/payment/v1/create-remaining/${depositTransactionId}`,
   );
   return res.data;
 };

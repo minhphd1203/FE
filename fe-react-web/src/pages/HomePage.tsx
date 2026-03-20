@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CATEGORIES, MOCK_LISTINGS } from '../constants/data';
-import { fetchRecommendedBikes } from '../api/recommendedBikes';
-import { login } from '../api/auth';
-import { Bicycle } from '../types';
+import { getRecommendedBikes, type BuyerBike } from '../api/buyerApi';
+import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 
 export const HomePage: React.FC = () => {
-  const [recommended, setRecommended] = useState<Bicycle[]>([]);
+  const [recommended, setRecommended] = useState<BuyerBike[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,14 +14,8 @@ export const HomePage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('Bạn chưa đăng nhập.');
-          setLoading(false);
-          return;
-        }
-        const res = await fetchRecommendedBikes(10, token);
-        setRecommended(res.data);
+        const list = await getRecommendedBikes(10);
+        setRecommended(list);
       } catch (err: any) {
         setError(err.message || 'Lỗi không xác định');
       } finally {
@@ -87,12 +80,17 @@ export const HomePage: React.FC = () => {
                 <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden">
                   {item.images && item.images.length > 0 ? (
                     <img
-                      src={item.images[0]}
+                      src={getBikeImage(item.images[0], item.title)}
                       alt={item.title}
                       className="w-full h-full object-cover"
+                      onError={(e) => handleBikeImageError(e, item.title)}
                     />
                   ) : (
-                    <span className="text-4xl text-gray-300">🚲</span>
+                    <img
+                      src={getBikeImage(undefined, item.title)}
+                      alt="Xe dap"
+                      className="w-full h-full object-cover"
+                    />
                   )}
                 </div>
                 <div className="p-3">
@@ -106,7 +104,7 @@ export const HomePage: React.FC = () => {
                     {item.title}
                   </p>
                   <p className="text-gray-500 text-xs">
-                    {item.seller?.name || ''}
+                    {item.seller?.name || item.seller?.email || ''}
                   </p>
                 </div>
               </Link>

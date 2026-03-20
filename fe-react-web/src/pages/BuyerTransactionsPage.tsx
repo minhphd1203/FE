@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  createTransaction,
-  getTransactions,
-  cancelTransaction,
-  getBikeDetails,
-} from '../api/buyerApi';
+import { getTransactions, cancelTransaction } from '../api/buyerApi';
+import { Link } from 'react-router-dom';
 
 export const BuyerTransactionsPage: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [bikeId, setBikeId] = useState('');
-  const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -31,23 +25,6 @@ export const BuyerTransactionsPage: React.FC = () => {
     loadTransactions();
   }, []);
 
-  const handleCreate = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    try {
-      await createTransaction({ bikeId, amount });
-      setSuccess('Đã đặt mua thành công!');
-      setBikeId('');
-      setAmount('');
-      loadTransactions();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Có lỗi xảy ra.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCancel = async (id: string) => {
     setLoading(true);
     setError('');
@@ -66,29 +43,11 @@ export const BuyerTransactionsPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto mt-10 bg-white p-6 rounded shadow">
       <h1 className="text-2xl font-bold mb-4">Đơn mua của tôi</h1>
-      <div className="flex gap-2 mb-4">
-        <input
-          className="border rounded px-3 py-2 flex-1"
-          value={bikeId}
-          onChange={(e) => setBikeId(e.target.value)}
-          placeholder="Nhập Bike ID để đặt mua"
-        />
-        <input
-          className="border rounded px-3 py-2 w-32"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Số tiền"
-        />
-        <button
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          onClick={handleCreate}
-          disabled={loading || !bikeId || !amount}
-        >
-          Đặt mua
-        </button>
-      </div>
       {success && <div className="text-green-600 mb-2">{success}</div>}
       {error && <div className="text-red-600 mb-2">{error}</div>}
+      <p className="text-sm text-gray-500 mb-4">
+        Để tạo đơn mua, vào chi tiết tin đăng và bấm nút <b>Đặt mua</b>.
+      </p>
       <div>
         {transactions.length === 0 ? (
           <div className="text-gray-400">Chưa có đơn mua nào.</div>
@@ -99,10 +58,15 @@ export const BuyerTransactionsPage: React.FC = () => {
                 key={item.id}
                 className="flex justify-between items-center border-b py-2"
               >
-                <span>
-                  Xe: {item.bikeId} | Số tiền: {item.amount} | Trạng thái:{' '}
-                  {item.status}
-                </span>
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-800">
+                    Xe: {item.bikeId || item.bike?.id || '—'} | Số tiền:{' '}
+                    {item.amount}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Trạng thái: {item.status || 'pending'}
+                  </p>
+                </div>
                 <button
                   className="text-red-500 hover:underline"
                   onClick={() => handleCancel(item.id)}
@@ -114,6 +78,11 @@ export const BuyerTransactionsPage: React.FC = () => {
             ))}
           </ul>
         )}
+      </div>
+      <div className="mt-4">
+        <Link to="/tat-ca-tin-dang" className="text-[#f57224] hover:underline">
+          Xem tin để mua ngay
+        </Link>
       </div>
     </div>
   );

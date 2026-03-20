@@ -84,6 +84,10 @@ export function App() {
                 path="thanh-toan/thanh-cong"
                 element={<PaymentSuccessPage />}
               />
+              <Route
+                path="payment/vnpay-return"
+                element={<PaymentSuccessPage />}
+              />
               <Route path="danh-muc/:slug" element={<CategoryPage />} />
               <Route path="tat-ca-tin-dang" element={<AllListingsPage />} />
               <Route path="tin-dang/:id" element={<ListingDetailPage />} />

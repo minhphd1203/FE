@@ -1,31 +1,12 @@
 import React, { useState } from 'react';
-import {
-  addToWishlist,
-  removeFromWishlist,
-  getWishlist,
-} from '../api/buyerApi';
+import { removeFromWishlist, getWishlist } from '../api/buyerApi';
+import { Link } from 'react-router-dom';
 
 export const WishlistPage: React.FC = () => {
-  const [bikeId, setBikeId] = useState('');
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const handleAdd = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    try {
-      await addToWishlist(bikeId);
-      setSuccess('Đã thêm vào danh sách yêu thích!');
-      loadWishlist();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Có lỗi xảy ra.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRemove = async (id: string) => {
     setLoading(true);
@@ -69,21 +50,6 @@ export const WishlistPage: React.FC = () => {
   return (
     <div className="max-w-lg mx-auto mt-10 bg-white p-6 rounded shadow">
       <h1 className="text-2xl font-bold mb-4">Danh sách yêu thích</h1>
-      <div className="flex gap-2 mb-4">
-        <input
-          className="border rounded px-3 py-2 flex-1"
-          value={bikeId}
-          onChange={(e) => setBikeId(e.target.value)}
-          placeholder="Nhập Bike ID để thêm"
-        />
-        <button
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          onClick={handleAdd}
-          disabled={loading || !bikeId}
-        >
-          Thêm
-        </button>
-      </div>
       {success && <div className="text-green-600 mb-2">{success}</div>}
       {error && <div className="text-red-600 mb-2">{error}</div>}
       <div>
@@ -98,9 +64,24 @@ export const WishlistPage: React.FC = () => {
                 key={item.id}
                 className="flex justify-between items-center border-b py-2"
               >
-                <span>{item.name || item.model || item.id}</span>
+                <div className="min-w-0">
+                  <Link
+                    to={`/tin-dang/${item.id}`}
+                    className="font-medium text-gray-800 hover:text-[#f57224]"
+                  >
+                    {item.title || item.name || item.model || item.id}
+                  </Link>
+                  <p className="text-xs text-gray-500">
+                    {item.price
+                      ? Number(item.price).toLocaleString('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        })
+                      : ''}
+                  </p>
+                </div>
                 <button
-                  className="text-red-500 hover:underline"
+                  className="text-red-500 hover:underline ml-3"
                   onClick={() => handleRemove(item.id)}
                   disabled={loading}
                 >

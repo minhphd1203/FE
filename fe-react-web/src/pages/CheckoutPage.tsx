@@ -32,10 +32,17 @@ export const CheckoutPage: React.FC = () => {
         notes: 'Thanh toán dịch vụ đăng tin',
       });
       const transactionId = transactionRes.data.id;
-      // 2. Tạo paymentUrl
+      // 2. Nếu COD thì không redirect VNPay, chuyển thẳng trang kết quả
+      if (method === 'cod') {
+        navigate(
+          `/payment/vnpay-return?transactionId=${transactionId}&status=pending`,
+        );
+        return;
+      }
+
+      // 3. Các method còn lại đi qua VNPay
       const paymentRes = await createPaymentUrl(transactionId);
       const paymentUrl = paymentRes.data.paymentUrl;
-      // 3. Redirect sang VNPay
       window.location.href = paymentUrl;
     } catch (err: any) {
       setError(
