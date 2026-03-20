@@ -7,11 +7,11 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   ChevronDown,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../redux/hooks';
 import { logout } from '../redux/slices/authSlice';
+import { authApi } from '../apis/authApi';
 
 const SIDEBAR_ITEMS = [
   { label: 'Trang chủ', icon: LayoutDashboard, href: '/inspector/dashboard' },
@@ -26,9 +26,16 @@ export const InspectorLayout: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout API failed:', error);
+    } finally {
+      dispatch(logout());
+      localStorage.removeItem('token');
+      navigate('/');
+    }
   };
 
   return (
@@ -60,10 +67,10 @@ export const InspectorLayout: React.FC = () => {
         </div>
 
         <div className="p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
             Kiểm định chất lượng
           </p>
-          <nav className="space-y-1">
+          <nav className="space-y-0.5">
             {SIDEBAR_ITEMS.map((item) => {
               const Icon = item.icon;
               return (
@@ -72,7 +79,7 @@ export const InspectorLayout: React.FC = () => {
                   to={item.href}
                   end={item.href === '/inspector'}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-[#f57224]/10 text-[#f57224]'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -80,31 +87,20 @@ export const InspectorLayout: React.FC = () => {
                   }
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm">{item.label}</span>
                 </NavLink>
               );
             })}
           </nav>
-        </div>
-
-        {/* Logout Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Đăng xuất
-          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="lg:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-6">
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between h-14 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-2 rounded-lg hover:bg-gray-100 lg:hidden"
@@ -112,43 +108,47 @@ export const InspectorLayout: React.FC = () => {
               <Menu className="w-5 h-5 text-gray-500" />
             </button>
 
-            <div className="flex items-center gap-4 ml-auto">
-              <button className="relative p-2 rounded-lg hover:bg-gray-100">
-                <Bell className="w-5 h-5 text-gray-500" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <div className="flex-1" />
+
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-8 h-8 bg-[#f57224] rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                  {user?.name?.charAt(0) || 'K'}
+                </div>
+                <span className="hidden sm:block text-sm font-medium text-gray-700">
+                  {user?.name || 'Kiểm duyệt viên'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>
 
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
-                >
-                  <div className="w-8 h-8 bg-[#f57224] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {user?.name?.charAt(0) || 'K'}
+              {userMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setUserMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-1">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-red-600 rounded hover:bg-red-50"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Đăng xuất
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {user?.name || 'Kiểm duyệt viên'}
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                </button>
-
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
-                    >
-                      Đăng xuất
-                    </button>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-3 lg:p-4">
           <Outlet />
         </main>
       </div>

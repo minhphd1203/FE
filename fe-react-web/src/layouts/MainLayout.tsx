@@ -37,10 +37,16 @@ export const MainLayout: React.FC = () => {
     }
   }, [dispatch, isAuthenticated]);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    localStorage.removeItem('token');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout API failed:', error);
+    } finally {
+      dispatch(logout());
+      localStorage.removeItem('token');
+      navigate('/');
+    }
   };
 
   return (
