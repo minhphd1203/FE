@@ -1,29 +1,27 @@
 import React, { useState } from 'react';
-import { reportViolation } from '../api/buyerApi';
+import { useBuyerReportViolationMutation } from '../hooks/buyer/useBuyerQueries';
 
 export const ReportViolationPage: React.FC = () => {
+  const reportMut = useBuyerReportViolationMutation();
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccess(false);
     try {
-      await reportViolation({ reason, details });
+      await reportMut.mutateAsync({ reason, details });
       setSuccess(true);
       setReason('');
       setDetails('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
       );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -60,9 +58,9 @@ export const ReportViolationPage: React.FC = () => {
           <button
             type="submit"
             className="bg-[#f57224] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#e0651a] disabled:opacity-60"
-            disabled={loading}
+            disabled={reportMut.isPending}
           >
-            {loading ? 'Đang gửi...' : 'Gửi báo cáo'}
+            {reportMut.isPending ? 'Đang gửi...' : 'Gửi báo cáo'}
           </button>
           {success && (
             <div className="text-green-600 text-sm">

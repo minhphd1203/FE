@@ -11,8 +11,14 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   allowedRoles,
   redirectTo = '/',
 }) => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user, isHydrated } = useAppSelector(
+    (state) => state.auth,
+  );
   const location = useLocation();
+
+  if (!isHydrated) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return (

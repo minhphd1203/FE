@@ -12,18 +12,21 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** true sau khi đã đọc storage / gọi /auth/me — guard chờ flag này */
+  isHydrated: boolean;
 }
 
-const initialState: AuthState = {
+export const authInitialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
   isLoading: false,
+  isHydrated: false,
 };
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: authInitialState,
   reducers: {
     setCredentials: (
       state,
@@ -41,8 +44,12 @@ const authSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
+    setAuthHydrated: (state, action: PayloadAction<boolean>) => {
+      state.isHydrated = action.payload;
+    },
   },
 });
 
-export const { setCredentials, logout, setLoading } = authSlice.actions;
+export const { setCredentials, logout, setLoading, setAuthHydrated } =
+  authSlice.actions;
 export default authSlice.reducer;

@@ -1,31 +1,29 @@
 import React, { useState } from 'react';
-import { reviewSeller } from '../api/buyerApi';
+import { useBuyerReviewSellerMutation } from '../hooks/buyer/useBuyerQueries';
 
 export const ReviewSellerPage: React.FC = () => {
+  const reviewMut = useBuyerReviewSellerMutation();
   const [sellerId, setSellerId] = useState('');
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccess(false);
     try {
-      await reviewSeller({ sellerId, rating, comment });
+      await reviewMut.mutateAsync({ sellerId, rating, comment });
       setSuccess(true);
       setSellerId('');
       setRating(5);
       setComment('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
       );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -79,9 +77,9 @@ export const ReviewSellerPage: React.FC = () => {
           <button
             type="submit"
             className="bg-[#f57224] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#e0651a] disabled:opacity-60"
-            disabled={loading}
+            disabled={reviewMut.isPending}
           >
-            {loading ? 'Đang gửi...' : 'Gửi đánh giá'}
+            {reviewMut.isPending ? 'Đang gửi...' : 'Gửi đánh giá'}
           </button>
           {success && (
             <div className="text-green-600 text-sm">

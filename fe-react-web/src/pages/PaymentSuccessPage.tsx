@@ -1,78 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
-import { getPaymentStatus, getVnpayReturnResult } from '../apis/paymentApi';
+import { useBuyerPaymentVerifyQuery } from '../hooks/buyer/useBuyerQueries';
 
 export const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState<boolean>(true);
-  const [message, setMessage] = useState('Đang xác nhận kết quả thanh toán...');
-
-  useEffect(() => {
-    const verify = async () => {
-      const query = new URLSearchParams(location.search);
-      const transactionId =
-        query.get('transactionId') || query.get('vnp_TxnRef') || '';
-
-      try {
-        // Ưu tiên xác nhận theo callback query nếu có từ VNPay
-        if (location.search && query.get('vnp_ResponseCode')) {
-          const ret = await getVnpayReturnResult(location.search);
-          const status = (ret.data?.status || '').toLowerCase();
-          const isOk =
-            status.includes('success') ||
-            status.includes('paid') ||
-            query.get('vnp_ResponseCode') === '00';
-          setSuccess(isOk);
-          setMessage(
-            isOk
-              ? 'Thanh toán thành công! Giao dịch đã được xác nhận.'
-              : ret.message || 'Thanh toán chưa thành công.',
-          );
-          return;
-        }
-
-        if (transactionId) {
-          const statusRes = await getPaymentStatus(transactionId);
-          const status = (statusRes.data?.status || '').toLowerCase();
-          const isOk = ['success', 'paid', 'completed'].includes(status);
-          const isPending = ['pending', 'processing'].includes(status);
-          setSuccess(isOk || isPending);
-          setMessage(
-            isOk
-              ? 'Thanh toán thành công!'
-              : isPending
-                ? 'Giao dịch đang được xử lý, vui lòng kiểm tra lại sau.'
-                : 'Thanh toán chưa thành công.',
-          );
-          return;
-        }
-
-        setSuccess(false);
-        setMessage('Không tìm thấy thông tin giao dịch.');
-      } catch (err: any) {
-        setSuccess(false);
-        setMessage(
-          err?.response?.data?.message ||
-            'Không thể xác minh trạng thái thanh toán.',
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void verify();
-  }, [location.search]);
+  const { data, isLoading, isFetching } = useBuyerPaymentVerifyQuery(
+    location.search,
+  );
+  const loading = isLoading || isFetching;
+  const success = data?.success ?? false;
+  const message = data?.message ?? 'Đang xác nhận kết quả thanh toán...';
 
   return (
     <div className="max-w-xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-6 text-center space-y-4">
         <div className="flex justify-center">
           <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
-            {success ? (
+            {loading ? (
+              <Clock className="w-10 h-10 text-amber-500 animate-pulse" />
+            ) : success ? (
               <CheckCircle2 className="w-10 h-10 text-emerald-500" />
             ) : (
               <XCircle className="w-10 h-10 text-red-500" />

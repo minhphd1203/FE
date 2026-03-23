@@ -1,42 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { getTransactions, cancelTransaction } from '../api/buyerApi';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  useBuyerCancelTransactionMutation,
+  useBuyerTransactionsQuery,
+} from '../hooks/buyer/useBuyerQueries';
 
 export const BuyerTransactionsPage: React.FC = () => {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {
+    data: transactions = [],
+    isLoading: loading,
+    error: queryError,
+  } = useBuyerTransactionsQuery();
+  const cancelMut = useBuyerCancelTransactionMutation();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const loadTransactions = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await getTransactions();
-      setTransactions(res);
-    } catch (err: any) {
-      setError('Không thể tải danh sách đơn mua.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTransactions();
-  }, []);
+  const loadError =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? 'Không thể tải danh sách đơn mua.'
+        : '';
 
   const handleCancel = async (id: string) => {
-    setLoading(true);
     setError('');
     setSuccess('');
     try {
-      await cancelTransaction(id);
+      await cancelMut.mutateAsync(id);
       setSuccess('Đã hủy đơn mua!');
-      loadTransactions();
-    } catch (err: any) {
+    } catch {
       setError('Không thể hủy đơn mua.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -46,8 +39,10 @@ export const BuyerTransactionsPage: React.FC = () => {
       <p className="text-sm text-gray-500 mb-5">
         Để tạo đơn mua, vào chi tiết tin đăng và bấm nút <b>Đặt mua</b>.
       </p>
+      {(loadError || error) && (
+        <div className="text-red-600 text-sm mb-3">{loadError || error}</div>
+      )}
       {success && <div className="text-green-600 text-sm mb-3">{success}</div>}
-      {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       <div>
         {transactions.length === 0 ? (
           <div className="text-gray-400 py-8 text-center border border-dashed rounded-xl">
@@ -72,7 +67,7 @@ export const BuyerTransactionsPage: React.FC = () => {
                 <button
                   className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg"
                   onClick={() => handleCancel(item.id)}
-                  disabled={loading}
+                  disabled={loading || cancelMut.isPending}
                 >
                   Hủy
                 </button>

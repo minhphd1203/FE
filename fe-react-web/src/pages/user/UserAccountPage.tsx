@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { logout, setCredentials } from '../../redux/slices/authSlice';
+import { clearAuthSession, persistAuthSession } from '../../utils/authStorage';
 import { profileApi, type ProfileUser } from '../../apis/profileApi';
 import { UTILITIES } from '../../constants/data';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const getRoleLabel = (role: string) => {
   if (role === 'admin') return 'Quản trị viên';
@@ -17,6 +19,9 @@ export const UserAccountPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user, token } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
+  const location = useLocation();
+  const profileFlash = (location.state as { profileMessage?: string } | null)
+    ?.profileMessage;
   const [profile, setProfile] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -24,7 +29,7 @@ export const UserAccountPage: React.FC = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    localStorage.removeItem('token');
+    clearAuthSession();
     navigate('/');
   };
 
@@ -51,16 +56,26 @@ export const UserAccountPage: React.FC = () => {
   const syncRoleToStore = (nextProfile: ProfileUser) => {
     const currentToken = token || localStorage.getItem('token');
     if (!currentToken) return;
+    const nextUser = {
+      id: nextProfile.id,
+      email: nextProfile.email,
+      name: nextProfile.name,
+      role: nextProfile.role,
+    };
     dispatch(
       setCredentials({
-        user: {
-          id: nextProfile.id,
-          email: nextProfile.email,
-          name: nextProfile.name,
-          role: nextProfile.role,
-        },
+        user: nextUser,
         token: currentToken,
       }),
+    );
+    persistAuthSession(
+      {
+        id: nextUser.id,
+        email: nextUser.email,
+        name: nextUser.name,
+        role: nextUser.role,
+      },
+      currentToken,
     );
   };
 
@@ -119,6 +134,11 @@ export const UserAccountPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fff7f0] via-[#f8f8f8] to-[#f4f4f4] pt-20">
       <div className="max-w-3xl mx-auto px-4 pb-12">
+        {profileFlash && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm px-4 py-3">
+            {profileFlash}
+          </div>
+        )}
         <div className="rounded-3xl overflow-hidden shadow-sm border border-gray-100 bg-white">
           <div className="p-6 sm:p-7 border-b border-gray-100">
             <div className="flex items-start gap-4 sm:gap-5">
@@ -186,6 +206,15 @@ export const UserAccountPage: React.FC = () => {
               <p className="mt-3 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
                 {error}
               </p>
+            )}
+            {profile?.role === 'seller' && (
+              <Link
+                to="/seller"
+                className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-[#f57224] bg-[#f57224]/5 text-[#f57224] text-sm font-bold hover:bg-[#f57224]/10 transition-colors"
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                Xem tổng quan kênh bán (dashboard)
+              </Link>
             )}
           </div>
 

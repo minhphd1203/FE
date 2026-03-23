@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
@@ -6,45 +6,38 @@ import {
   Bell,
   MessageCircle,
   ChevronDown,
+  LayoutDashboard,
+  LogOut,
 } from 'lucide-react';
 import {
   UTILITIES,
   ACCOUNT_MENU_TOP,
+  ACCOUNT_MENU_SELLER,
   ACCOUNT_MENU_OFFERS,
   ACCOUNT_MENU_OTHER,
 } from '../constants/data';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { setCredentials, logout } from '../redux/slices/authSlice';
+import { logout } from '../redux/slices/authSlice';
 import { authApi } from '../apis/authApi';
+import { clearAuthSession } from '../utils/authStorage';
 
 export const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-
-  // Hydrate user from token on initial load (so UI shows real info when already logged in)
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token && !isAuthenticated) {
-      authApi
-        .getCurrentUser()
-        .then((userData) => {
-          dispatch(setCredentials({ user: userData, token }));
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-        });
-    }
-  }, [dispatch, isAuthenticated]);
+  const isSeller = user?.role?.toLowerCase() === 'seller';
+  const [logoutBusy, setLogoutBusy] = useState(false);
 
   const handleLogout = async () => {
+    if (logoutBusy) return;
+    setLogoutBusy(true);
     try {
       await authApi.logout();
     } catch (error) {
       console.error('Logout API failed:', error);
     } finally {
       dispatch(logout());
-      localStorage.removeItem('token');
+      clearAuthSession();
       navigate('/');
     }
   };
@@ -79,7 +72,7 @@ export const MainLayout: React.FC = () => {
               </div>
             </div>
 
-            {/* Khu vực bên phải: Heart, Bell, Liên hệ, Quản lý tin, Đăng tin, Avatar */}
+            {/* Khu vực bên phải: Heart, Bell, Liên hệ, Kênh bán, Avatar */}
             <div className="flex items-center gap-2 shrink-0">
               <select className="py-2 px-3 border border-gray-200 rounded-full text-gray-700 text-sm bg-white cursor-pointer hover:border-[#f57224] hidden sm:block">
                 <option>Toàn quốc</option>
@@ -168,12 +161,31 @@ export const MainLayout: React.FC = () => {
                 <MessageCircle className="w-4 h-4" />
                 Liên hệ
               </Link>
-              <Link
-                to="/dang-tin"
-                className="py-2.5 px-4 bg-gray-900 text-white font-semibold rounded-full hover:bg-gray-800 transition-colors whitespace-nowrap"
-              >
-                Đăng tin
-              </Link>
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  disabled={logoutBusy}
+                  className="flex items-center gap-1.5 py-2 px-2.5 sm:px-3 rounded-full border border-gray-200 bg-white text-gray-700 text-xs sm:text-sm font-medium hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors disabled:opacity-60"
+                  title="Đăng xuất (gọi API đăng xuất)"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">
+                    {logoutBusy ? 'Đang xuất…' : 'Đăng xuất'}
+                  </span>
+                </button>
+              )}
+              {isAuthenticated && isSeller && (
+                <Link
+                  to="/seller"
+                  className="inline-flex items-center gap-1.5 py-2 px-2.5 sm:px-3 rounded-full border-2 border-[#f57224] text-[#f57224] text-xs sm:text-sm font-semibold bg-white hover:bg-orange-50 transition-colors whitespace-nowrap"
+                  title="Tổng quan tin đăng & giao dịch"
+                >
+                  <LayoutDashboard className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">Kênh bán</span>
+                  <span className="sm:hidden">Bán</span>
+                </Link>
+              )}
               <div className="relative">
                 <button
                   type="button"
@@ -187,6 +199,8 @@ export const MainLayout: React.FC = () => {
                       navigate('/admin/settings');
                     } else if (role === 'inspector') {
                       navigate('/inspector');
+                    } else if (role === 'seller') {
+                      navigate('/seller');
                     } else {
                       navigate('/tai-khoan');
                     }
@@ -337,6 +351,26 @@ export const MainLayout: React.FC = () => {
                       </Link>
                     );
                   })}
+                  {user?.role?.toLowerCase() === 'seller' &&
+                    ACCOUNT_MENU_SELLER.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={`seller-${item.id}`}
+                          to={item.href}
+                          className="flex items-center gap-3 py-3 px-4 bg-white rounded-xl text-gray-800 hover:bg-gray-50 transition-colors border border-[#f57224]/20"
+                        >
+                          <Icon
+                            className="w-5 h-5 text-[#f57224] shrink-0"
+                            strokeWidth={1.5}
+                          />
+                          <span className="flex-1 text-sm font-medium">
+                            {item.label}
+                          </span>
+                          <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
+                        </Link>
+                      );
+                    })}
                 </div>
               </div>
 

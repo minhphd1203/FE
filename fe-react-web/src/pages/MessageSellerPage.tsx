@@ -1,45 +1,50 @@
 import React, { useState } from 'react';
-import { sendMessageToSeller, getMessagesWithSeller } from '../api/buyerApi';
+import {
+  useBuyerMessagesWithSellerQuery,
+  useBuyerSendMessageMutation,
+} from '../hooks/buyer/useBuyerQueries';
 
 export const MessageSellerPage: React.FC = () => {
   const [sellerId, setSellerId] = useState('');
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const {
+    data: messages = [],
+    refetch: refetchMessages,
+    isFetching: messagesLoading,
+  } = useBuyerMessagesWithSellerQuery(sellerId);
+  const sendMut = useBuyerSendMessageMutation();
+
+  const loading = sendMut.isPending || messagesLoading;
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccess(false);
     try {
-      await sendMessageToSeller(sellerId, { message });
+      await sendMut.mutateAsync({ sellerId, message });
       setSuccess(true);
       setMessage('');
-      // Refresh messages
-      const res = await getMessagesWithSeller(sellerId);
-      setMessages(res);
-    } catch (err: any) {
+      await refetchMessages();
+    } catch (err: unknown) {
       setError(
-        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleLoadMessages = async () => {
-    setLoading(true);
     setError('');
     try {
-      const res = await getMessagesWithSeller(sellerId);
-      setMessages(res);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Không thể tải tin nhắn.');
-    } finally {
-      setLoading(false);
+      await refetchMessages();
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Không thể tải tin nhắn.',
+      );
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { logout } from '../../redux/slices/authSlice';
+import { clearAuthSession } from '../../utils/authStorage';
 import { Save, Settings, DollarSign, Shield, Bell, Lock } from 'lucide-react';
 
 export const AdminSettingsPage: React.FC = () => {
@@ -20,7 +21,7 @@ export const AdminSettingsPage: React.FC = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    localStorage.removeItem('token');
+    clearAuthSession();
     navigate('/auth/login');
   };
 

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, XCircle } from 'lucide-react';
-import { getInspectionHistory } from '../../apis/inspectorApi';
+import { useInspectorHistoryQuery } from '../../hooks/inspector/useInspectorQueries';
 
 const INSPECTION_HISTORY = [
   {
@@ -126,19 +126,15 @@ const getConditionLabel = (value?: string) => {
 };
 
 export const InspectionHistoryPage: React.FC = () => {
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getInspectionHistory()
-      .then((res) => setHistory(res.data || []))
-      .catch(() => setError('Không thể tải lịch sử kiểm định'))
-      .finally(() => setLoading(false));
-  }, []);
+  const {
+    data: history = [],
+    isLoading: loading,
+    error: queryError,
+  } = useInspectorHistoryQuery();
 
   if (loading) return <div>Đang tải lịch sử kiểm định...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (queryError)
+    return <div className="text-red-500">Không thể tải lịch sử kiểm định</div>;
 
   return (
     <div className="space-y-6">

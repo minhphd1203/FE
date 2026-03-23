@@ -1,24 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
-import { getInspectionDetails } from '../../apis/inspectorApi';
+import { useInspectorHistoryDetailQuery } from '../../hooks/inspector/useInspectorQueries';
 
 export const InspectionHistoryDetailPage: React.FC = () => {
   const { id } = useParams();
-  const [item, setItem] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    getInspectionDetails(id)
-      .then((res) => setItem(res.data))
-      .catch(() => setError('Không thể tải chi tiết kiểm định'))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const {
+    data: item,
+    isLoading: loading,
+    error: queryError,
+  } = useInspectorHistoryDetailQuery(id);
 
   if (loading) return <div>Đang tải chi tiết kiểm định...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (queryError)
+    return <div className="text-red-500">Không thể tải chi tiết kiểm định</div>;
   if (!item) {
     return (
       <div>

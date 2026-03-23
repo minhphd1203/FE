@@ -11,7 +11,7 @@ import {
 const FAQS = [
   {
     q: 'Làm thế nào để đăng tin bán xe?',
-    a: 'Bạn cần đăng nhập, sau đó nhấn vào nút "Đăng tin" ở góc phải màn hình. Điền đầy đủ thông tin về xe đạp và tải ảnh lên.',
+    a: 'Bạn cần đăng nhập với tài khoản người bán, mở "Kênh bán" trên thanh điều hướng rồi chọn "Đăng tin mới". Điền đầy đủ thông tin và tải ảnh lên.',
   },
   {
     q: 'Tôi có mất phí khi đăng tin không?',

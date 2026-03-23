@@ -11,8 +11,11 @@ import {
   Clock,
   CheckCircle,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { adminApi, AdminBike, AdminUser } from '../../apis/adminApi';
+import { AdminBike, AdminUser } from '../../apis/adminApi';
+import {
+  useAdminBikesQuery,
+  useAdminUsersQuery,
+} from '../../hooks/admin/useAdminQueries';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -78,19 +81,13 @@ export const AdminDashboardPage: React.FC = () => {
     data: bikes = [],
     isLoading: bikesLoading,
     error: bikesError,
-  } = useQuery<AdminBike[]>({
-    queryKey: ['admin', 'bikes'],
-    queryFn: () => adminApi.getBikes().then((res) => res.data),
-  });
+  } = useAdminBikesQuery();
 
   const {
     data: users = [],
     isLoading: usersLoading,
     error: usersError,
-  } = useQuery<AdminUser[]>({
-    queryKey: ['admin', 'users'],
-    queryFn: () => adminApi.getUsers().then((res) => res.data),
-  });
+  } = useAdminUsersQuery();
 
   const statData = [
     {

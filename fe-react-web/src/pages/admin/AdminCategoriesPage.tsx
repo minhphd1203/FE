@@ -1,34 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import { adminApi, AdminCategory } from '../../apis/adminApi';
+import React, { useState } from 'react';
+import type { AdminCategory } from '../../apis/adminApi';
 import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
+import {
+  useAdminCategoriesQuery,
+  useAdminCreateCategoryMutation,
+  useAdminDeleteCategoryMutation,
+  useAdminUpdateCategoryMutation,
+} from '../../hooks/admin/useAdminQueries';
 
 const initialForm = { name: '', slug: '', description: '' };
 
 export const AdminCategoriesPage: React.FC = () => {
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: categories = [],
+    isLoading: loading,
+    error: queryError,
+  } = useAdminCategoriesQuery();
+  const createMut = useAdminCreateCategoryMutation();
+  const updateMut = useAdminUpdateCategoryMutation();
+  const deleteMut = useAdminDeleteCategoryMutation();
+
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? 'Không tải được danh mục'
+        : null;
+
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-
-  const fetchCategories = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await adminApi.getCategories();
-      setCategories(res.data || []);
-    } catch (e) {
-      setError('Không tải được danh mục');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
   const openAddModal = () => {
     setForm(initialForm);
@@ -50,8 +52,7 @@ export const AdminCategoriesPage: React.FC = () => {
     if (!window.confirm('Xóa danh mục này?')) return;
     setActionLoading(true);
     try {
-      await adminApi.deleteCategory(id);
-      fetchCategories();
+      await deleteMut.mutateAsync(id);
     } finally {
       setActionLoading(false);
     }
@@ -62,12 +63,11 @@ export const AdminCategoriesPage: React.FC = () => {
     setActionLoading(true);
     try {
       if (editingId) {
-        await adminApi.updateCategory(editingId, form);
+        await updateMut.mutateAsync({ id: editingId, body: form });
       } else {
-        await adminApi.createCategory(form);
+        await createMut.mutateAsync(form);
       }
       setModalOpen(false);
-      fetchCategories();
     } finally {
       setActionLoading(false);
     }

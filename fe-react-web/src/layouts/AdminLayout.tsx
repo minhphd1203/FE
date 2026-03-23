@@ -15,6 +15,7 @@ import {
 import { useAppSelector, useAppDispatch } from '../redux/hooks';
 import { logout } from '../redux/slices/authSlice';
 import { authApi } from '../apis/authApi';
+import { clearAuthSession } from '../utils/authStorage';
 
 const SIDEBAR_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
@@ -40,7 +41,7 @@ export const AdminLayout: React.FC = () => {
       console.error('Logout API failed:', error);
     } finally {
       dispatch(logout());
-      localStorage.removeItem('token');
+      clearAuthSession();
       navigate('/');
     }
   };

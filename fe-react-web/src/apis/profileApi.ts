@@ -6,6 +6,9 @@ export interface ProfileUser {
   name: string;
   phone?: string | null;
   role: string;
+  avatar?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ApiResponse<T> {
@@ -47,9 +50,7 @@ export const profileApi = {
   },
 };
 
-import apiClient from './apiClient';
-
-// Profile APIs
+// Profile APIs (legacy paths — ưu tiên dùng profileApi ở trên với baseURL)
 export const getCurrentUserProfile = async () => {
   const res = await apiClient.get('/api/profile/v1/info');
   return res.data;

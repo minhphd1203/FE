@@ -1,43 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, Clock } from 'lucide-react';
 import {
-  getInspectorDashboard,
-  fetchBikesForInspector,
-} from '../../apis/inspectorApi';
+  useInspectorDashboardQuery,
+  useInspectorSearchBikesQuery,
+} from '../../hooks/inspector/useInspectorQueries';
 
 export const InspectorStatsPage: React.FC = () => {
-  const [counts, setCounts] = useState({ inspected: 0, pending: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  useInspectorSearchBikesQuery({
+    brand: '',
+    model: '',
+    page: 1,
+    limit: 5,
+  });
 
-  // Ví dụ: Gọi API search bikes khi mount (có thể xóa hoặc thay đổi logic tuỳ ý)
-  useEffect(() => {
-    // Gọi thử API search bikes với params mẫu
-    fetchBikesForInspector({ brand: '', model: '', page: 1, limit: 5 })
-      .then((data) => {
-        // Xử lý dữ liệu nếu cần
-        // console.log('Bikes:', data);
-      })
-      .catch((err) => {
-        // console.log('Lỗi fetch bikes:', err);
-      });
-  }, []);
-
-  useEffect(() => {
-    getInspectorDashboard()
-      .then((res) =>
-        setCounts({
-          inspected: res.data?.inspected || 0,
-          pending: res.data?.pending || 0,
-        }),
-      )
-      .catch(() => setError('Không thể tải thống kê kiểm định'))
-      .finally(() => setLoading(false));
-  }, []);
+  const {
+    data: counts = { inspected: 0, pending: 0 },
+    isLoading: loading,
+    error: queryError,
+  } = useInspectorDashboardQuery();
 
   if (loading) return <div>Đang tải thống kê...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (queryError)
+    return <div className="text-red-500">Không thể tải thống kê kiểm định</div>;
 
   return (
     <div className="space-y-6">

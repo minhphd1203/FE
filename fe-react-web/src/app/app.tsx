@@ -50,6 +50,8 @@ import { InspectionListPage } from '../pages/inspector/InspectionListPage';
 import { InspectionDetailPage } from '../pages/inspector/InspectionDetailPage';
 import { InspectionHistoryPage } from '../pages/inspector/InspectionHistoryPage';
 import { InspectionHistoryDetailPage } from '../pages/inspector/InspectionHistoryDetailPage';
+import { SellerDashboardPage } from '../pages/seller/SellerDashboardPage';
+import { SellerProfilePage } from '../pages/seller/SellerProfilePage';
 
 const NotFoundPage: React.FC = () => (
   <div className="py-16 flex flex-col items-center gap-4 text-center">
@@ -157,6 +159,14 @@ export function App() {
                   element={<InspectionHistoryDetailPage />}
                 />
                 <Route path="dashboard" element={<InspectorStatsPage />} />
+              </Route>
+            </Route>
+
+            {/* Seller routes — dashboard từ GET /seller/v1/dashboard */}
+            <Route element={<RoleGuard allowedRoles={['seller']} />}>
+              <Route path="/seller" element={<MainLayout />}>
+                <Route index element={<SellerDashboardPage />} />
+                <Route path="ho-so" element={<SellerProfilePage />} />
               </Route>
             </Route>
           </Routes>

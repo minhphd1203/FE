@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { History, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { getTransactions } from '../../api/buyerApi';
-import { createRemainingPaymentUrl } from '../../apis/paymentApi';
+import {
+  useBuyerCreateRemainingPaymentUrlMutation,
+  useBuyerTransactionsQuery,
+} from '../../hooks/buyer/useBuyerQueries';
 
 type TransactionItem = {
   id: string;
@@ -14,30 +16,21 @@ type TransactionItem = {
 };
 
 export const TransactionHistoryPage: React.FC = () => {
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: transactions = [],
+    isLoading: loading,
+    error: queryError,
+  } = useBuyerTransactionsQuery();
+  const payRemainingMut = useBuyerCreateRemainingPaymentUrlMutation();
   const [error, setError] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
 
-  const loadTransactions = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getTransactions();
-      setTransactions(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message || 'Không tải được lịch sử giao dịch.',
-      );
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadTransactions();
-  }, []);
+  const loadError =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? 'Không tải được lịch sử giao dịch.'
+        : null;
 
   const normalizeType = (trx: TransactionItem) => {
     if (trx.type) return trx.type.toLowerCase();
@@ -57,16 +50,17 @@ export const TransactionHistoryPage: React.FC = () => {
     setPayingId(depositTransactionId);
     setError(null);
     try {
-      const res = await createRemainingPaymentUrl(depositTransactionId);
+      const res = await payRemainingMut.mutateAsync(depositTransactionId);
       const paymentUrl = res?.data?.paymentUrl;
       if (!paymentUrl) {
         throw new Error('Không lấy được link thanh toán phần còn lại.');
       }
       window.location.href = paymentUrl;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.response?.data?.message ||
-          err?.message ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ||
+          (err as Error)?.message ||
           'Không thể tạo link thanh toán phần còn lại.',
       );
     } finally {
@@ -81,9 +75,9 @@ export const TransactionHistoryPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">Lịch sử giao dịch</h1>
       </div>
 
-      {error && (
+      {(loadError || error) && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm">
-          {error}
+          {loadError || error}
         </div>
       )}
 

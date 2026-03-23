@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Eye, Upload, CheckCircle } from 'lucide-react';
-import { getPendingBikes } from '../../apis/inspectorApi';
+import { useInspectorPendingBikesQuery } from '../../hooks/inspector/useInspectorQueries';
+import { inspectorDetailRouteId } from '../../utils/inspectorBikeDetail';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -32,19 +33,19 @@ const getStatusBadge = (status: string) => {
 };
 
 export const InspectionListPage: React.FC = () => {
-  const [bikes, setBikes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getPendingBikes()
-      .then((res) => setBikes(res.data || []))
-      .catch((err) => setError('Không thể tải danh sách xe chờ kiểm định'))
-      .finally(() => setLoading(false));
-  }, []);
+  const {
+    data: bikes = [],
+    isLoading: loading,
+    error: queryError,
+  } = useInspectorPendingBikesQuery();
 
   if (loading) return <div>Đang tải danh sách xe...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (queryError)
+    return (
+      <div className="text-red-500">
+        Không thể tải danh sách xe chờ kiểm định
+      </div>
+    );
 
   return (
     <div className="space-y-6">
@@ -77,65 +78,69 @@ export const InspectionListPage: React.FC = () => {
 
       {/* Vehicles Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {bikes.map((vehicle) => (
-          <Link
-            key={vehicle.id}
-            to={`/inspector/inspection/${vehicle.id}`}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-          >
-            <div className="p-6">
-              {/* Vehicle Info */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
-                    {vehicle.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Người bán:{' '}
-                    <span className="font-medium">
-                      {vehicle.sellerName || vehicle.seller || '-'}
-                    </span>
-                  </p>
+        {bikes.map((vehicle) => {
+          const v = vehicle as Record<string, unknown>;
+          const detailId = inspectorDetailRouteId(v);
+          return (
+            <Link
+              key={detailId || String(v.id)}
+              to={`/inspector/inspection/${detailId || String(v.id)}`}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+            >
+              <div className="p-6">
+                {/* Vehicle Info */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">
+                      {vehicle.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Người bán:{' '}
+                      <span className="font-medium">
+                        {vehicle.sellerName || vehicle.seller || '-'}
+                      </span>
+                    </p>
+                  </div>
+                  {getStatusBadge(vehicle.status)}
                 </div>
-                {getStatusBadge(vehicle.status)}
+
+                {/* Divider */}
+                <div className="border-t border-gray-100 my-4"></div>
+
+                {/* Vehicle Details */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">
+                      Giá
+                    </p>
+                    <p className="text-lg font-bold text-[#f57224] mt-1">
+                      {vehicle.price ? vehicle.price + ' đ' : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase">
+                      Tình trạng
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 mt-1">
+                      {vehicle.condition || '-'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Submission Time */}
+                <p className="text-xs text-gray-500">
+                  Gửi từ {vehicle.submittedDate || '-'}
+                </p>
+
+                {/* Action Button */}
+                <button className="w-full mt-4 bg-[#f57224] hover:bg-[#e06818] text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Kiểm định ngay
+                </button>
               </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-100 my-4"></div>
-
-              {/* Vehicle Details */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase">
-                    Giá
-                  </p>
-                  <p className="text-lg font-bold text-[#f57224] mt-1">
-                    {vehicle.price ? vehicle.price + ' đ' : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase">
-                    Tình trạng
-                  </p>
-                  <p className="text-lg font-bold text-gray-900 mt-1">
-                    {vehicle.condition || '-'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Submission Time */}
-              <p className="text-xs text-gray-500">
-                Gửi từ {vehicle.submittedDate || '-'}
-              </p>
-
-              {/* Action Button */}
-              <button className="w-full mt-4 bg-[#f57224] hover:bg-[#e06818] text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
-                <Eye className="w-4 h-4" />
-                Kiểm định ngay
-              </button>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

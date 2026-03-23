@@ -1,34 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
-import { addToWishlist, getBikeDetails, type BuyerBike } from '../api/buyerApi';
+import type { BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
+import {
+  useBuyerAddToWishlistMutation,
+  useBuyerBikeDetailsQuery,
+} from '../hooks/buyer/useBuyerQueries';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [listing, setListing] = useState<BuyerBike | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: listing,
+    isLoading: loading,
+    error: queryError,
+  } = useBuyerBikeDetailsQuery(id);
+  const addWishlistMut = useBuyerAddToWishlistMutation();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      if (!id) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getBikeDetails(id);
-        setListing(data);
-      } catch (err: any) {
-        setError(err?.message || 'Không tải được chi tiết tin đăng.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, [id]);
+  const error = queryError
+    ? (queryError as Error).message || 'Không tải được chi tiết tin đăng.'
+    : null;
 
   if (loading) {
     return <div className="py-16 text-center text-gray-500">Đang tải...</div>;
@@ -57,17 +50,15 @@ export const ListingDetailPage: React.FC = () => {
 
   const handleAddWishlist = async () => {
     if (!listing?.id) return;
-    setActionLoading(true);
     setActionMessage(null);
     try {
-      await addToWishlist(listing.id);
+      await addWishlistMut.mutateAsync(listing.id);
       setActionMessage('Đã thêm vào danh sách yêu thích.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setActionMessage(
-        err?.response?.data?.message || 'Không thể thêm yêu thích.',
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Không thể thêm yêu thích.',
       );
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -134,7 +125,7 @@ export const ListingDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddWishlist}
-                disabled={actionLoading}
+                disabled={addWishlistMut.isPending}
                 className="px-4 py-2 rounded-lg border border-[#f57224] text-[#f57224] font-medium hover:bg-orange-50 disabled:opacity-60"
               >
                 Yêu thích
@@ -142,7 +133,7 @@ export const ListingDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBuyNow}
-                disabled={actionLoading}
+                disabled={addWishlistMut.isPending}
                 className="px-4 py-2 rounded-lg bg-[#f57224] text-white font-medium hover:bg-[#e0651a] disabled:opacity-60"
               >
                 Đặt mua

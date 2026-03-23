@@ -13,6 +13,8 @@ import {
   Percent,
   Settings,
   Headset,
+  LayoutDashboard,
+  UserCircle,
 } from 'lucide-react';
 
 export const CATEGORIES = [
@@ -93,6 +95,22 @@ export const ACCOUNT_MENU_TOP = [
     label: 'Lịch sử giao dịch',
     icon: History,
     href: '/lich-su-giao-dich',
+  },
+];
+
+/** Chỉ hiển thị khi user có role seller */
+export const ACCOUNT_MENU_SELLER = [
+  {
+    id: 1,
+    label: 'Tổng quan kênh bán',
+    icon: LayoutDashboard,
+    href: '/seller',
+  },
+  {
+    id: 2,
+    label: 'Hồ sơ người bán',
+    icon: UserCircle,
+    href: '/seller/ho-so',
   },
 ];
 

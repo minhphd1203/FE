@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
-import { useQuery } from '@tanstack/react-query';
-import { adminApi, AdminReport } from '../../apis/adminApi';
+import type { AdminReport } from '../../apis/adminApi';
+import {
+  useAdminReportsQuery,
+  useAdminResolveReportMutation,
+} from '../../hooks/admin/useAdminQueries';
 import {
   Search,
   Filter,
@@ -323,15 +326,8 @@ export const AdminReportsPage: React.FC = () => {
     data: reports = [],
     isLoading,
     refetch,
-  } = useQuery<AdminReport[]>({
-    queryKey: ['admin', 'reports'],
-    queryFn: () =>
-      adminApi
-        .getReports({
-          status: filterStatus === 'all' ? undefined : filterStatus,
-        })
-        .then((res) => res.data),
-  });
+  } = useAdminReportsQuery(filterStatus);
+  const resolveMut = useAdminResolveReportMutation();
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -370,7 +366,11 @@ export const AdminReportsPage: React.FC = () => {
   ) => {
     setActiveId(report.id);
     try {
-      await adminApi.resolveReport(report.id, { resolution, status });
+      await resolveMut.mutateAsync({
+        reportId: report.id,
+        resolution,
+        status,
+      });
       await refetch();
       setIsModalOpen(false);
     } catch {

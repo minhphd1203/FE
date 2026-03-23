@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   Filter,
@@ -10,7 +10,11 @@ import {
   ChevronRight,
   UserPlus,
 } from 'lucide-react';
-import { adminApi, type AdminUser } from '../../apis/adminApi';
+import type { AdminUser } from '../../apis/adminApi';
+import {
+  useAdminUsersQuery,
+  useDeleteAdminUserMutation,
+} from '../../hooks/admin/useAdminQueries';
 
 const getRoleBadge = (role: string) => {
   switch (role) {
@@ -48,57 +52,46 @@ const getRoleBadge = (role: string) => {
 };
 
 export const AdminUsersPage: React.FC = () => {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: rawUsers = [],
+    isLoading: loading,
+    error: queryError,
+  } = useAdminUsersQuery();
+  const deleteUserMutation = useDeleteAdminUserMutation();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await adminApi.getUsers();
-      if (res.success && res.data) {
-        let list = Array.isArray(res.data) ? res.data : [];
-        if (searchTerm) {
-          const q = searchTerm.toLowerCase();
-          list = list.filter(
-            (u) =>
-              u.name?.toLowerCase().includes(q) ||
-              u.email?.toLowerCase().includes(q),
-          );
-        }
-        if (filterRole !== 'all') {
-          list = list.filter((u) => u.role === filterRole);
-        }
-        setUsers(list);
-      } else {
-        setUsers([]);
-      }
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || 'Không thể tải danh sách người dùng.';
-      setError(msg);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? 'Không thể tải danh sách người dùng.'
+        : null;
 
-  useEffect(() => {
-    fetchUsers();
-  }, [searchTerm, filterRole]);
+  const users = useMemo(() => {
+    let list = [...rawUsers];
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q),
+      );
+    }
+    if (filterRole !== 'all') {
+      list = list.filter((u) => u.role === filterRole);
+    }
+    return list;
+  }, [rawUsers, searchTerm, filterRole]);
 
   const handleDeleteUser = async (userId: string) => {
     if (!window.confirm('Bạn có chắc muốn xóa tài khoản này?')) return;
     setOpenActionMenu(null);
     try {
-      await adminApi.deleteUser(userId);
-      await fetchUsers();
+      await deleteUserMutation.mutateAsync(userId);
       setSelectedUsers((prev) => prev.filter((id) => id !== userId));
     } catch (err: unknown) {
       const msg =

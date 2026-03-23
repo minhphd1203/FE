@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Search,
   Filter,
@@ -12,7 +13,15 @@ import {
   Clock,
   Image,
 } from 'lucide-react';
-import { adminApi, type AdminBike } from '../../apis/adminApi';
+import type { AdminBike } from '../../apis/adminApi';
+import { adminApi } from '../../apis/adminApi';
+import { queryKeys } from '../../hooks/query-keys';
+import {
+  useAdminApproveBikeMutation,
+  useAdminBikesQuery,
+  useAdminDeleteBikeMutation,
+  useAdminRejectBikeMutation,
+} from '../../hooks/admin/useAdminQueries';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN').format(price) + ' d';
@@ -52,9 +61,23 @@ const getStatusBadge = (status: string) => {
 };
 
 export const AdminListingsPage: React.FC = () => {
-  const [listings, setListings] = useState<AdminBike[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const {
+    data: listings = [],
+    isLoading: loading,
+    error: queryError,
+  } = useAdminBikesQuery();
+  const approveMut = useAdminApproveBikeMutation();
+  const rejectMut = useAdminRejectBikeMutation();
+  const deleteMut = useAdminDeleteBikeMutation();
+
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? 'Không tải được danh sách xe'
+        : null;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState<
@@ -64,35 +87,10 @@ export const AdminListingsPage: React.FC = () => {
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const fetchBikes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await adminApi.getBikes();
-      if (res.success && res.data) {
-        setListings(Array.isArray(res.data) ? res.data : []);
-      } else {
-        setListings([]);
-      }
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Không tải được danh sách xe',
-      );
-      setListings([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBikes();
-  }, []);
-
   const handleApprove = async (bikeId: string) => {
     setActionLoading(bikeId);
     try {
-      const res = await adminApi.approveBike(bikeId);
-      if (res.success) fetchBikes();
+      await approveMut.mutateAsync(bikeId);
     } finally {
       setActionLoading(null);
       setOpenActionMenu(null);
@@ -102,8 +100,7 @@ export const AdminListingsPage: React.FC = () => {
   const handleReject = async (bikeId: string) => {
     setActionLoading(bikeId);
     try {
-      await adminApi.rejectBike(bikeId);
-      fetchBikes();
+      await rejectMut.mutateAsync({ bikeId });
     } finally {
       setActionLoading(null);
       setOpenActionMenu(null);
@@ -114,8 +111,7 @@ export const AdminListingsPage: React.FC = () => {
     if (!window.confirm('Bạn có chắc muốn xóa tin đăng này?')) return;
     setActionLoading(bikeId);
     try {
-      await adminApi.deleteBike(bikeId);
-      fetchBikes();
+      await deleteMut.mutateAsync(bikeId);
     } finally {
       setActionLoading(null);
       setOpenActionMenu(null);
@@ -236,7 +232,9 @@ export const AdminListingsPage: React.FC = () => {
                   await adminApi.approveBike(id);
                 }
                 setSelectedListings([]);
-                fetchBikes();
+                void queryClient.invalidateQueries({
+                  queryKey: queryKeys.admin.bikes(),
+                });
               }}
               className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600"
             >
@@ -251,7 +249,9 @@ export const AdminListingsPage: React.FC = () => {
                   await adminApi.rejectBike(id);
                 }
                 setSelectedListings([]);
-                fetchBikes();
+                void queryClient.invalidateQueries({
+                  queryKey: queryKeys.admin.bikes(),
+                });
               }}
               className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600"
             >

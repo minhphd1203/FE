@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -7,12 +7,16 @@ import {
   CheckCircle,
   Image as ImageIcon,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import {
-  getBikeDetails,
-  startInspection,
-  submitInspection,
-} from '../../apis/inspectorApi';
+  useInspectorBikeDetailQuery,
+  useInspectorSellerProfileQuery,
+  useInspectorStartInspectionMutation,
+  useInspectorSubmitInspectionMutation,
+} from '../../hooks/inspector/useInspectorQueries';
+import { formatInspectorPrice } from '../../utils/inspectorBikeDetail';
+import { resolveBikeMediaUrl } from '../../apis/sellerApi';
 
 interface InspectionFormData {
   status: 'passed' | 'failed' | '';
@@ -29,19 +33,26 @@ interface InspectionFormData {
 export const InspectionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [vehicle, setVehicle] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: vehicle,
+    isLoading: bikeLoading,
+    error: bikeQueryError,
+  } = useInspectorBikeDetailQuery(id);
+  const sellerProfileQ = useInspectorSellerProfileQuery(
+    vehicle?.sellerId ?? null,
+  );
+  const startMut = useInspectorStartInspectionMutation();
+  const submitMut = useInspectorSubmitInspectionMutation();
   const [error, setError] = useState<string | null>(null);
   const [inspectionStarted, setInspectionStarted] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    getBikeDetails(id)
-      .then((res) => setVehicle(res.data))
-      .catch(() => setError('Không thể tải thông tin xe'))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const loading = bikeLoading || startMut.isPending;
+  const loadError =
+    bikeQueryError instanceof Error
+      ? bikeQueryError.message
+      : bikeQueryError
+        ? 'Không thể tải thông tin xe'
+        : null;
 
   const [formData, setFormData] = useState<InspectionFormData>({
     status: '',
@@ -95,14 +106,11 @@ export const InspectionDetailPage: React.FC = () => {
 
   const handleStartInspection = async () => {
     if (!id) return;
-    setLoading(true);
     try {
-      await startInspection(id);
+      await startMut.mutateAsync(id);
       setInspectionStarted(true);
     } catch {
       setError('Không thể bắt đầu kiểm định');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -122,21 +130,33 @@ export const InspectionDetailPage: React.FC = () => {
         recommendation: formData.recommendation,
         inspectionImages: uploadedImages,
       };
-      await submitInspection(id!, payload);
+      await submitMut.mutateAsync({ bikeId: id!, data: payload });
       setShowSuccess(true);
       setTimeout(() => {
         navigate('/inspector');
       }, 2000);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Không thể gửi kiểm định');
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Không thể gửi kiểm định',
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (loading) return <div>Đang tải thông tin xe...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (loadError) return <div className="text-red-500">{loadError}</div>;
   if (!vehicle) return <div>Không tìm thấy xe</div>;
+
+  const sellerFromApi = sellerProfileQ.data;
+  const sellerLabel =
+    sellerFromApi?.name?.trim() ||
+    vehicle.sellerName?.trim() ||
+    vehicle.seller?.name?.trim() ||
+    (sellerProfileQ.isPending && !sellerFromApi
+      ? 'Đang tải thông tin người bán…'
+      : null);
 
   if (showSuccess) {
     return (
@@ -158,6 +178,11 @@ export const InspectionDetailPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-lg bg-red-50 text-red-700 px-4 py-3 text-sm">
+          {error}
+        </div>
+      )}
       {/* Back Button */}
       <button
         onClick={() => navigate('/inspector')}
@@ -167,37 +192,184 @@ export const InspectionDetailPage: React.FC = () => {
         Quay lại
       </button>
 
-      {/* Vehicle Info Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h1 className="text-2xl font-bold text-gray-900">{vehicle.title}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <p className="text-sm text-gray-600">Người bán</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {vehicle.seller?.name || vehicle.sellerName || '-'}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Giá</p>
-            <p className="text-lg font-semibold text-[#f57224]">
-              {vehicle.price
-                ? Number(vehicle.price).toLocaleString('vi-VN') + ' đ'
-                : '-'}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Tình trạng ban đầu</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {vehicle.condition}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Mô tả</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {vehicle.description}
-            </p>
-          </div>
+      {/* Thông tin người bán + nội dung tin đăng (theo payload seller gửi) */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{vehicle.title}</h1>
+          <p className="text-xs text-gray-400 mt-1 font-mono">
+            Mã tin: {vehicle.id}
+          </p>
         </div>
+
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Người bán
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4 border border-gray-100">
+            <div>
+              <p className="text-sm text-gray-600">Tên hiển thị</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {sellerLabel ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Mã người bán (sellerId)</p>
+              <p className="text-sm font-mono text-gray-900 break-all">
+                {vehicle.sellerId ?? '—'}
+              </p>
+            </div>
+            {sellerFromApi?.email && (
+              <div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="text-base text-gray-900">{sellerFromApi.email}</p>
+              </div>
+            )}
+            {sellerFromApi?.phone != null && sellerFromApi.phone !== '' && (
+              <div>
+                <p className="text-sm text-gray-600">Số điện thoại</p>
+                <p className="text-base text-gray-900">{sellerFromApi.phone}</p>
+              </div>
+            )}
+            {vehicle.sellerId && sellerProfileQ.isError && (
+              <p className="text-sm text-amber-700 md:col-span-2">
+                Không tải được hồ sơ công khai qua{' '}
+                <code className="text-xs bg-amber-100 px-1 rounded">
+                  GET /profile/v1/:sellerId
+                </code>
+                . Vẫn hiển thị đủ dữ liệu tin đăng bên dưới.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Nội dung đơn đăng bán
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Giá rao</p>
+              <p className="text-lg font-semibold text-[#f57224]">
+                {formatInspectorPrice(vehicle.price)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Tình trạng (condition)</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.condition?.trim() ? vehicle.condition : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Hãng</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.brand ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Model</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.model ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Năm sản xuất</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.year != null ? vehicle.year : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Số km đã đi</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.mileage != null && vehicle.mileage !== ''
+                  ? String(vehicle.mileage)
+                  : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Màu sắc</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.color ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Danh mục (categoryId)</p>
+              <p className="text-sm font-mono text-gray-900 break-all">
+                {vehicle.categoryId ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Trạng thái tin</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.status ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">
+                Kiểm định (inspectionStatus)
+              </p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.inspectionStatus ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Xác minh (isVerified)</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {vehicle.isVerified ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Ngày tạo / cập nhật</p>
+              <p className="text-sm text-gray-900">
+                {vehicle.createdAt ?? '—'} → {vehicle.updatedAt ?? '—'}
+              </p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-600">Mô tả</p>
+              <p className="text-base text-gray-900 whitespace-pre-wrap mt-1">
+                {vehicle.description?.trim() ? vehicle.description : '—'}
+              </p>
+            </div>
+            {vehicle.video && (
+              <div className="md:col-span-2">
+                <p className="text-sm text-gray-600 mb-1">Video</p>
+                <a
+                  href={vehicle.video}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[#f57224] font-medium hover:underline"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  {vehicle.video}
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {vehicle.images && vehicle.images.length > 0 && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Ảnh seller đăng kèm
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {vehicle.images.map((src, i) => (
+                <a
+                  key={`${src}-${i}`}
+                  href={resolveBikeMediaUrl(src)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
+                >
+                  <img
+                    src={resolveBikeMediaUrl(src)}
+                    alt=""
+                    className="w-full h-full object-cover hover:opacity-90"
+                  />
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Inspection Form */}
@@ -445,7 +617,7 @@ export const InspectionDetailPage: React.FC = () => {
         <button
           onClick={handleStartInspection}
           className="mb-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          disabled={loading}
+          disabled={loading || startMut.isPending}
         >
           Bắt đầu kiểm định
         </button>

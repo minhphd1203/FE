@@ -1,28 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { searchBikes, type BuyerBike } from '../api/buyerApi';
+import type { BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
+import { useBuyerSearchBikesQuery } from '../hooks/buyer/useBuyerQueries';
 
 export const AllListingsPage: React.FC = () => {
-  const [listings, setListings] = useState<BuyerBike[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await searchBikes({ page: 1, limit: 50 });
-        setListings(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        setError(err?.message || 'Không tải được danh sách tin đăng.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, []);
+  const searchParams = { page: 1, limit: 50 } as const;
+  const {
+    data: rawListings,
+    isLoading: loading,
+    error: queryError,
+  } = useBuyerSearchBikesQuery(searchParams);
+  const listings: BuyerBike[] = Array.isArray(rawListings) ? rawListings : [];
+  const error = queryError
+    ? (queryError as Error).message || 'Không tải được danh sách tin đăng.'
+    : null;
 
   return (
     <div className="space-y-4">

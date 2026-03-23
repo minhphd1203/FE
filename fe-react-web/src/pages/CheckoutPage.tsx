@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Wallet, CreditCard, Banknote, ShieldCheck, Clock } from 'lucide-react';
-import { createTransaction, createPaymentUrl } from '../apis/paymentApi';
-import { useLocation } from 'react-router-dom';
 import { getTransactions } from '../api/buyerApi';
+import { queryKeys } from '../hooks/query-keys';
+import {
+  useBuyerCreatePaymentUrlMutation,
+  useBuyerCreateTransactionMutation,
+} from '../hooks/buyer/useBuyerQueries';
 
 type PaymentMethod = 'wallet' | 'bank' | 'cod';
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const createTxMut = useBuyerCreateTransactionMutation();
+  const createPayMut = useBuyerCreatePaymentUrlMutation();
   const [method, setMethod] = useState<PaymentMethod>('wallet');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const location = useLocation();
   const { bikeId, amount } = location.state || {};
+
+  const loading = createTxMut.isPending || createPayMut.isPending;
 
   // Nếu không có dữ liệu, quay lại trang đăng tin
   if (!bikeId || !amount) {
@@ -23,17 +31,14 @@ export const CheckoutPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     try {
-      // 1. Tạo transaction
-      const transactionRes = await createTransaction({
+      const transactionRes = await createTxMut.mutateAsync({
         bikeId,
-        amount,
+        amount: Number(amount),
         notes: 'Thanh toán dịch vụ đăng tin',
       });
       const transactionId = transactionRes.data.id;
-      // 2. Nếu COD thì không redirect VNPay, chuyển thẳng trang kết quả
       if (method === 'cod') {
         navigate(
           `/payment/vnpay-return?transactionId=${transactionId}&status=pending`,
@@ -41,32 +46,37 @@ export const CheckoutPage: React.FC = () => {
         return;
       }
 
-      // 3. Các method còn lại đi qua VNPay
-      const paymentRes = await createPaymentUrl(transactionId);
+      const paymentRes = await createPayMut.mutateAsync(transactionId);
       const paymentUrl = paymentRes.data.paymentUrl;
       window.location.href = paymentUrl;
-    } catch (err: any) {
+    } catch (err: unknown) {
       const apiMessage =
-        err?.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Có lỗi xảy ra, vui lòng thử lại.';
 
-      // Nếu đã có đơn pending cho bike này, tái sử dụng transaction đó để tạo link VNPay
       const hasExistingPendingOrder =
         typeof apiMessage === 'string' &&
         apiMessage.toLowerCase().includes('đơn đặt mua đang chờ xử lý');
 
       if (hasExistingPendingOrder && method !== 'cod') {
         try {
-          const transactions = await getTransactions();
-          const pending = (
-            Array.isArray(transactions) ? transactions : []
-          ).find((trx: any) => {
-            const trxBikeId = trx?.bikeId || trx?.bike?.id;
-            const trxStatus = (trx?.status || '').toLowerCase();
+          const transactions = await queryClient.fetchQuery({
+            queryKey: queryKeys.buyer.transactions(),
+            queryFn: async () => {
+              const data = await getTransactions();
+              return Array.isArray(data) ? data : [];
+            },
+          });
+          const pending = transactions.find((trx: Record<string, unknown>) => {
+            const trxBikeId = trx?.bikeId ?? (trx?.bike as { id?: string })?.id;
+            const trxStatus = String(trx?.status || '').toLowerCase();
             return trxBikeId === bikeId && trxStatus === 'pending';
           });
 
-          if (pending?.id) {
-            const paymentRes = await createPaymentUrl(pending.id);
+          if (pending && typeof pending === 'object' && 'id' in pending) {
+            const paymentRes = await createPayMut.mutateAsync(
+              String((pending as { id: string }).id),
+            );
             const paymentUrl = paymentRes.data.paymentUrl;
             window.location.href = paymentUrl;
             return;
@@ -77,8 +87,6 @@ export const CheckoutPage: React.FC = () => {
       }
 
       setError(apiMessage);
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -52,8 +52,15 @@ export const authApi = {
     return response.data;
   },
 
-  getCurrentUser: async () => {
-    const response = await apiClient.get('/auth/me');
-    return response.data;
+  getCurrentUser: async (): Promise<AuthResponse['user']> => {
+    const response = await apiClient.get<
+      | { success: boolean; data: AuthResponse['user']; message?: string }
+      | AuthResponse['user']
+    >('/auth/me');
+    const raw = response.data;
+    if (raw && typeof raw === 'object' && 'data' in raw && raw.data) {
+      return raw.data as AuthResponse['user'];
+    }
+    return raw as AuthResponse['user'];
   },
 };

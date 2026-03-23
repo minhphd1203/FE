@@ -7,6 +7,7 @@ import { authApi } from '../../apis/authApi';
 import { GoogleIcon } from '../../components/GoogleIcon';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '../../schema/validation';
+import { persistAuthSession } from '../../utils/authStorage';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,12 +26,20 @@ export const LoginPage: React.FC = () => {
     setError(null);
     try {
       const { user, token } = await authApi.login(data);
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', (user.role || 'buyer').toLowerCase());
+      const normalized = { ...user, role: user.role || 'buyer' };
+      persistAuthSession(
+        {
+          id: normalized.id,
+          email: normalized.email,
+          name: normalized.name,
+          role: normalized.role,
+        },
+        token,
+      );
 
       dispatch(
         setCredentials({
-          user: { ...user, role: user.role || 'buyer' },
+          user: normalized,
           token,
         }),
       );
@@ -43,6 +52,8 @@ export const LoginPage: React.FC = () => {
         redirectTo = '/admin/settings';
       } else if (role === 'inspector') {
         redirectTo = '/inspector/dashboard';
+      } else if (role === 'seller') {
+        redirectTo = '/seller';
       }
 
       navigate(redirectTo, { replace: true });

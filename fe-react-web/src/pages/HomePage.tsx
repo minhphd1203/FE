@@ -1,29 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { CATEGORIES, MOCK_LISTINGS } from '../constants/data';
-import { getRecommendedBikes, type BuyerBike } from '../api/buyerApi';
+import type { BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
+import { useBuyerRecommendedBikesQuery } from '../hooks/buyer/useBuyerQueries';
 
 export const HomePage: React.FC = () => {
-  const [recommended, setRecommended] = useState<BuyerBike[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const list = await getRecommendedBikes(10);
-        setRecommended(list);
-      } catch (err: any) {
-        setError(err.message || 'Lỗi không xác định');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const {
+    data: recommended = [],
+    isLoading: loading,
+    error: queryError,
+  } = useBuyerRecommendedBikesQuery(10);
+  const error = queryError
+    ? (queryError as Error).message || 'Lỗi không xác định'
+    : null;
 
   return (
     <>

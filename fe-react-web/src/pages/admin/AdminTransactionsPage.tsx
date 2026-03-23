@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { adminApi, AdminTransaction } from '../../apis/adminApi';
+import type { AdminTransaction } from '../../apis/adminApi';
+import {
+  useAdminTransactionsQuery,
+  useAdminUpdateTransactionMutation,
+} from '../../hooks/admin/useAdminQueries';
 import {
   Search,
   Filter,
@@ -26,17 +29,9 @@ export const AdminTransactionsPage: React.FC = () => {
   const {
     data: transactions = [],
     isLoading,
-    error,
     refetch,
-  } = useQuery<AdminTransaction[]>({
-    queryKey: ['admin', 'transactions'],
-    queryFn: () =>
-      adminApi
-        .getTransactions({
-          status: filterStatus === 'all' ? undefined : filterStatus,
-        })
-        .then((res) => res.data),
-  });
+  } = useAdminTransactionsQuery(filterStatus);
+  const updateTxMut = useAdminUpdateTransactionMutation();
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -56,9 +51,9 @@ export const AdminTransactionsPage: React.FC = () => {
   ) => {
     setActiveId(id);
     try {
-      await adminApi.updateTransaction(id, { status });
+      await updateTxMut.mutateAsync({ id, status });
       await refetch();
-    } catch (error) {
+    } catch {
       // ignore
     } finally {
       setActiveId(null);

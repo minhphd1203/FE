@@ -1,51 +1,40 @@
 import React, { useState } from 'react';
-import { removeFromWishlist, getWishlist } from '../api/buyerApi';
 import { Link } from 'react-router-dom';
+import {
+  useBuyerRemoveFromWishlistMutation,
+  useBuyerWishlistQuery,
+} from '../hooks/buyer/useBuyerQueries';
 
 export const WishlistPage: React.FC = () => {
-  const [wishlist, setWishlist] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {
+    data: wishlist = [],
+    isLoading: loading,
+    error: queryError,
+  } = useBuyerWishlistQuery();
+  const removeMut = useBuyerRemoveFromWishlistMutation();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const loadError =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? 'Không thể tải danh sách yêu thích.'
+        : '';
+
   const handleRemove = async (id: string) => {
-    setLoading(true);
     setError('');
     setSuccess('');
     try {
-      await removeFromWishlist(id);
+      await removeMut.mutateAsync(id);
       setSuccess('Đã xóa khỏi danh sách yêu thích!');
-      loadWishlist();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Có lỗi xảy ra.');
-    } finally {
-      setLoading(false);
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Có lỗi xảy ra.',
+      );
     }
   };
-
-  const loadWishlist = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await getWishlist();
-      // Đảm bảo wishlist luôn là mảng
-      const data = Array.isArray(res)
-        ? res
-        : Array.isArray(res?.data)
-          ? res.data
-          : [];
-      setWishlist(data);
-    } catch (err: any) {
-      setError('Không thể tải danh sách yêu thích.');
-      setWishlist([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    loadWishlist();
-  }, []);
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -55,8 +44,10 @@ export const WishlistPage: React.FC = () => {
       <p className="text-sm text-gray-500 mb-5">
         Các tin bạn quan tâm sẽ xuất hiện ở đây để tiện theo dõi.
       </p>
+      {(loadError || error) && (
+        <div className="text-red-600 text-sm mb-3">{loadError || error}</div>
+      )}
       {success && <div className="text-green-600 text-sm mb-3">{success}</div>}
-      {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
       <div>
         {wishlist.length === 0 ? (
           <div className="text-gray-400 py-8 text-center border border-dashed rounded-xl">
@@ -88,7 +79,7 @@ export const WishlistPage: React.FC = () => {
                 <button
                   className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg ml-3"
                   onClick={() => handleRemove(item.id)}
-                  disabled={loading}
+                  disabled={loading || removeMut.isPending}
                 >
                   Xóa
                 </button>
