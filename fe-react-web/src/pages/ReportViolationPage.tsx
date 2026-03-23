@@ -5,6 +5,8 @@ export const ReportViolationPage: React.FC = () => {
   const reportMut = useBuyerReportViolationMutation();
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
+  const [reportedUserId, setReportedUserId] = useState('');
+  const [reportedBikeId, setReportedBikeId] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
@@ -13,10 +15,17 @@ export const ReportViolationPage: React.FC = () => {
     setError('');
     setSuccess(false);
     try {
-      await reportMut.mutateAsync({ reason, details });
+      await reportMut.mutateAsync({
+        reason,
+        description: details.trim() || undefined,
+        reportedUserId: reportedUserId.trim() || undefined,
+        reportedBikeId: reportedBikeId.trim() || undefined,
+      });
       setSuccess(true);
       setReason('');
       setDetails('');
+      setReportedUserId('');
+      setReportedBikeId('');
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -32,6 +41,30 @@ export const ReportViolationPage: React.FC = () => {
         Gửi thông tin vi phạm để đội ngũ kiểm duyệt xử lý nhanh hơn.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block mb-1 font-medium text-gray-700">
+              ID người bị báo cáo (tùy chọn)
+            </label>
+            <input
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
+              value={reportedUserId}
+              onChange={(e) => setReportedUserId(e.target.value)}
+              placeholder="UUID người dùng"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium text-gray-700">
+              ID xe liên quan (tùy chọn)
+            </label>
+            <input
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
+              value={reportedBikeId}
+              onChange={(e) => setReportedBikeId(e.target.value)}
+              placeholder="UUID tin đăng"
+            />
+          </div>
+        </div>
         <div>
           <label className="block mb-1 font-medium text-gray-700">Lý do</label>
           <input

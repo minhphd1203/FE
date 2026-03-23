@@ -5,6 +5,7 @@ import {
   getBikeDetails,
   getMessagesWithSeller,
   getRecommendedBikes,
+  getTransactionDetail,
   getTransactions,
   getWishlist,
   removeFromWishlist,
@@ -13,6 +14,7 @@ import {
   searchBikes,
   sendMessageToSeller,
   type BuyerBike,
+  type WishlistItem,
 } from '../../api/buyerApi';
 import {
   createPaymentUrl,
@@ -20,69 +22,165 @@ import {
   createTransaction,
   getPaymentStatus,
   getVnpayReturnResult,
+  type CreateTransactionRequest,
 } from '../../apis/paymentApi';
+import { getBikeDetail, type SellerBikeDetail } from '../../apis/sellerApi';
+import { useAppSelector } from '../../redux/hooks';
 import { queryKeys } from '../query-keys';
+
+function mapSellerDetailToBuyerBike(d: SellerBikeDetail): BuyerBike {
+  return {
+    id: d.id,
+    title: d.title,
+    description: d.description || undefined,
+    price: d.price,
+    images: d.images?.length ? d.images : undefined,
+    image: d.images?.[0],
+    seller: { id: d.sellerId },
+    createdAt: d.createdAt,
+    status: d.status,
+  };
+}
 
 export function useBuyerRecommendedBikesQuery(limit = 10) {
   return useQuery({
     queryKey: queryKeys.buyer.recommended(limit),
-    queryFn: () => getRecommendedBikes(limit),
+    queryFn: async () => {
+      try {
+        return await getRecommendedBikes(limit);
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status;
+        if (status === 401 || status === 403) {
+          const { items } = await searchBikes({ page: 1, limit });
+          return items;
+        }
+        throw err;
+      }
+    },
   });
 }
 
-export function useBuyerSearchBikesQuery(params: {
-  keyword?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  condition?: string;
-  page?: number;
-  limit?: number;
-}) {
+export function useBuyerSearchBikesQuery(
+  params: {
+    keyword?: string;
+    brand?: string;
+    model?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    condition?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: number;
+    limit?: number;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.buyer.search(params as Record<string, unknown>),
     queryFn: () => searchBikes(params),
+    enabled: options?.enabled ?? true,
   });
 }
 
+/**
+ * Chi tiết tin: ưu tiên API buyer (tin đã lên chợ).
+ * Nếu 404 và user là seller — thử GET seller (tin chờ duyệt / chưa public vẫn xem được).
+ */
 export function useBuyerBikeDetailsQuery(bikeId: string | undefined) {
+  const isSeller =
+    useAppSelector((s) => s.auth.user?.role?.toLowerCase()) === 'seller';
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const trySellerFallback = isAuthenticated && isSeller;
+
   return useQuery({
-    queryKey: queryKeys.buyer.bike(bikeId ?? ''),
-    queryFn: () => getBikeDetails(bikeId as string),
+    queryKey: [
+      ...queryKeys.buyer.bike(bikeId ?? ''),
+      'detail',
+      trySellerFallback,
+    ] as const,
+    queryFn: async () => {
+      const id = bikeId as string;
+      try {
+        return await getBikeDetails(id);
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status;
+        if (status === 404 && trySellerFallback) {
+          const res = await getBikeDetail(id);
+          const raw = res?.data;
+          if (raw && typeof raw === 'object' && 'id' in raw) {
+            return mapSellerDetailToBuyerBike(raw as SellerBikeDetail);
+          }
+        }
+        throw err;
+      }
+    },
     enabled: Boolean(bikeId),
   });
 }
 
-export function useBuyerWishlistQuery() {
+export function useBuyerWishlistQuery(params?: {
+  page?: number;
+  limit?: number;
+}) {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 20;
   return useQuery({
-    queryKey: queryKeys.buyer.wishlist(),
-    queryFn: async () => {
-      const res = await getWishlist();
-      if (Array.isArray(res)) return res;
-      if (res && typeof res === 'object' && 'data' in res) {
-        const d = (res as { data?: unknown }).data;
-        return Array.isArray(d) ? d : [];
-      }
-      return [];
+    queryKey: queryKeys.buyer.wishlist({ page, limit }),
+    queryFn: async (): Promise<WishlistItem[]> => {
+      const { items } = await getWishlist({ page, limit });
+      return items;
     },
   });
 }
 
-export function useBuyerTransactionsQuery() {
+export function useBuyerTransactionsQuery(params?: {
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 10;
+  const status = params?.status;
   return useQuery({
-    queryKey: queryKeys.buyer.transactions(),
+    queryKey: queryKeys.buyer.transactions({ status, page, limit }),
     queryFn: async () => {
-      const data = await getTransactions();
-      return Array.isArray(data) ? data : [];
+      const { items } = await getTransactions({ status, page, limit });
+      return items;
     },
   });
 }
 
-export function useBuyerMessagesWithSellerQuery(sellerId: string) {
+export function useBuyerMessagesWithSellerQuery(
+  sellerId: string,
+  params?: { bikeId?: string; page?: number; limit?: number },
+) {
   const trimmed = sellerId.trim();
+  const bikeId = params?.bikeId?.trim();
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 30;
   return useQuery({
-    queryKey: queryKeys.buyer.messages(trimmed),
-    queryFn: () => getMessagesWithSeller(trimmed),
-    enabled: false,
+    queryKey: queryKeys.buyer.messages(trimmed, {
+      bikeId,
+      page,
+      limit,
+    }),
+    queryFn: () => getMessagesWithSeller(trimmed, { bikeId, page, limit }),
+    enabled: Boolean(trimmed),
+  });
+}
+
+export function useBuyerTransactionDetailQuery(
+  transactionId: string | undefined,
+  options?: { enabled?: boolean },
+) {
+  const hasId = Boolean(transactionId?.trim());
+  const enabled = (options?.enabled ?? true) && hasId;
+  return useQuery({
+    queryKey: queryKeys.buyer.transaction(transactionId ?? ''),
+    queryFn: () => getTransactionDetail(transactionId as string),
+    enabled,
   });
 }
 
@@ -91,7 +189,7 @@ export function useBuyerAddToWishlistMutation() {
   return useMutation({
     mutationFn: (bikeId: string) => addToWishlist(bikeId),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.buyer.wishlist() });
+      void qc.invalidateQueries({ queryKey: ['buyer', 'wishlist'] });
     },
   });
 }
@@ -101,7 +199,7 @@ export function useBuyerRemoveFromWishlistMutation() {
   return useMutation({
     mutationFn: (bikeId: string) => removeFromWishlist(bikeId),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.buyer.wishlist() });
+      void qc.invalidateQueries({ queryKey: ['buyer', 'wishlist'] });
     },
   });
 }
@@ -111,22 +209,30 @@ export function useBuyerCancelTransactionMutation() {
   return useMutation({
     mutationFn: (id: string) => cancelTransaction(id),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.buyer.transactions() });
+      void qc.invalidateQueries({ queryKey: ['buyer', 'transactions'] });
     },
   });
 }
 
 export function useBuyerReportViolationMutation() {
   return useMutation({
-    mutationFn: (data: { reason: string; details?: string }) =>
-      reportViolation(data),
+    mutationFn: (data: {
+      reason: string;
+      description?: string;
+      reportedUserId?: string;
+      reportedBikeId?: string;
+    }) => reportViolation(data),
   });
 }
 
 export function useBuyerReviewSellerMutation() {
   return useMutation({
-    mutationFn: (data: { sellerId: string; rating: number; comment: string }) =>
-      reviewSeller(data),
+    mutationFn: (data: {
+      sellerId: string;
+      transactionId: string;
+      rating: number;
+      comment: string;
+    }) => reviewSeller(data),
   });
 }
 
@@ -135,14 +241,20 @@ export function useBuyerSendMessageMutation() {
   return useMutation({
     mutationFn: ({
       sellerId,
-      message,
+      content,
+      bikeId,
     }: {
       sellerId: string;
-      message: string;
-    }) => sendMessageToSeller(sellerId.trim(), { message }),
+      content: string;
+      bikeId?: string;
+    }) =>
+      sendMessageToSeller(sellerId.trim(), {
+        content,
+        ...(bikeId?.trim() ? { bikeId: bikeId.trim() } : {}),
+      }),
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({
-        queryKey: queryKeys.buyer.messages(variables.sellerId.trim()),
+        queryKey: ['buyer', 'messages', variables.sellerId.trim()],
       });
     },
   });
@@ -151,10 +263,10 @@ export function useBuyerSendMessageMutation() {
 export function useBuyerCreateTransactionMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { bikeId: string; amount: number; notes?: string }) =>
+    mutationFn: (payload: CreateTransactionRequest) =>
       createTransaction(payload),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.buyer.transactions() });
+      void qc.invalidateQueries({ queryKey: ['buyer', 'transactions'] });
     },
   });
 }

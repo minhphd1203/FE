@@ -29,7 +29,13 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
   const role = user?.role?.toLowerCase();
   const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
   if (!role || !normalizedAllowed.includes(role)) {
-    return <Navigate to={redirectTo} replace />;
+    const fallback =
+      role === 'admin'
+        ? '/admin'
+        : role === 'inspector'
+          ? '/inspector'
+          : redirectTo;
+    return <Navigate to={fallback} replace />;
   }
 
   return <Outlet />;

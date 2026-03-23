@@ -15,6 +15,7 @@ import { profileApi, type ProfileUser } from '../../apis/profileApi';
 import { resolveBikeMediaUrl } from '../../apis/sellerApi';
 
 function profileErrorMessage(err: unknown): string {
+  if (err instanceof Error && err.message.trim()) return err.message;
   const ax = err as {
     response?: { data?: { message?: string; error?: string } };
   };
@@ -131,10 +132,11 @@ export const SellerProfilePage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-gray-900">Hồ sơ người bán</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Dữ liệu từ{' '}
+              Chỉ xem thông tin từ{' '}
               <code className="text-xs bg-gray-100 px-1 rounded">
                 GET /profile/v1/info
               </code>
+              . App không gọi API cập nhật hồ sơ / đổi mật khẩu / upload avatar.
             </p>
           </div>
           <button
@@ -220,6 +222,15 @@ export const SellerProfilePage: React.FC = () => {
                   </dd>
                 </div>
               </dl>
+
+              <div className="pt-6 border-t border-gray-100">
+                <Link
+                  to="/tai-khoan"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Trang tài khoản
+                </Link>
+              </div>
 
               {isSeller && (
                 <div className="pt-4 border-t border-gray-100">

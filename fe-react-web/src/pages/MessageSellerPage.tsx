@@ -6,6 +6,7 @@ import {
 
 export const MessageSellerPage: React.FC = () => {
   const [sellerId, setSellerId] = useState('');
+  const [bikeId, setBikeId] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -14,7 +15,9 @@ export const MessageSellerPage: React.FC = () => {
     data: messages = [],
     refetch: refetchMessages,
     isFetching: messagesLoading,
-  } = useBuyerMessagesWithSellerQuery(sellerId);
+  } = useBuyerMessagesWithSellerQuery(sellerId, {
+    bikeId: bikeId.trim() || undefined,
+  });
   const sendMut = useBuyerSendMessageMutation();
 
   const loading = sendMut.isPending || messagesLoading;
@@ -24,7 +27,11 @@ export const MessageSellerPage: React.FC = () => {
     setError('');
     setSuccess(false);
     try {
-      await sendMut.mutateAsync({ sellerId, message });
+      await sendMut.mutateAsync({
+        sellerId,
+        content: message,
+        bikeId: bikeId.trim() || undefined,
+      });
       setSuccess(true);
       setMessage('');
       await refetchMessages();
@@ -57,6 +64,17 @@ export const MessageSellerPage: React.FC = () => {
         Liên hệ người bán để hỏi thêm thông tin trước khi chốt đơn.
       </p>
       <form onSubmit={handleSend} className="space-y-4">
+        <div>
+          <label className="block mb-1 font-medium text-gray-700">
+            Bike ID (tùy chọn — lọc & gắn tin nhắn với xe)
+          </label>
+          <input
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
+            value={bikeId}
+            onChange={(e) => setBikeId(e.target.value)}
+            placeholder="UUID tin đăng"
+          />
+        </div>
         <div>
           <label className="block mb-1 font-medium text-gray-700">
             Seller ID
@@ -120,7 +138,9 @@ export const MessageSellerPage: React.FC = () => {
                 <span className="font-medium text-gray-800">
                   {msg.sender || 'Bạn'}:
                 </span>{' '}
-                <span className="text-gray-700">{msg.message}</span>
+                <span className="text-gray-700">
+                  {msg.content ?? msg.message}
+                </span>
               </div>
             ))
           )}

@@ -2,7 +2,12 @@ import apiClient from './apiClient';
 
 // Buyer APIs
 export const getRecommendedBikes = async (limit: number = 5) => {
-  const res = await apiClient.get(`/buyer/v1/bikes/recommended?limit=${limit}`);
+  const res = await apiClient.get(
+    `/buyer/v1/bikes/recommended?limit=${limit}`,
+    {
+      skipAuth: true,
+    },
+  );
   return res.data;
 };
 
@@ -16,33 +21,16 @@ export const searchBikes = async (params: {
   page?: number;
   limit?: number;
 }) => {
-  const res = await apiClient.get('/buyer/v1/bikes/search', { params });
-  return res.data;
-};
-
-export const getBikeDetail = async (bikeId: string) => {
-  const res = await apiClient.get(`/buyer/v1/bikes/${bikeId}`);
-  return res.data;
-};
-
-export const getMyOffers = async (page: number = 1, limit: number = 10) => {
-  const res = await apiClient.get(
-    `/buyer/v1/offers?page=${page}&limit=${limit}`,
-  );
-  return res.data;
-};
-
-export const makeOffer = async (bikeId: string, offerPrice: number) => {
-  const res = await apiClient.post(`/buyer/v1/offers`, {
-    bikeId,
-    offerPrice,
+  const res = await apiClient.get('/buyer/v1/bikes/search', {
+    params,
+    skipAuth: true,
   });
   return res.data;
 };
 
-export const updateOffer = async (offerId: string, offerPrice: number) => {
-  const res = await apiClient.put(`/buyer/v1/offers/${offerId}`, {
-    offerPrice,
+export const getBikeDetail = async (bikeId: string) => {
+  const res = await apiClient.get(`/buyer/v1/bikes/${bikeId}`, {
+    skipAuth: true,
   });
   return res.data;
 };

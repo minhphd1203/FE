@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Upload,
@@ -16,7 +17,11 @@ import {
   useInspectorSubmitInspectionMutation,
 } from '../../hooks/inspector/useInspectorQueries';
 import { formatInspectorPrice } from '../../utils/inspectorBikeDetail';
-import { resolveBikeMediaUrl } from '../../apis/sellerApi';
+import { formatDateTimeVi } from '../../utils/formatDisplayDate';
+import {
+  getSellerListingCategories,
+  resolveBikeMediaUrl,
+} from '../../apis/sellerApi';
 
 interface InspectionFormData {
   status: 'passed' | 'failed' | '';
@@ -69,6 +74,24 @@ export const InspectionDetailPage: React.FC = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const categoryIdTrim = vehicle?.categoryId?.trim() ?? '';
+  const categoryNameTrim = vehicle?.categoryName?.trim() ?? '';
+  const needCategoryLookup = Boolean(categoryIdTrim && !categoryNameTrim);
+
+  const categoriesLookupQ = useQuery({
+    queryKey: ['inspector', 'listing-categories', 'resolve'],
+    queryFn: () => getSellerListingCategories(),
+    enabled: needCategoryLookup,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const categoryLookupName = useMemo(() => {
+    if (!categoryIdTrim || !categoriesLookupQ.data?.length) return null;
+    return (
+      categoriesLookupQ.data.find((c) => c.id === categoryIdTrim)?.name ?? null
+    );
+  }, [categoryIdTrim, categoriesLookupQ.data]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -292,36 +315,58 @@ export const InspectionDetailPage: React.FC = () => {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Danh mục (categoryId)</p>
-              <p className="text-sm font-mono text-gray-900 break-all">
-                {vehicle.categoryId ?? '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Trạng thái tin</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {vehicle.status ?? '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">
-                Kiểm định (inspectionStatus)
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                {vehicle.inspectionStatus ?? '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Xác minh (isVerified)</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {vehicle.isVerified ?? '—'}
-              </p>
+              <p className="text-sm text-gray-600">Danh mục</p>
+              {categoryNameTrim ? (
+                <>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {categoryNameTrim}
+                  </p>
+                  {categoryIdTrim ? (
+                    <p className="mt-0.5 break-all font-mono text-xs text-gray-500">
+                      ID: {categoryIdTrim}
+                    </p>
+                  ) : null}
+                </>
+              ) : categoryIdTrim ? (
+                <>
+                  {categoryLookupName ? (
+                    <p className="text-lg font-semibold text-gray-900">
+                      {categoryLookupName}
+                    </p>
+                  ) : categoriesLookupQ.isFetching ? (
+                    <p className="text-sm text-gray-500">
+                      Đang tải tên danh mục…
+                    </p>
+                  ) : categoriesLookupQ.isError ? (
+                    <p className="text-sm text-amber-800">
+                      Không tải được danh sách danh mục để tra tên.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-amber-800">
+                      API tin không gửi tên danh mục; không tìm thấy ID trong
+                      danh sách hệ thống.
+                    </p>
+                  )}
+                  <p className="mt-0.5 break-all font-mono text-xs text-gray-500">
+                    ID: {categoryIdTrim}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg font-semibold text-gray-900">—</p>
+              )}
             </div>
             <div>
               <p className="text-sm text-gray-600">Ngày tạo / cập nhật</p>
-              <p className="text-sm text-gray-900">
-                {vehicle.createdAt ?? '—'} → {vehicle.updatedAt ?? '—'}
-              </p>
+              <dl className="mt-1 space-y-1.5 text-sm text-gray-900">
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                  <dt className="font-medium text-gray-500">Tạo</dt>
+                  <dd>{formatDateTimeVi(vehicle.createdAt)}</dd>
+                </div>
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                  <dt className="font-medium text-gray-500">Cập nhật</dt>
+                  <dd>{formatDateTimeVi(vehicle.updatedAt)}</dd>
+                </div>
+              </dl>
             </div>
             <div className="md:col-span-2">
               <p className="text-sm text-gray-600">Mô tả</p>

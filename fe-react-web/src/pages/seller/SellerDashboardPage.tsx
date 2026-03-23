@@ -4,9 +4,11 @@ import {
   Bike,
   Receipt,
   Star,
-  PlusCircle,
   Search,
-  UserCircle,
+  Handshake,
+  MessageCircle,
+  BarChart3,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   useSellerDashboardQuery,
@@ -155,26 +157,55 @@ export const SellerDashboardPage: React.FC = () => {
             </code>
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {isFetching && !isLoading && (
+        {isFetching && !isLoading && (
+          <div className="flex justify-end sm:items-center">
             <span className="text-xs text-gray-400">Đang cập nhật...</span>
-          )}
+          </div>
+        )}
+      </div>
+
+      <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">
+          Quản lý nhanh
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           <Link
-            to="/seller/ho-so"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-800 text-sm font-semibold hover:bg-gray-50 transition-colors"
+            to="/seller/tra-gia"
+            className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2.5 text-sm font-medium text-gray-800 hover:border-[#f57224]/40 hover:bg-orange-50/50"
           >
-            <UserCircle className="w-5 h-5" />
-            Hồ sơ
+            <Handshake className="w-4 h-4 text-[#f57224] shrink-0" />
+            Trả giá
           </Link>
           <Link
-            to="/dang-tin"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#f57224] text-white text-sm font-semibold hover:bg-[#e0651a] transition-colors"
+            to="/seller/don-hang"
+            className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2.5 text-sm font-medium text-gray-800 hover:border-[#f57224]/40 hover:bg-orange-50/50"
           >
-            <PlusCircle className="w-5 h-5" />
-            Đăng tin mới
+            <ShoppingBag className="w-4 h-4 text-[#f57224] shrink-0" />
+            Đơn hàng
+          </Link>
+          <Link
+            to="/seller/tin-nhan"
+            className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2.5 text-sm font-medium text-gray-800 hover:border-[#f57224]/40 hover:bg-orange-50/50"
+          >
+            <MessageCircle className="w-4 h-4 text-[#f57224] shrink-0" />
+            Tin nhắn
+          </Link>
+          <Link
+            to="/seller/danh-gia"
+            className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2.5 text-sm font-medium text-gray-800 hover:border-[#f57224]/40 hover:bg-orange-50/50"
+          >
+            <Star className="w-4 h-4 text-amber-500 shrink-0" />
+            Đánh giá
+          </Link>
+          <Link
+            to="/seller/thong-ke"
+            className="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2.5 text-sm font-medium text-gray-800 hover:border-[#f57224]/40 hover:bg-orange-50/50"
+          >
+            <BarChart3 className="w-4 h-4 text-[#f57224] shrink-0" />
+            Thống kê
           </Link>
         </div>
-      </div>
+      </section>
 
       {/* Tin đăng */}
       <section className="space-y-3">
@@ -407,11 +438,20 @@ export const SellerDashboardPage: React.FC = () => {
                         <td className="px-3 py-2">
                           <div className="flex flex-col gap-1.5 items-start">
                             <Link
-                              to={`/tin-dang/${row.id}`}
+                              to={`/seller/tin-dang/${row.id}`}
                               className="text-[#f57224] font-medium hover:underline"
                             >
-                              Xem
+                              Xem / sửa
                             </Link>
+                            {(row.status === 'approved' ||
+                              row.status === 'hidden') && (
+                              <Link
+                                to={`/tin-dang/${row.id}`}
+                                className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+                              >
+                                Xem trên chợ
+                              </Link>
+                            )}
                             {canToggleVisibility && (
                               <button
                                 type="button"

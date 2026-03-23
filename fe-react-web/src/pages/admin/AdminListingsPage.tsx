@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Clock,
   Image,
+  ExternalLink,
 } from 'lucide-react';
 import type { AdminBike } from '../../apis/adminApi';
 import { adminApi } from '../../apis/adminApi';
@@ -22,6 +23,7 @@ import {
   useAdminDeleteBikeMutation,
   useAdminRejectBikeMutation,
 } from '../../hooks/admin/useAdminQueries';
+import { AdminListingDetailModal } from './AdminListingDetailModal';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN').format(price) + ' d';
@@ -86,6 +88,7 @@ export const AdminListingsPage: React.FC = () => {
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [detailBike, setDetailBike] = useState<AdminBike | null>(null);
 
   const handleApprove = async (bikeId: string) => {
     setActionLoading(bikeId);
@@ -346,9 +349,13 @@ export const AdminListingsPage: React.FC = () => {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                            <button
+                              type="button"
+                              onClick={() => setDetailBike(bike)}
+                              className="text-left text-sm font-medium text-gray-900 truncate max-w-[200px] hover:text-[#f57224] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f57224]/30 rounded"
+                            >
                               {bike.title}
-                            </p>
+                            </button>
                             <p className="text-xs text-gray-500">
                               {bike.brand} {bike.model}
                             </p>
@@ -394,17 +401,30 @@ export const AdminListingsPage: React.FC = () => {
                                   !isBusy && setOpenActionMenu(null)
                                 }
                               />
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                              <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                                 <div className="py-1">
-                                  <a
-                                    href={`/xe-dap/${bike.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setDetailBike(bike);
+                                      setOpenActionMenu(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
                                   >
-                                    <Eye className="w-4 h-4" />
-                                    Xem chi tiết
-                                  </a>
+                                    <Eye className="w-4 h-4 shrink-0" />
+                                    Xem chi tiết (popup)
+                                  </button>
+                                  {bike.status === 'approved' && (
+                                    <a
+                                      href={`/tin-dang/${bike.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                      <ExternalLink className="w-4 h-4 shrink-0" />
+                                      Mở trang chợ (tab mới)
+                                    </a>
+                                  )}
                                   {bike.status === 'pending' && (
                                     <>
                                       <button
@@ -469,6 +489,14 @@ export const AdminListingsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AdminListingDetailModal
+        open={detailBike !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailBike(null);
+        }}
+        bike={detailBike}
+      />
     </div>
   );
 };

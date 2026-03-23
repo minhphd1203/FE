@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CATEGORIES, MOCK_LISTINGS } from '../constants/data';
-import type { BuyerBike } from '../api/buyerApi';
+import { CATEGORIES } from '../constants/data';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import { useBuyerRecommendedBikesQuery } from '../hooks/buyer/useBuyerQueries';
 

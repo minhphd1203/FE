@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
-  ChevronRight,
-  Heart,
-  Bell,
-  MessageCircle,
   ChevronDown,
+  Handshake,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
+  PlusCircle,
+  Search,
+  ShoppingBag,
+  UserCircle,
 } from 'lucide-react';
-import {
-  UTILITIES,
-  ACCOUNT_MENU_TOP,
-  ACCOUNT_MENU_SELLER,
-  ACCOUNT_MENU_OFFERS,
-  ACCOUNT_MENU_OTHER,
-} from '../constants/data';
+import { HEADER_QUICK_LINKS } from '../constants/data';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { logout } from '../redux/slices/authSlice';
 import { authApi } from '../apis/authApi';
@@ -27,6 +24,7 @@ export const MainLayout: React.FC = () => {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const isSeller = user?.role?.toLowerCase() === 'seller';
   const [logoutBusy, setLogoutBusy] = useState(false);
+  const [searchQ, setSearchQ] = useState('');
 
   const handleLogout = async () => {
     if (logoutBusy) return;
@@ -42,522 +40,298 @@ export const MainLayout: React.FC = () => {
     }
   };
 
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQ.trim();
+    const params = new URLSearchParams();
+    if (q) params.set('keyword', q);
+    navigate(`/tat-ca-tin-dang${params.toString() ? `?${params}` : ''}`);
+  };
+
+  const goDefaultAccount = () => {
+    if (!isAuthenticated) {
+      navigate('/auth/login');
+      return;
+    }
+    const role = user?.role?.toLowerCase();
+    if (role === 'admin') navigate('/admin');
+    else if (role === 'inspector') navigate('/inspector');
+    else if (role === 'seller') navigate('/seller');
+    else navigate('/tai-khoan');
+  };
+
   return (
     <div className="min-h-screen bg-[#f4f4f4]">
-      {/* ========== HEADER (nền trắng, icon, nút) ========== */}
-      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 shrink-0">
-              <span className="text-2xl font-bold text-[#f57224]">
-                Chợ Xe Đạp
-              </span>
-            </Link>
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-100 bg-white/95 shadow-sm backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            to="/"
+            className="shrink-0 text-2xl font-bold tracking-tight text-[#f57224]"
+          >
+            Chợ Xe Đạp
+          </Link>
 
-            {/* Ô tìm kiếm chính */}
-            <div className="flex-1 w-full sm:max-w-xl">
-              <div className="relative flex rounded-lg overflow-hidden border border-gray-200 bg-white focus-within:border-[#f57224] focus-within:ring-1 focus-within:ring-[#f57224]">
+          <form
+            onSubmit={submitSearch}
+            className="relative w-full sm:max-w-xl sm:flex-1"
+          >
+            <div className="flex overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow focus-within:border-[#f57224] focus-within:ring-2 focus-within:ring-[#f57224]/15">
+              <div className="flex flex-1 items-center gap-2 pl-3 text-gray-400">
+                <Search className="h-5 w-5 shrink-0" strokeWidth={2} />
                 <input
-                  type="text"
-                  placeholder="Tìm xe đạp, phụ kiện..."
-                  className="w-full py-2.5 pl-4 pr-10 bg-transparent text-gray-800 placeholder-gray-500 outline-none"
+                  type="search"
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder="Tìm theo tên xe, hãng..."
+                  className="min-w-0 flex-1 bg-transparent py-2.5 pr-2 text-sm text-gray-900 placeholder:text-gray-400 outline-none"
+                  aria-label="Tìm kiếm tin đăng"
                 />
-                <button
-                  type="button"
-                  className="absolute right-0 top-0 bottom-0 px-4 bg-[#f57224] text-white font-medium hover:bg-[#e0651a] transition-colors"
-                >
-                  Tìm kiếm
-                </button>
               </div>
-            </div>
-
-            {/* Khu vực bên phải: Heart, Bell, Liên hệ, Kênh bán, Avatar */}
-            <div className="flex items-center gap-2 shrink-0">
-              <select className="py-2 px-3 border border-gray-200 rounded-full text-gray-700 text-sm bg-white cursor-pointer hover:border-[#f57224] hidden sm:block">
-                <option>Toàn quốc</option>
-                <option>Hồ Chí Minh</option>
-                <option>Hà Nội</option>
-                <option>Đà Nẵng</option>
-              </select>
-              {/* Nút Yêu thích */}
-              <Link
-                to="/yeu-thich"
-                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Yêu thích"
-              >
-                <Heart className="w-5 h-5 text-gray-800" />
-              </Link>
-              {/* Nút Đơn mua */}
-              <Link
-                to="/don-mua"
-                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Đơn mua"
-              >
-                <svg
-                  className="w-5 h-5 text-gray-800"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A1 1 0 007 17h10a1 1 0 00.95-.68L21 13M7 13V6h10v7"></path>
-                </svg>
-              </Link>
-              {/* Nút Báo cáo vi phạm */}
-              <Link
-                to="/bao-cao-vi-pham"
-                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Báo cáo vi phạm"
-              >
-                <svg
-                  className="w-5 h-5 text-yellow-600"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </Link>
-              {/* Nút Nhắn tin Seller */}
-              <Link
-                to="/nhan-tin-seller"
-                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Nhắn tin Seller"
-              >
-                <MessageCircle className="w-5 h-5 text-gray-800" />
-              </Link>
-              {/* Nút Đánh giá Seller */}
-              <Link
-                to="/danh-gia-seller"
-                className="p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Đánh giá Seller"
-              >
-                <svg
-                  className="w-5 h-5 text-yellow-500"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-                </svg>
-              </Link>
               <button
-                type="button"
-                className="relative p-2.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                title="Thông báo"
+                type="submit"
+                className="shrink-0 bg-[#f57224] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#e0651a]"
               >
-                <Bell className="w-5 h-5 text-gray-800" />
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
-                  2
-                </span>
+                Tìm
               </button>
-              <Link
-                to="/lien-he"
-                className="flex items-center gap-2 py-2 px-3 rounded-full border border-gray-200 bg-gray-50 text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Liên hệ
-              </Link>
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => void handleLogout()}
-                  disabled={logoutBusy}
-                  className="flex items-center gap-1.5 py-2 px-2.5 sm:px-3 rounded-full border border-gray-200 bg-white text-gray-700 text-xs sm:text-sm font-medium hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors disabled:opacity-60"
-                  title="Đăng xuất (gọi API đăng xuất)"
-                >
-                  <LogOut className="w-4 h-4 shrink-0" />
-                  <span className="hidden sm:inline">
-                    {logoutBusy ? 'Đang xuất…' : 'Đăng xuất'}
-                  </span>
-                </button>
-              )}
-              {isAuthenticated && isSeller && (
-                <Link
-                  to="/seller"
-                  className="inline-flex items-center gap-1.5 py-2 px-2.5 sm:px-3 rounded-full border-2 border-[#f57224] text-[#f57224] text-xs sm:text-sm font-semibold bg-white hover:bg-orange-50 transition-colors whitespace-nowrap"
-                  title="Tổng quan tin đăng & giao dịch"
-                >
-                  <LayoutDashboard className="w-4 h-4 shrink-0" />
-                  <span className="hidden sm:inline">Kênh bán</span>
-                  <span className="sm:hidden">Bán</span>
-                </Link>
-              )}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      navigate('/auth/login');
-                      return;
-                    }
-                    const role = user?.role?.toLowerCase();
-                    if (role === 'admin') {
-                      navigate('/admin/settings');
-                    } else if (role === 'inspector') {
-                      navigate('/inspector');
-                    } else if (role === 'seller') {
-                      navigate('/seller');
-                    } else {
-                      navigate('/tai-khoan');
-                    }
-                  }}
-                  className="flex items-center gap-1.5 p-1 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-9 h-9 rounded-full bg-[#c2410c] flex items-center justify-center text-white font-semibold text-sm">
-                    {isAuthenticated
-                      ? (user?.name?.charAt(0) || user?.email?.charAt(0) || 'U')
-                          .toString()
-                          .toUpperCase()
-                      : 'P'}
-                  </div>
-                  <div className="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
-                    <ChevronDown className="w-4 h-4 text-gray-800" />
-                  </div>
-                </button>
-              </div>
             </div>
+          </form>
+
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:shrink-0 sm:gap-2">
+            {HEADER_QUICK_LINKS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.href}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition-colors hover:border-[#f57224]/40 hover:bg-orange-50/80 hover:text-[#f57224]"
+                  title={item.label}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={2} />
+                </Link>
+              );
+            })}
+
+            {!isAuthenticated ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  to="/auth/register"
+                  className="rounded-full border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 transition-colors hover:border-[#f57224] hover:text-[#f57224] sm:px-4"
+                >
+                  Đăng ký
+                </Link>
+                <Link
+                  to="/auth/login"
+                  className="rounded-full bg-[#f57224] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#e0651a] sm:px-4"
+                >
+                  Đăng nhập
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center rounded-full border border-gray-200 bg-white p-0.5 pl-1 shadow-sm transition-colors hover:border-gray-300">
+                <button
+                  type="button"
+                  onClick={goDefaultAccount}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ea580c] to-[#c2410c] text-sm font-semibold text-white outline-none ring-[#f57224] focus-visible:ring-2"
+                  title="Tài khoản & trang chính"
+                >
+                  {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'U')
+                    .toString()
+                    .toUpperCase()}
+                </button>
+
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-600 outline-none transition-colors hover:bg-gray-100 data-[state=open]:bg-gray-100 aria-expanded:bg-gray-100"
+                      aria-label="Mở menu tài khoản"
+                    >
+                      <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+                    </button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      className="z-[100] min-w-[13.5rem] overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-lg"
+                      sideOffset={8}
+                      align="end"
+                    >
+                      {isSeller ? (
+                        <>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/seller"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <LayoutDashboard className="h-4 w-4 text-[#f57224]" />
+                              Kênh bán
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/seller/ho-so"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <UserCircle className="h-4 w-4 text-gray-500" />
+                              Hồ sơ
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/dang-tin"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <PlusCircle className="h-4 w-4 text-[#f57224]" />
+                              Đăng tin mới
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/seller/tra-gia"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <Handshake className="h-4 w-4 text-[#f57224]" />
+                              Trả giá
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/seller/don-hang"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <ShoppingBag className="h-4 w-4 text-gray-500" />
+                              Đơn hàng
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/seller/tin-nhan"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <MessageCircle className="h-4 w-4 text-gray-500" />
+                              Tin nhắn
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Separator className="my-1 h-px bg-gray-100" />
+                          <DropdownMenu.Item
+                            className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-red-600 outline-none data-[highlighted]:bg-red-50"
+                            disabled={logoutBusy}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              void handleLogout();
+                            }}
+                          >
+                            <LogOut className="h-4 w-4" />
+                            {logoutBusy ? 'Đang xuất…' : 'Đăng xuất'}
+                          </DropdownMenu.Item>
+                        </>
+                      ) : (
+                        <>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/tai-khoan"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              <UserCircle className="h-4 w-4 text-gray-500" />
+                              Tài khoản
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              to="/lich-su-giao-dich"
+                              className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
+                            >
+                              Lịch sử giao dịch
+                            </Link>
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Separator className="my-1 h-px bg-gray-100" />
+                          <DropdownMenu.Item
+                            className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-red-600 outline-none data-[highlighted]:bg-red-50"
+                            disabled={logoutBusy}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              void handleLogout();
+                            }}
+                          >
+                            <LogOut className="h-4 w-4" />
+                            {logoutBusy ? 'Đang xuất…' : 'Đăng xuất'}
+                          </DropdownMenu.Item>
+                        </>
+                      )}
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Popup Đăng nhập / Tài khoản (giống Chợ Tốt) */}
-      {false && (
-        <>
-          <div className="fixed inset-0 bg-black/30 z-40" aria-hidden />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col mx-4">
-            <div className="bg-white rounded-2xl shadow-xl overflow-y-auto overflow-x-hidden flex flex-col max-h-[90vh]">
-              {/* Phần trên: Mua thì hời, bán thì lời + Nút */}
-              <div className="p-6 relative">
-                <div className="pr-16">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {isAuthenticated
-                      ? `Xin chào, ${user?.name || user?.email}`
-                      : 'Mua thì hời, bán thì lời.'}
-                  </h3>
-                  <p className="text-gray-500 mt-1">
-                    {isAuthenticated
-                      ? 'Thông tin tài khoản của bạn'
-                      : 'Đăng nhập cái đã!'}
-                  </p>
-                </div>
-                {/* Nhân vật cam (minh họa) */}
-                <div className="absolute right-4 top-4 w-14 h-14 rounded-full bg-[#f57224]/20 flex items-center justify-center text-3xl">
-                  🐣
-                </div>
-                {isAuthenticated ? (
-                  <>
-                    <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-sm font-medium text-gray-900">
-                        {user?.name || user?.email}
-                      </p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
-                      {user?.role && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          Vai trò: {user.role}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-3 mt-4">
-                      <Link
-                        to="/tai-khoan"
-                        className="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-center font-medium text-gray-800 hover:bg-gray-50"
-                      >
-                        Quản lý tài khoản
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="flex-1 py-2.5 px-4 bg-[#facc15] text-gray-900 font-semibold rounded-lg text-center hover:bg-[#eab308]"
-                      >
-                        Đăng xuất
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex gap-3 mt-4">
-                      <Link
-                        to="/auth/register"
-                        className="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-center font-medium text-gray-800 hover:bg-gray-50"
-                      >
-                        Tạo tài khoản
-                      </Link>
-                      <Link
-                        to="/auth/login"
-                        className="flex-1 py-2.5 px-4 bg-[#facc15] text-gray-900 font-semibold rounded-lg text-center hover:bg-[#eab308]"
-                      >
-                        Đăng nhập
-                      </Link>
-                    </div>
-                    <a
-                      href="/api/auth/google"
-                      className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-gray-700 font-medium hover:bg-gray-50 text-sm"
-                    >
-                      <GoogleIcon className="w-5 h-5 shrink-0" />
-                      Đăng nhập với Google
-                    </a>
-                  </>
-                )}
-              </div>
-              {/* Tiện ích */}
-              <div className="border-t border-gray-100 px-6 py-4">
-                <p className="text-sm font-medium text-gray-500 mb-3">
-                  Tiện ích
-                </p>
-                <ul className="space-y-0">
-                  {UTILITIES.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <li key={item.id}>
-                        <Link
-                          to={item.href}
-                          className="flex items-center gap-3 py-3 text-gray-800 hover:text-[#f57224] transition-colors"
-                        >
-                          <Icon className="w-5 h-5 text-gray-400 shrink-0" />
-                          <span className="flex-1 text-sm font-medium">
-                            {item.label}
-                          </span>
-                          <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              {/* Lịch sử giao dịch, Cửa hàng */}
-              <div className="border-t border-gray-100 px-4 py-3 bg-[#f5f5f5]">
-                <div className="space-y-2">
-                  {ACCOUNT_MENU_TOP.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.id}
-                        to={item.href}
-                        className="flex items-center gap-3 py-3 px-4 bg-white rounded-xl text-gray-800 hover:bg-gray-50 transition-colors"
-                      >
-                        <Icon
-                          className="w-5 h-5 text-gray-500 shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <span className="flex-1 text-sm font-medium">
-                          {item.label}
-                        </span>
-                        <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-                      </Link>
-                    );
-                  })}
-                  {user?.role?.toLowerCase() === 'seller' &&
-                    ACCOUNT_MENU_SELLER.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={`seller-${item.id}`}
-                          to={item.href}
-                          className="flex items-center gap-3 py-3 px-4 bg-white rounded-xl text-gray-800 hover:bg-gray-50 transition-colors border border-[#f57224]/20"
-                        >
-                          <Icon
-                            className="w-5 h-5 text-[#f57224] shrink-0"
-                            strokeWidth={1.5}
-                          />
-                          <span className="flex-1 text-sm font-medium">
-                            {item.label}
-                          </span>
-                          <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-                        </Link>
-                      );
-                    })}
-                </div>
-              </div>
-
-              {/* Ưu đãi, khuyến mãi */}
-              <div className="border-t border-gray-100 px-4 py-3 bg-[#f5f5f5]">
-                <p className="text-sm font-medium text-gray-600 mb-2 px-4">
-                  Ưu đãi, khuyến mãi
-                </p>
-                <div className="space-y-2">
-                  {ACCOUNT_MENU_OFFERS.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.id}
-                        to={item.href}
-                        className="flex items-center gap-3 py-3 px-4 bg-white rounded-xl text-gray-800 hover:bg-gray-50 transition-colors"
-                      >
-                        <Icon
-                          className="w-5 h-5 text-gray-500 shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <span className="flex-1 text-sm font-medium">
-                          {item.label}
-                        </span>
-                        <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Khác */}
-              <div className="border-t border-gray-100 px-4 py-3 pb-5 bg-[#f5f5f5]">
-                <p className="text-sm font-medium text-gray-600 mb-2 px-4">
-                  Khác
-                </p>
-                <div className="space-y-2">
-                  {ACCOUNT_MENU_OTHER.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.id}
-                        to={item.href}
-                        className="flex items-center gap-3 py-3 px-4 bg-white rounded-xl text-gray-800 hover:bg-gray-50 transition-colors"
-                      >
-                        <Icon
-                          className="w-5 h-5 text-gray-500 shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <span className="flex-1 text-sm font-medium">
-                          {item.label}
-                        </span>
-                        <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6 pt-20">
+      <main className="mx-auto max-w-6xl px-4 pb-10 pt-[4.75rem] sm:pt-20">
         <Outlet />
       </main>
 
-      {/* ========== FOOTER ========== */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {/* Brand */}
-            <div>
-              <Link to="/" className="text-xl font-bold text-[#f57224]">
+      <footer className="mt-auto border-t border-gray-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-10">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-sm">
+              <Link to="/" className="text-lg font-bold text-[#f57224]">
                 Chợ Xe Đạp
               </Link>
-              <p className="mt-2 text-sm text-gray-500">
-                Nền tảng mua bán xe đạp thể thao uy tín, kết nối người mua và
-                người bán.
+              <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                Nền tảng kết nối người mua và người bán xe đạp thể thao.
               </p>
             </div>
-            {/* Liên kết */}
-            <div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-3">
-                Về chúng tôi
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link
-                    to="/gioi-thieu"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Giới thiệu
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/lien-he"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Liên hệ
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/tin-tuc"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Tin tức
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-3">
-                Hỗ trợ
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link
-                    to="/huong-dan"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Hướng dẫn mua bán
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/cau-hoi-thuong-gap"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Câu hỏi thường gặp
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/bao-cao"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Báo cáo vi phạm
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-3">
-                Pháp lý
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link
-                    to="/dieu-khoan"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Điều khoản sử dụng
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/chinh-sach-bao-mat"
-                    className="text-sm text-gray-600 hover:text-[#f57224]"
-                  >
-                    Chính sách bảo mật
-                  </Link>
-                </li>
-              </ul>
+            <div className="flex flex-wrap gap-8 text-sm">
+              <div>
+                <p className="mb-2 font-semibold text-gray-800">Mua bán</p>
+                <ul className="space-y-2 text-gray-600">
+                  <li>
+                    <Link
+                      to="/tat-ca-tin-dang"
+                      className="hover:text-[#f57224]"
+                    >
+                      Tất cả tin đăng
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/dang-tin" className="hover:text-[#f57224]">
+                      Đăng tin
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/yeu-thich" className="hover:text-[#f57224]">
+                      Yêu thích
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <p className="mb-2 font-semibold text-gray-800">Hỗ trợ</p>
+                <ul className="space-y-2 text-gray-600">
+                  <li>
+                    <Link to="/tro-giup" className="hover:text-[#f57224]">
+                      Trợ giúp
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/bao-cao-vi-pham"
+                      className="hover:text-[#f57224]"
+                    >
+                      Báo cáo vi phạm
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/tai-khoan" className="hover:text-[#f57224]">
+                      Tài khoản
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} Chợ Xe Đạp. Bảo lưu mọi quyền.
-            </p>
-            <div className="flex gap-6">
-              <Link
-                to="/dieu-khoan"
-                className="text-sm text-gray-500 hover:text-[#f57224]"
-              >
-                Điều khoản
-              </Link>
-              <Link
-                to="/chinh-sach-bao-mat"
-                className="text-sm text-gray-500 hover:text-[#f57224]"
-              >
-                Bảo mật
-              </Link>
-            </div>
+          <div className="mt-8 border-t border-gray-100 pt-6 text-center text-xs text-gray-400 sm:text-left">
+            © {new Date().getFullYear()} Chợ Xe Đạp
           </div>
         </div>
       </footer>

@@ -8,6 +8,7 @@ import { GoogleIcon } from '../../components/GoogleIcon';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginFormData } from '../../schema/validation';
 import { persistAuthSession } from '../../utils/authStorage';
+import { getDefaultRouteForRole } from '../../utils/postLoginRedirect';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,16 +45,20 @@ export const LoginPage: React.FC = () => {
         }),
       );
 
-      // Fetch role from API response and redirect accordingly
-      const role = (user.role || 'buyer').toLowerCase();
-      let redirectTo = '/';
+      const role = user.role || 'buyer';
+      const from = (location.state as { from?: string } | null)?.from;
+      const isBuyerLike =
+        String(role).trim().toLowerCase() === 'buyer' ||
+        String(role).trim().toLowerCase() === 'customer';
 
-      if (role === 'admin') {
-        redirectTo = '/admin/settings';
-      } else if (role === 'inspector') {
-        redirectTo = '/inspector/dashboard';
-      } else if (role === 'seller') {
-        redirectTo = '/seller';
+      let redirectTo = getDefaultRouteForRole(role);
+      if (
+        isBuyerLike &&
+        typeof from === 'string' &&
+        from.startsWith('/') &&
+        !from.startsWith('/auth')
+      ) {
+        redirectTo = from;
       }
 
       navigate(redirectTo, { replace: true });

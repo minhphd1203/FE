@@ -20,9 +20,29 @@ export const queryKeys = {
     search: (params: Record<string, unknown>) =>
       ['buyer', 'search', params] as const,
     bike: (id: string) => ['buyer', 'bike', id] as const,
-    wishlist: () => ['buyer', 'wishlist'] as const,
-    transactions: () => ['buyer', 'transactions'] as const,
-    messages: (sellerId: string) => ['buyer', 'messages', sellerId] as const,
+    wishlist: (p: { page?: number; limit?: number }) =>
+      ['buyer', 'wishlist', p.page ?? 1, p.limit ?? 10] as const,
+    transactions: (p: { status?: string; page?: number; limit?: number }) =>
+      [
+        'buyer',
+        'transactions',
+        p.status ?? '',
+        p.page ?? 1,
+        p.limit ?? 10,
+      ] as const,
+    transaction: (id: string) => ['buyer', 'transaction', id] as const,
+    messages: (
+      sellerId: string,
+      p?: { bikeId?: string; page?: number; limit?: number },
+    ) =>
+      [
+        'buyer',
+        'messages',
+        sellerId,
+        p?.bikeId ?? '',
+        p?.page ?? 1,
+        p?.limit ?? 30,
+      ] as const,
     paymentVerify: (search: string) =>
       ['buyer', 'payment-verify', search] as const,
   },

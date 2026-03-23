@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
-import type { BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import {
   useBuyerAddToWishlistMutation,
   useBuyerBikeDetailsQuery,
 } from '../hooks/buyer/useBuyerQueries';
+import { SellerReviewForm } from '../components/SellerReviewForm';
+import { useAppSelector } from '../redux/hooks';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const user = useAppSelector((s) => s.auth.user);
   const {
     data: listing,
     isLoading: loading,
@@ -19,9 +21,39 @@ export const ListingDetailPage: React.FC = () => {
   const addWishlistMut = useBuyerAddToWishlistMutation();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+  const isOwnListing = useMemo(() => {
+    if (!listing || !user?.id) return false;
+    const sid = listing.seller?.id;
+    return Boolean(sid && user.id === sid);
+  }, [listing, user?.id]);
+
   const error = queryError
     ? (queryError as Error).message || 'Không tải được chi tiết tin đăng.'
     : null;
+
+  const handleAddWishlist = async () => {
+    if (!listing?.id) return;
+    setActionMessage(null);
+    try {
+      await addWishlistMut.mutateAsync(listing.id);
+      setActionMessage('Đã thêm vào danh sách yêu thích.');
+    } catch (err: unknown) {
+      setActionMessage(
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || 'Không thể thêm yêu thích.',
+      );
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!listing?.id || !listing?.price) return;
+    navigate('/thanh-toan', {
+      state: {
+        bikeId: listing.id,
+        amount: listing.price,
+      },
+    });
+  };
 
   if (loading) {
     return <div className="py-16 text-center text-gray-500">Đang tải...</div>;
@@ -48,39 +80,23 @@ export const ListingDetailPage: React.FC = () => {
     );
   }
 
-  const handleAddWishlist = async () => {
-    if (!listing?.id) return;
-    setActionMessage(null);
-    try {
-      await addWishlistMut.mutateAsync(listing.id);
-      setActionMessage('Đã thêm vào danh sách yêu thích.');
-    } catch (err: unknown) {
-      setActionMessage(
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || 'Không thể thêm yêu thích.',
-      );
-    }
-  };
-
-  const handleBuyNow = async () => {
-    if (!listing?.id || !listing?.price) return;
-    navigate('/thanh-toan', {
-      state: {
-        bikeId: listing.id,
-        amount: listing.price,
-      },
-    });
-  };
-
   return (
     <div className="max-w-4xl mx-auto">
       <Link
-        to="/"
+        to={isOwnListing ? '/seller' : '/'}
         className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#f57224] mb-4"
       >
         <ChevronLeft className="w-4 h-4" />
-        Quay lại trang chủ
+        {isOwnListing ? 'Về kênh bán' : 'Quay lại trang chủ'}
       </Link>
+
+      {isOwnListing && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Đây là <strong>tin của bạn</strong>. Tin chưa duyệt hoặc chưa lên chợ
+          có thể không xem được từ trang chủ — bạn vẫn xem được tại đây qua kênh
+          người bán.
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="grid md:grid-cols-2 gap-0">
@@ -115,36 +131,59 @@ export const ListingDetailPage: React.FC = () => {
               })}
             </p>
             <p className="text-sm text-gray-500">
-              Người bán: {listing.seller?.name || listing.seller?.email || '—'}
+              Người bán:{' '}
+              {isOwnListing
+                ? 'Bạn'
+                : listing.seller?.name || listing.seller?.email || '—'}
             </p>
+            {listing.status && (
+              <p className="text-xs text-gray-400">
+                Trạng thái tin:{' '}
+                <span className="font-medium text-gray-600">
+                  {listing.status}
+                </span>
+              </p>
+            )}
 
             <div className="mt-4 text-sm text-gray-600 leading-relaxed">
               <p>{listing.description || 'Không có mô tả cho tin đăng này.'}</p>
             </div>
-            <div className="pt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={handleAddWishlist}
-                disabled={addWishlistMut.isPending}
-                className="px-4 py-2 rounded-lg border border-[#f57224] text-[#f57224] font-medium hover:bg-orange-50 disabled:opacity-60"
-              >
-                Yêu thích
-              </button>
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={addWishlistMut.isPending}
-                className="px-4 py-2 rounded-lg bg-[#f57224] text-white font-medium hover:bg-[#e0651a] disabled:opacity-60"
-              >
-                Đặt mua
-              </button>
-            </div>
+            {!isOwnListing && (
+              <div className="pt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddWishlist}
+                  disabled={addWishlistMut.isPending}
+                  className="px-4 py-2 rounded-lg border border-[#f57224] text-[#f57224] font-medium hover:bg-orange-50 disabled:opacity-60"
+                >
+                  Yêu thích
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={addWishlistMut.isPending}
+                  className="px-4 py-2 rounded-lg bg-[#f57224] text-white font-medium hover:bg-[#e0651a] disabled:opacity-60"
+                >
+                  Đặt mua
+                </button>
+              </div>
+            )}
             {actionMessage && (
               <p className="text-sm text-gray-600 pt-1">{actionMessage}</p>
             )}
           </div>
         </div>
       </div>
+
+      {!isOwnListing && (
+        <SellerReviewForm
+          listingId={listing.id}
+          sellerId={listing.seller?.id}
+          sellerLabel={
+            listing.seller?.name || listing.seller?.email || undefined
+          }
+        />
+      )}
     </div>
   );
 };

@@ -10,7 +10,7 @@ export const WishlistPage: React.FC = () => {
     data: wishlist = [],
     isLoading: loading,
     error: queryError,
-  } = useBuyerWishlistQuery();
+  } = useBuyerWishlistQuery({ page: 1, limit: 50 });
   const removeMut = useBuyerRemoveFromWishlistMutation();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -22,11 +22,11 @@ export const WishlistPage: React.FC = () => {
         ? 'Không thể tải danh sách yêu thích.'
         : '';
 
-  const handleRemove = async (id: string) => {
+  const handleRemove = async (bikeId: string) => {
     setError('');
     setSuccess('');
     try {
-      await removeMut.mutateAsync(id);
+      await removeMut.mutateAsync(bikeId);
       setSuccess('Đã xóa khỏi danh sách yêu thích!');
     } catch (err: unknown) {
       setError(
@@ -55,36 +55,42 @@ export const WishlistPage: React.FC = () => {
           </div>
         ) : (
           <ul className="space-y-3">
-            {wishlist.map((item: any) => (
-              <li
-                key={item.id}
-                className="flex justify-between items-center border border-gray-100 rounded-xl p-4"
-              >
-                <div className="min-w-0">
-                  <Link
-                    to={`/tin-dang/${item.id}`}
-                    className="font-medium text-gray-800 hover:text-[#f57224]"
-                  >
-                    {item.title || item.name || item.model || item.id}
-                  </Link>
-                  <p className="text-sm text-[#f57224] font-semibold mt-1">
-                    {item.price
-                      ? Number(item.price).toLocaleString('vi-VN', {
-                          style: 'currency',
-                          currency: 'VND',
-                        })
-                      : ''}
-                  </p>
-                </div>
-                <button
-                  className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg ml-3"
-                  onClick={() => handleRemove(item.id)}
-                  disabled={loading || removeMut.isPending}
+            {wishlist.map((item) => {
+              const bike = item.bike;
+              const bikeId = item.bikeId || bike?.id;
+              if (!bikeId) return null;
+              return (
+                <li
+                  key={item.id}
+                  className="flex justify-between items-center border border-gray-100 rounded-xl p-4"
                 >
-                  Xóa
-                </button>
-              </li>
-            ))}
+                  <div className="min-w-0">
+                    <Link
+                      to={`/tin-dang/${bikeId}`}
+                      className="font-medium text-gray-800 hover:text-[#f57224]"
+                    >
+                      {bike?.title || bike?.model || bike?.brand || bikeId}
+                    </Link>
+                    <p className="text-sm text-[#f57224] font-semibold mt-1">
+                      {bike?.price != null
+                        ? Number(bike.price).toLocaleString('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          })
+                        : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg ml-3"
+                    onClick={() => handleRemove(bikeId)}
+                    disabled={loading || removeMut.isPending}
+                  >
+                    Xóa
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

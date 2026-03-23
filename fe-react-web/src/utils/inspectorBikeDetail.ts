@@ -21,6 +21,8 @@ export type InspectorBikeDetailView = {
   inspectionStatus?: string;
   isVerified?: string;
   categoryId?: string | null;
+  /** Tên danh mục nếu API trả nested `category` hoặc `categoryName`. */
+  categoryName?: string;
   sellerId?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -154,9 +156,33 @@ export function normalizeInspectorBikeDetail(
       ? sellerIdRaw.trim()
       : null;
 
-  const categoryIdRaw = layer.categoryId ?? root.categoryId;
+  const catBlock = layer.category ?? root.category;
+  let categoryName: string | undefined;
+  let categoryIdRaw: unknown =
+    layer.categoryId ??
+    root.categoryId ??
+    layer.category_id ??
+    root.category_id ??
+    layer.listingCategoryId ??
+    root.listingCategoryId;
+
+  if (isRecord(catBlock)) {
+    if (categoryIdRaw == null || categoryIdRaw === '') {
+      categoryIdRaw = catBlock.id ?? catBlock.categoryId;
+    }
+    const n = catBlock.name ?? catBlock.label ?? catBlock.title;
+    if (typeof n === 'string' && n.trim()) categoryName = n.trim();
+  } else if (typeof catBlock === 'string' && catBlock.trim()) {
+    categoryName = catBlock.trim();
+  }
+
+  const nameFromLayer = strOpt(layer.categoryName ?? root.categoryName);
+  if (nameFromLayer) categoryName = nameFromLayer;
+
   const categoryId =
-    categoryIdRaw === null || categoryIdRaw === undefined
+    categoryIdRaw === null ||
+    categoryIdRaw === undefined ||
+    categoryIdRaw === ''
       ? null
       : String(categoryIdRaw);
 
@@ -187,6 +213,7 @@ export function normalizeInspectorBikeDetail(
     inspectionStatus: strOpt(layer.inspectionStatus ?? root.inspectionStatus),
     isVerified: strOpt(layer.isVerified ?? root.isVerified),
     categoryId,
+    categoryName,
     sellerId,
     createdAt: strOpt(layer.createdAt ?? root.createdAt),
     updatedAt: strOpt(layer.updatedAt ?? root.updatedAt),

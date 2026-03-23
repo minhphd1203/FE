@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Wallet, CreditCard, Banknote, ShieldCheck, Clock } from 'lucide-react';
 import { getTransactions } from '../api/buyerApi';
-import { queryKeys } from '../hooks/query-keys';
 import {
   useBuyerCreatePaymentUrlMutation,
   useBuyerCreateTransactionMutation,
@@ -37,6 +36,8 @@ export const CheckoutPage: React.FC = () => {
         bikeId,
         amount: Number(amount),
         notes: 'Thanh toán dịch vụ đăng tin',
+        transactionType: 'full_payment',
+        paymentMethod: method === 'cod' ? null : 'vnpay',
       });
       const transactionId = transactionRes.data.id;
       if (method === 'cod') {
@@ -61,10 +62,10 @@ export const CheckoutPage: React.FC = () => {
       if (hasExistingPendingOrder && method !== 'cod') {
         try {
           const transactions = await queryClient.fetchQuery({
-            queryKey: queryKeys.buyer.transactions(),
+            queryKey: ['buyer', 'transactions', '', 1, 50],
             queryFn: async () => {
-              const data = await getTransactions();
-              return Array.isArray(data) ? data : [];
+              const { items } = await getTransactions({ page: 1, limit: 50 });
+              return items;
             },
           });
           const pending = transactions.find((trx: Record<string, unknown>) => {

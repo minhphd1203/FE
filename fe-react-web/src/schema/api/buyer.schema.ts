@@ -20,23 +20,12 @@ export const buyerRecommendedQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
 });
 
-/** POST /buyer/v1/offers */
-export const buyerMakeOfferBodySchema = z.object({
-  bikeId: z.string().min(1),
-  offerPrice: z.coerce.number().positive(),
-});
-
-/** PUT /buyer/v1/offers/:id */
-export const buyerUpdateOfferBodySchema = z.object({
-  offerPrice: z.coerce.number().positive(),
-});
-
 /** POST /buyer/v1/wishlist */
 export const buyerWishlistAddBodySchema = z.object({
   bikeId: z.string().min(1),
 });
 
-/** GET /buyer/v1/offers | transactions */
+/** GET (vd. transactions) — phân trang */
 export const buyerPagedQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),

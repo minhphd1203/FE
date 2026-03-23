@@ -18,8 +18,10 @@ apiClient.interceptors.request.use(
       delete config.headers['Content-Type'];
     }
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && !config.skipAuth) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (config.skipAuth && config.headers.Authorization) {
+      delete config.headers.Authorization;
     }
     return config;
   },

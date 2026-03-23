@@ -4,6 +4,10 @@ export interface CreateTransactionRequest {
   bikeId: string;
   amount: number;
   notes?: string;
+  /** Swagger: e.g. full_payment, deposit */
+  transactionType?: string;
+  /** Swagger: e.g. vnpay */
+  paymentMethod?: string | null;
 }
 
 export interface CreateTransactionResponse {
@@ -35,12 +39,23 @@ type ApiEnvelope<T> = {
   message?: string;
 };
 
+function unwrapTransactionCreate(
+  raw: CreateTransactionResponse | ApiEnvelope<{ id: string; status?: string }>,
+): CreateTransactionResponse {
+  if (raw && typeof raw === 'object' && 'data' in raw) {
+    const inner = (raw as ApiEnvelope<{ id: string; status?: string }>).data;
+    if (inner && typeof inner === 'object' && 'id' in inner) {
+      return { data: inner };
+    }
+  }
+  return raw as CreateTransactionResponse;
+}
+
 export const createTransaction = async (payload: CreateTransactionRequest) => {
-  const res = await apiClient.post<CreateTransactionResponse>(
-    '/buyer/v1/transactions',
-    payload,
-  );
-  return res.data;
+  const res = await apiClient.post<
+    CreateTransactionResponse | ApiEnvelope<{ id: string; status?: string }>
+  >('/buyer/v1/transactions', payload);
+  return unwrapTransactionCreate(res.data);
 };
 
 export const createPaymentUrl = async (transactionId: string) => {

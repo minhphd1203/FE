@@ -6,6 +6,7 @@ import { AuthProvider } from '../providers/AuthProvider';
 import { GuestGuard } from '../guards/GuestGuard';
 import { AuthGuard } from '../guards/AuthGuard';
 import { RoleGuard } from '../guards/RoleGuard';
+import { RedirectAdminFromMarketplaceGuard } from '../guards/RedirectAdminFromMarketplaceGuard';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { HomePage } from '../pages/HomePage';
@@ -43,7 +44,7 @@ import { ReportViolationPage } from '../pages/ReportViolationPage';
 import { MessageSellerPage } from '../pages/MessageSellerPage';
 import { WishlistPage } from '../pages/WishlistPage';
 import { BuyerTransactionsPage } from '../pages/BuyerTransactionsPage';
-import { ReviewSellerPage } from '../pages/ReviewSellerPage';
+import { BuyerTransactionDetailPage } from '../pages/BuyerTransactionDetailPage';
 import { AllListingsPage } from '../pages/AllListingsPage';
 import { InspectorStatsPage } from '../pages/inspector/InspectorStatsPage';
 import { InspectionListPage } from '../pages/inspector/InspectionListPage';
@@ -52,6 +53,15 @@ import { InspectionHistoryPage } from '../pages/inspector/InspectionHistoryPage'
 import { InspectionHistoryDetailPage } from '../pages/inspector/InspectionHistoryDetailPage';
 import { SellerDashboardPage } from '../pages/seller/SellerDashboardPage';
 import { SellerProfilePage } from '../pages/seller/SellerProfilePage';
+import { SellerBikeDetailPage } from '../pages/seller/SellerBikeDetailPage';
+import { SellerBikeEditPage } from '../pages/seller/SellerBikeEditPage';
+import { SellerOffersPage } from '../pages/seller/SellerOffersPage';
+import { SellerTransactionsPage } from '../pages/seller/SellerTransactionsPage';
+import { SellerTransactionDetailPage } from '../pages/seller/SellerTransactionDetailPage';
+import { SellerMessagesPage } from '../pages/seller/SellerMessagesPage';
+import { SellerMessageThreadPage } from '../pages/seller/SellerMessageThreadPage';
+import { SellerReviewsPage } from '../pages/seller/SellerReviewsPage';
+import { SellerSalesStatsPage } from '../pages/seller/SellerSalesStatsPage';
 
 const NotFoundPage: React.FC = () => (
   <div className="py-16 flex flex-col items-center gap-4 text-center">
@@ -77,45 +87,53 @@ export function App() {
       <ReactQueryProvider>
         <AuthProvider>
           <Routes>
-            {/* Public routes with main marketplace layout */}
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<HomePage />} />
-              <Route path="dang-tin" element={<PostListingPage />} />
-              <Route path="thanh-toan" element={<CheckoutPage />} />
-              <Route
-                path="thanh-toan/thanh-cong"
-                element={<PaymentSuccessPage />}
-              />
-              <Route
-                path="payment/vnpay-return"
-                element={<PaymentSuccessPage />}
-              />
-              <Route path="danh-muc/:slug" element={<CategoryPage />} />
-              <Route path="tat-ca-tin-dang" element={<AllListingsPage />} />
-              <Route path="tin-dang/:id" element={<ListingDetailPage />} />
+            {/* Chợ / buyer — admin đã đăng nhập luôn chuyển về /admin */}
+            <Route element={<RedirectAdminFromMarketplaceGuard />}>
+              <Route path="/" element={<MainLayout />}>
+                <Route index element={<HomePage />} />
+                <Route path="dang-tin" element={<PostListingPage />} />
+                <Route path="thanh-toan" element={<CheckoutPage />} />
+                <Route
+                  path="thanh-toan/thanh-cong"
+                  element={<PaymentSuccessPage />}
+                />
+                <Route
+                  path="payment/vnpay-return"
+                  element={<PaymentSuccessPage />}
+                />
+                <Route path="danh-muc/:slug" element={<CategoryPage />} />
+                <Route path="tat-ca-tin-dang" element={<AllListingsPage />} />
+                <Route path="tin-dang/:id" element={<ListingDetailPage />} />
 
-              {/* User / account utility pages */}
-              <Route path="tin-dang-da-luu" element={<SavedListingsPage />} />
-              <Route path="tim-kiem-da-luu" element={<SavedSearchesPage />} />
-              <Route path="lich-su-xem-tin" element={<ViewHistoryPage />} />
-              <Route path="danh-gia-tu-toi" element={<MyReviewsPage />} />
-              <Route path="bao-cao-vi-pham" element={<ReportViolationPage />} />
-              <Route path="nhan-tin-seller" element={<MessageSellerPage />} />
-              <Route path="yeu-thich" element={<WishlistPage />} />
-              <Route path="don-mua" element={<BuyerTransactionsPage />} />
-              <Route path="danh-gia-seller" element={<ReviewSellerPage />} />
-              <Route
-                path="lich-su-giao-dich"
-                element={<TransactionHistoryPage />}
-              />
-              <Route path="uu-dai" element={<OffersPage />} />
-              <Route path="uu-dai-cua-toi" element={<MyOffersPage />} />
-              <Route path="cai-dat" element={<UserSettingsPage />} />
-              <Route path="tro-giup" element={<HelpPage />} />
-              <Route path="tai-khoan" element={<UserAccountPage />} />
+                {/* User / account utility pages */}
+                <Route path="tin-dang-da-luu" element={<SavedListingsPage />} />
+                <Route path="tim-kiem-da-luu" element={<SavedSearchesPage />} />
+                <Route path="lich-su-xem-tin" element={<ViewHistoryPage />} />
+                <Route path="danh-gia-tu-toi" element={<MyReviewsPage />} />
+                <Route
+                  path="bao-cao-vi-pham"
+                  element={<ReportViolationPage />}
+                />
+                <Route path="nhan-tin-seller" element={<MessageSellerPage />} />
+                <Route path="yeu-thich" element={<WishlistPage />} />
+                <Route
+                  path="don-mua/:id"
+                  element={<BuyerTransactionDetailPage />}
+                />
+                <Route path="don-mua" element={<BuyerTransactionsPage />} />
+                <Route
+                  path="lich-su-giao-dich"
+                  element={<TransactionHistoryPage />}
+                />
+                <Route path="uu-dai" element={<OffersPage />} />
+                <Route path="uu-dai-cua-toi" element={<MyOffersPage />} />
+                <Route path="cai-dat" element={<UserSettingsPage />} />
+                <Route path="tro-giup" element={<HelpPage />} />
+                <Route path="tai-khoan" element={<UserAccountPage />} />
 
-              {/* Fallback cho các đường dẫn public chưa có trang riêng */}
-              <Route path="*" element={<NotFoundPage />} />
+                {/* Fallback cho các đường dẫn public chưa có trang riêng */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
             </Route>
 
             {/* Guest routes */}
@@ -167,6 +185,24 @@ export function App() {
               <Route path="/seller" element={<MainLayout />}>
                 <Route index element={<SellerDashboardPage />} />
                 <Route path="ho-so" element={<SellerProfilePage />} />
+                <Route path="tin-dang/:id" element={<SellerBikeDetailPage />} />
+                <Route
+                  path="tin-dang/:id/chinh-sua"
+                  element={<SellerBikeEditPage />}
+                />
+                <Route path="tra-gia" element={<SellerOffersPage />} />
+                <Route path="don-hang" element={<SellerTransactionsPage />} />
+                <Route
+                  path="don-hang/:id"
+                  element={<SellerTransactionDetailPage />}
+                />
+                <Route path="tin-nhan" element={<SellerMessagesPage />} />
+                <Route
+                  path="tin-nhan/:partnerId"
+                  element={<SellerMessageThreadPage />}
+                />
+                <Route path="danh-gia" element={<SellerReviewsPage />} />
+                <Route path="thong-ke" element={<SellerSalesStatsPage />} />
               </Route>
             </Route>
           </Routes>
