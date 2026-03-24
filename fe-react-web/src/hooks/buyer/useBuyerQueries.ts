@@ -273,14 +273,29 @@ export function useBuyerCreateTransactionMutation() {
 
 export function useBuyerCreatePaymentUrlMutation() {
   return useMutation({
-    mutationFn: (transactionId: string) => createPaymentUrl(transactionId),
+    mutationFn: (params: {
+      transactionId: string;
+      bankCode?: string;
+      language?: string;
+    }) =>
+      createPaymentUrl(params.transactionId, {
+        bankCode: params.bankCode,
+        language: params.language,
+      }),
   });
 }
 
 export function useBuyerCreateRemainingPaymentUrlMutation() {
   return useMutation({
-    mutationFn: (depositTransactionId: string) =>
-      createRemainingPaymentUrl(depositTransactionId),
+    mutationFn: (params: {
+      depositTransactionId: string;
+      bankCode?: string;
+      language?: string;
+    }) =>
+      createRemainingPaymentUrl(params.depositTransactionId, {
+        bankCode: params.bankCode,
+        language: params.language,
+      }),
   });
 }
 

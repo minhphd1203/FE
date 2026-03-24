@@ -45,7 +45,7 @@ function unwrapTransactionCreate(
   if (raw && typeof raw === 'object' && 'data' in raw) {
     const inner = (raw as ApiEnvelope<{ id: string; status?: string }>).data;
     if (inner && typeof inner === 'object' && 'id' in inner) {
-      return { data: inner };
+      return { data: inner as { id: string; status: string } };
     }
   }
   return raw as CreateTransactionResponse;
@@ -58,9 +58,13 @@ export const createTransaction = async (payload: CreateTransactionRequest) => {
   return unwrapTransactionCreate(res.data);
 };
 
-export const createPaymentUrl = async (transactionId: string) => {
+export const createPaymentUrl = async (
+  transactionId: string,
+  payload?: { bankCode?: string; language?: string },
+) => {
   const res = await apiClient.post<CreatePaymentUrlResponse>(
     `/payment/v1/create/${transactionId}`,
+    payload || {},
   );
   return res.data;
 };
@@ -86,9 +90,11 @@ export const getVnpayReturnResult = async (
 // POST /api/payment/v1/create-remaining/{depositTransactionId}
 export const createRemainingPaymentUrl = async (
   depositTransactionId: string,
+  payload?: { bankCode?: string; language?: string },
 ) => {
   const res = await apiClient.post<CreatePaymentUrlResponse>(
     `/payment/v1/create-remaining/${depositTransactionId}`,
+    payload || {},
   );
   return res.data;
 };
