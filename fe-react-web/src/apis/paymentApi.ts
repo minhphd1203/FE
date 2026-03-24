@@ -17,13 +17,20 @@ export interface CreateTransactionResponse {
   };
 }
 
+/** Payload trong `data` sau POST create / create-remaining (VNPay + QR base64). */
+export type PaymentCreateData = {
+  paymentUrl: string;
+  transactionId: string;
+  amount: number;
+  orderInfo: string;
+  /** Data URL PNG — backend encode đúng `paymentUrl` */
+  qrCode?: string | null;
+  /** ISO datetime — QR/link thường ~10 phút */
+  expiresAt?: string | null;
+};
+
 export interface CreatePaymentUrlResponse {
-  data: {
-    paymentUrl: string;
-    transactionId: string;
-    amount: number;
-    orderInfo: string;
-  };
+  data: PaymentCreateData;
 }
 
 export interface PaymentStatusResponse {
@@ -38,6 +45,27 @@ type ApiEnvelope<T> = {
   data?: T;
   message?: string;
 };
+
+/** Chuẩn hoá `{ success, data }` hoặc body đã là `data` phẳng. */
+function unwrapPaymentCreateResponse(raw: unknown): CreatePaymentUrlResponse {
+  if (!raw || typeof raw !== 'object') {
+    return raw as CreatePaymentUrlResponse;
+  }
+  const o = raw as Record<string, unknown>;
+  if (
+    'paymentUrl' in o &&
+    typeof (o as PaymentCreateData).paymentUrl === 'string'
+  ) {
+    return { data: o as PaymentCreateData };
+  }
+  if ('data' in o && o.data && typeof o.data === 'object') {
+    const inner = o.data as PaymentCreateData;
+    if (inner.paymentUrl) {
+      return { data: inner };
+    }
+  }
+  return raw as CreatePaymentUrlResponse;
+}
 
 function unwrapTransactionCreate(
   raw: CreateTransactionResponse | ApiEnvelope<{ id: string; status?: string }>,
@@ -62,11 +90,11 @@ export const createPaymentUrl = async (
   transactionId: string,
   payload?: { bankCode?: string; language?: string },
 ) => {
-  const res = await apiClient.post<CreatePaymentUrlResponse>(
+  const res = await apiClient.post<unknown>(
     `/payment/v1/create/${transactionId}`,
     payload || {},
   );
-  return res.data;
+  return unwrapPaymentCreateResponse(res.data);
 };
 
 export const getPaymentStatus = async (transactionId: string) => {
@@ -92,9 +120,9 @@ export const createRemainingPaymentUrl = async (
   depositTransactionId: string,
   payload?: { bankCode?: string; language?: string },
 ) => {
-  const res = await apiClient.post<CreatePaymentUrlResponse>(
+  const res = await apiClient.post<unknown>(
     `/payment/v1/create-remaining/${depositTransactionId}`,
     payload || {},
   );
-  return res.data;
+  return unwrapPaymentCreateResponse(res.data);
 };

@@ -12,6 +12,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { SellerReviewForm } from '../components/SellerReviewForm';
+import { VnpayPaymentModal } from '../components/VnpayPaymentModal';
 import {
   useBuyerTransactionDetailQuery,
   useBuyerCreatePaymentUrlMutation,
@@ -27,57 +28,20 @@ export const BuyerTransactionDetailPage: React.FC = () => {
     data: transaction,
     isLoading,
     error,
+    refetch: refetchTransaction,
   } = useBuyerTransactionDetailQuery(id, { enabled: authed });
 
   const createPaymentMut = useBuyerCreatePaymentUrlMutation();
   const createRemainingMut = useBuyerCreateRemainingPaymentUrlMutation();
 
-  const [payError, setPayError] = useState<string | null>(null);
-
-  // Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentType, setPaymentType] = useState<
     'initial' | 'remaining' | null
   >(null);
-  const [bankCode, setBankCode] = useState('');
-  const [language, setLanguage] = useState('vn');
 
   const handleOpenPaymentModal = (type: 'initial' | 'remaining') => {
     setPaymentType(type);
     setShowPaymentModal(true);
-    setPayError(null);
-  };
-
-  const submitPayment = async () => {
-    if (!transaction?.id || !paymentType) return;
-    setPayError(null);
-    try {
-      if (paymentType === 'initial') {
-        const res = await createPaymentMut.mutateAsync({
-          transactionId: transaction.id,
-          bankCode,
-          language,
-        });
-        if (res?.data?.paymentUrl) {
-          window.location.href = res.data.paymentUrl;
-        }
-      } else {
-        const res = await createRemainingMut.mutateAsync({
-          depositTransactionId: transaction.id,
-          bankCode,
-          language,
-        });
-        if (res?.data?.paymentUrl) {
-          window.location.href = res.data.paymentUrl;
-        }
-      }
-    } catch (err: unknown) {
-      setPayError(
-        (err as any)?.response?.data?.message ||
-          'Có lỗi xảy ra khi tạo link thanh toán.',
-      );
-      setShowPaymentModal(false);
-    }
   };
 
   if (!authed) {
@@ -226,13 +190,6 @@ export const BuyerTransactionDetailPage: React.FC = () => {
           </div>
           <div>{getStatusBadge()}</div>
         </div>
-
-        {payError && (
-          <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <p className="text-sm font-medium">{payError}</p>
-          </div>
-        )}
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Cột trái: Chi tiết thanh toán & Tình trạng */}
@@ -461,83 +418,37 @@ export const BuyerTransactionDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Thông tin thanh toán VNPay
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Xin vui lòng chọn thông tin ngân hàng và ngôn ngữ trước khi tạo
-              giao dịch.
-            </p>
-
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Ngân hàng / Cổng thanh toán (Tuỳ chọn)
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#f57224] focus:border-[#f57224]"
-                  value={bankCode}
-                  onChange={(e) => setBankCode(e.target.value)}
-                >
-                  <option value="">Cổng thanh toán Gateway (Mặc định)</option>
-                  <option value="VNPAYQR">Ứng dụng thanh toán (VNPAYQR)</option>
-                  <option value="VNBANK">
-                    Thẻ ATM / Tài khoản nội địa (VNBANK)
-                  </option>
-                  <option value="INTCARD">
-                    Thẻ quốc tế (Visa, Master, JCB)
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Ngôn ngữ hiển thị
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#f57224] focus:border-[#f57224]"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <option value="vn">Tiếng Việt</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="px-5 py-2.5 text-sm font-bold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-                disabled={
-                  createPaymentMut.isPending || createRemainingMut.isPending
-                }
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={submitPayment}
-                className="px-5 py-2.5 text-sm font-bold text-white bg-[#f57224] rounded-xl hover:bg-[#e0651a] shadow-md transition-all flex items-center gap-2"
-                disabled={
-                  createPaymentMut.isPending || createRemainingMut.isPending
-                }
-              >
-                {createPaymentMut.isPending || createRemainingMut.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{' '}
-                    Đang xử lý...
-                  </>
-                ) : (
-                  'Tiến hành thanh toán'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <VnpayPaymentModal
+        open={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        isPending={createPaymentMut.isPending || createRemainingMut.isPending}
+        requestPayment={async ({ bankCode, language }) => {
+          if (!transaction?.id || !paymentType) {
+            throw new Error('Thiếu thông tin đơn thanh toán.');
+          }
+          if (paymentType === 'initial') {
+            if (status !== 'approved') {
+              throw new Error(
+                'Chỉ tạo thanh toán khi đơn đã được người bán duyệt (trạng thái Approved).',
+              );
+            }
+            return createPaymentMut.mutateAsync({
+              transactionId: transaction.id,
+              bankCode,
+              language,
+            });
+          }
+          if (!canPayRemaining) {
+            throw new Error('Chưa đủ điều kiện thanh toán phần còn lại.');
+          }
+          return createRemainingMut.mutateAsync({
+            depositTransactionId: transaction.id,
+            bankCode,
+            language,
+          });
+        }}
+        onAfterPaymentCreated={() => void refetchTransaction()}
+      />
     </div>
   );
 };

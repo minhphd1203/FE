@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ChevronRight,
   Filter,
@@ -13,9 +14,11 @@ import {
   useBuyerCreatePaymentUrlMutation,
   useBuyerCreateRemainingPaymentUrlMutation,
 } from '../hooks/buyer/useBuyerQueries';
+import { VnpayPaymentModal } from '../components/VnpayPaymentModal';
 
 export const BuyerTransactionsPage: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('');
 
   const {
@@ -33,7 +36,7 @@ export const BuyerTransactionsPage: React.FC = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const payBusy = createPayMut.isPending || createRemainingMut.isPending;
 
   const loadError =
     queryError instanceof Error
@@ -60,9 +63,6 @@ export const BuyerTransactionsPage: React.FC = () => {
     'initial' | 'remaining' | null
   >(null);
   const [paymentTargetId, setPaymentTargetId] = useState<string | null>(null);
-  const [bankCode, setBankCode] = useState('');
-  const [language, setLanguage] = useState('vn');
-
   const handleOpenPaymentModal = (
     id: string,
     type: 'initial' | 'remaining',
@@ -71,39 +71,6 @@ export const BuyerTransactionsPage: React.FC = () => {
     setPaymentType(type);
     setShowPaymentModal(true);
     setError('');
-  };
-
-  const submitPayment = async () => {
-    if (!paymentTargetId || !paymentType) return;
-    setError('');
-    setSuccess('');
-    setProcessingId(paymentTargetId);
-    try {
-      let mutRes;
-      if (paymentType === 'initial') {
-        mutRes = await createPayMut.mutateAsync({
-          transactionId: paymentTargetId,
-          bankCode,
-          language,
-        });
-      } else {
-        mutRes = await createRemainingMut.mutateAsync({
-          depositTransactionId: paymentTargetId,
-          bankCode,
-          language,
-        });
-      }
-      if (mutRes?.data?.paymentUrl) {
-        window.location.href = mutRes.data.paymentUrl;
-      }
-    } catch (err: unknown) {
-      setError(
-        (err as any)?.response?.data?.message ||
-          'Không thể tạo link thanh toán.',
-      );
-      setProcessingId(null);
-      setShowPaymentModal(false);
-    }
   };
 
   const statusColors: Record<string, string> = {
@@ -194,8 +161,6 @@ export const BuyerTransactionsPage: React.FC = () => {
                 isApproved && item.paymentMethod === 'vnpay';
               const needsRemainingPay =
                 isCompleted && isDeposit && Number(item.remainingBalance) > 0;
-              const amIProcessing = processingId === item.id;
-
               return (
                 <div
                   key={item.id}
@@ -257,7 +222,7 @@ export const BuyerTransactionsPage: React.FC = () => {
                         type="button"
                         className="px-4 py-2 text-sm font-semibold rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
                         onClick={() => item.id && handleCancel(item.id)}
-                        disabled={cancelMut.isPending || amIProcessing}
+                        disabled={cancelMut.isPending || payBusy}
                       >
                         Huỷ
                       </button>
@@ -270,9 +235,9 @@ export const BuyerTransactionsPage: React.FC = () => {
                         onClick={() =>
                           item.id && handleOpenPaymentModal(item.id, 'initial')
                         }
-                        disabled={amIProcessing}
+                        disabled={payBusy}
                       >
-                        {amIProcessing ? (
+                        {payBusy ? (
                           <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                         ) : (
                           <CreditCard className="w-4 h-4" />
@@ -289,9 +254,9 @@ export const BuyerTransactionsPage: React.FC = () => {
                           item.id &&
                           handleOpenPaymentModal(item.id, 'remaining')
                         }
-                        disabled={amIProcessing}
+                        disabled={payBusy}
                       >
-                        {amIProcessing ? (
+                        {payBusy ? (
                           <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                         ) : (
                           <CreditCard className="w-4 h-4" />
@@ -307,83 +272,45 @@ export const BuyerTransactionsPage: React.FC = () => {
         </div>
       )}
 
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Thông tin thanh toán VNPay
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Xin vui lòng chọn thông tin ngân hàng và ngôn ngữ trước khi tạo
-              giao dịch.
-            </p>
-
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Ngân hàng / Cổng thanh toán (Tuỳ chọn)
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#f57224] focus:border-[#f57224]"
-                  value={bankCode}
-                  onChange={(e) => setBankCode(e.target.value)}
-                >
-                  <option value="">Cổng thanh toán Gateway (Mặc định)</option>
-                  <option value="VNPAYQR">Ứng dụng thanh toán (VNPAYQR)</option>
-                  <option value="VNBANK">
-                    Thẻ ATM / Tài khoản nội địa (VNBANK)
-                  </option>
-                  <option value="INTCARD">
-                    Thẻ quốc tế (Visa, Master, JCB)
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Ngôn ngữ hiển thị
-                </label>
-                <select
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#f57224] focus:border-[#f57224]"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <option value="vn">Tiếng Việt</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="px-5 py-2.5 text-sm font-bold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-                disabled={
-                  createPayMut.isPending || createRemainingMut.isPending
-                }
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={submitPayment}
-                className="px-5 py-2.5 text-sm font-bold text-white bg-[#f57224] rounded-xl hover:bg-[#e0651a] shadow-md transition-all flex items-center gap-2"
-                disabled={
-                  createPayMut.isPending || createRemainingMut.isPending
-                }
-              >
-                {createPayMut.isPending || createRemainingMut.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{' '}
-                    Đang xử lý...
-                  </>
-                ) : (
-                  'Tiến hành thanh toán'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <VnpayPaymentModal
+        open={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setPaymentTargetId(null);
+          setPaymentType(null);
+        }}
+        isPending={payBusy}
+        requestPayment={async ({ bankCode, language }) => {
+          if (!paymentTargetId || !paymentType) {
+            throw new Error('Thiếu thông tin đơn thanh toán.');
+          }
+          if (paymentType === 'initial') {
+            const row = transactions.find(
+              (t: { id?: string }) => t.id === paymentTargetId,
+            );
+            if (row && row.status !== 'approved') {
+              throw new Error(
+                'Chỉ tạo thanh toán khi đơn đã được duyệt (Approved).',
+              );
+            }
+            return createPayMut.mutateAsync({
+              transactionId: paymentTargetId,
+              bankCode,
+              language,
+            });
+          }
+          return createRemainingMut.mutateAsync({
+            depositTransactionId: paymentTargetId,
+            bankCode,
+            language,
+          });
+        }}
+        onAfterPaymentCreated={() => {
+          void queryClient.invalidateQueries({
+            queryKey: ['buyer', 'transactions'],
+          });
+        }}
+      />
     </div>
   );
 };

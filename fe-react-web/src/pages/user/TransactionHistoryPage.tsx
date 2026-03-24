@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { History, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { VnpayPaymentModal } from '../../components/VnpayPaymentModal';
 import {
   useBuyerCreateRemainingPaymentUrlMutation,
   useBuyerTransactionsQuery,
@@ -16,6 +18,7 @@ type TransactionItem = {
 };
 
 export const TransactionHistoryPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const {
     data: transactions = [],
     isLoading: loading,
@@ -23,7 +26,10 @@ export const TransactionHistoryPage: React.FC = () => {
   } = useBuyerTransactionsQuery();
   const payRemainingMut = useBuyerCreateRemainingPaymentUrlMutation();
   const [error, setError] = useState<string | null>(null);
-  const [payingId, setPayingId] = useState<string | null>(null);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [remainingTargetId, setRemainingTargetId] = useState<string | null>(
+    null,
+  );
 
   const loadError =
     queryError instanceof Error
@@ -46,26 +52,10 @@ export const TransactionHistoryPage: React.FC = () => {
     );
   };
 
-  const handlePayRemaining = async (depositTransactionId: string) => {
-    setPayingId(depositTransactionId);
+  const openRemainingModal = (depositTransactionId: string) => {
+    setRemainingTargetId(depositTransactionId);
+    setShowPayModal(true);
     setError(null);
-    try {
-      const res = await payRemainingMut.mutateAsync(depositTransactionId);
-      const paymentUrl = res?.data?.paymentUrl;
-      if (!paymentUrl) {
-        throw new Error('Không lấy được link thanh toán phần còn lại.');
-      }
-      window.location.href = paymentUrl;
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ||
-          (err as Error)?.message ||
-          'Không thể tạo link thanh toán phần còn lại.',
-      );
-    } finally {
-      setPayingId(null);
-    }
   };
 
   return (
@@ -197,13 +187,11 @@ export const TransactionHistoryPage: React.FC = () => {
                         {canPay ? (
                           <button
                             type="button"
-                            onClick={() => handlePayRemaining(trx.id)}
-                            disabled={payingId === trx.id}
+                            onClick={() => openRemainingModal(trx.id)}
+                            disabled={payRemainingMut.isPending}
                             className="px-3 py-1.5 rounded-lg bg-[#f57224] text-white text-xs font-medium hover:bg-[#e0651a] disabled:opacity-60"
                           >
-                            {payingId === trx.id
-                              ? 'Đang tạo link...'
-                              : 'Thanh toán còn lại'}
+                            Thanh toán còn lại
                           </button>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -217,6 +205,30 @@ export const TransactionHistoryPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <VnpayPaymentModal
+        open={showPayModal}
+        onClose={() => {
+          setShowPayModal(false);
+          setRemainingTargetId(null);
+        }}
+        isPending={payRemainingMut.isPending}
+        requestPayment={async ({ bankCode, language }) => {
+          if (!remainingTargetId) {
+            throw new Error('Thiếu mã giao dịch cọc.');
+          }
+          return payRemainingMut.mutateAsync({
+            depositTransactionId: remainingTargetId,
+            bankCode,
+            language,
+          });
+        }}
+        onAfterPaymentCreated={() => {
+          void queryClient.invalidateQueries({
+            queryKey: ['buyer', 'transactions'],
+          });
+        }}
+      />
     </div>
   );
 };
