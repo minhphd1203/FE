@@ -11,6 +11,7 @@ import {
   ExternalLink,
   CalendarDays,
 } from 'lucide-react';
+import { SellerReviewForm } from '../components/SellerReviewForm';
 import {
   useBuyerTransactionDetailQuery,
   useBuyerCreatePaymentUrlMutation,
@@ -201,9 +202,23 @@ export const BuyerTransactionDetailPage: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-              Chi tiết đơn hàng #{transaction.id?.slice(0, 8).toUpperCase()}
-            </h1>
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+                Chi tiết đơn hàng #{transaction.id?.slice(0, 8).toUpperCase()}
+              </h1>
+              <button
+                onClick={() => {
+                  if (transaction.id) {
+                    navigator.clipboard.writeText(transaction.id);
+                    alert('Đã copy Mã UUID giao dịch: ' + transaction.id);
+                  }
+                }}
+                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                title="Copy toàn bộ UUID"
+              >
+                (Copy UUID)
+              </button>
+            </div>
             <div className="flex items-center gap-2 mt-2 text-gray-500 text-sm font-medium">
               <CalendarDays className="w-4 h-4" />
               <span>{new Date(createdAt).toLocaleString('vi-VN')}</span>
@@ -433,6 +448,15 @@ export const BuyerTransactionDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {isCompleted && (
+              <SellerReviewForm
+                listingId={bike?.id || ''}
+                sellerId={seller?.id}
+                sellerLabel={seller?.name || seller?.email || undefined}
+                defaultTransactionId={id}
+              />
+            )}
           </div>
         </div>
       </div>

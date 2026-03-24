@@ -51,14 +51,26 @@ export const SellerMessagesPage: React.FC = () => {
       <ul className="space-y-2">
         {rows.map((item, idx) => {
           const r = asRecord(item) ?? {};
-          const partnerId = pickStr(r, [
-            'partnerId',
-            'buyerId',
-            'userId',
-            'id',
+          const partner = asRecord(r.partner) ?? {};
+          const partnerId =
+            pickStr(r, ['partnerId', 'buyerId', 'userId', 'id']) ||
+            pickStr(partner, ['id']);
+          const partnerName = pickStr(partner, ['name', 'email']) || partnerId;
+
+          const bike = asRecord(r.bike) ?? r;
+          const bikeId =
+            pickStr(r, ['bikeId', 'bike_id']) || pickStr(bike, ['id']);
+
+          const lastMsg = asRecord(r.lastMessage) ?? r;
+          const preview = pickStr(lastMsg, [
+            'content',
+            'preview',
+            'lastMessage',
           ]);
-          const bikeId = pickStr(r, ['bikeId', 'bike_id']);
-          const preview = pickStr(r, ['lastMessage', 'content', 'preview']);
+
+          // Debugging info
+          console.log('Mapping row:', r, '-> partnerId:', partnerId);
+
           if (!partnerId) return null;
           const q = bikeId ? `?bikeId=${encodeURIComponent(bikeId)}` : '';
           return (
@@ -68,11 +80,13 @@ export const SellerMessagesPage: React.FC = () => {
                 className="block rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-[#f57224]/40"
               >
                 <p className="text-sm font-semibold text-gray-900">
-                  Người mua:{' '}
-                  <span className="font-mono text-xs">{partnerId}</span>
+                  Phía mua:{' '}
+                  <span className="text-[#f57224]">{partnerName}</span>
                 </p>
                 {bikeId && (
-                  <p className="text-xs text-gray-500 mt-1">Tin: {bikeId}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Sản phẩm tham chiếu: {bike?.title || bikeId}
+                  </p>
                 )}
                 {preview && (
                   <p className="text-sm text-gray-600 mt-2 line-clamp-2">

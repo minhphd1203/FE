@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, MessageSquare, AlertTriangle, X } from 'lucide-react';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import {
   useBuyerAddToWishlistMutation,
   useBuyerBikeDetailsQuery,
+  useBuyerSendMessageMutation,
+  useBuyerReportViolationMutation,
 } from '../hooks/buyer/useBuyerQueries';
 import { SellerReviewForm } from '../components/SellerReviewForm';
 import { useAppSelector } from '../redux/hooks';
@@ -20,6 +22,72 @@ export const ListingDetailPage: React.FC = () => {
   } = useBuyerBikeDetailsQuery(id);
   const addWishlistMut = useBuyerAddToWishlistMutation();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [modalFeedback, setModalFeedback] = useState<{
+    type: 'success' | 'error';
+    msg: string;
+  } | null>(null);
+
+  const sendMut = useBuyerSendMessageMutation();
+  const reportMut = useBuyerReportViolationMutation();
+
+  const handleSendChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!listing?.seller?.id) return;
+    setModalFeedback(null);
+    try {
+      await sendMut.mutateAsync({
+        sellerId: listing.seller.id,
+        content: chatMessage,
+        bikeId: listing.id,
+      });
+      setModalFeedback({ type: 'success', msg: 'Gửi tin nhắn thành công!' });
+      setChatMessage('');
+      setTimeout(() => {
+        setShowChatModal(false);
+        setModalFeedback(null);
+      }, 2000);
+    } catch (err: unknown) {
+      setModalFeedback({
+        type: 'error',
+        msg:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message || 'Có lỗi xảy ra',
+      });
+    }
+  };
+
+  const handleSendReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalFeedback(null);
+    try {
+      await reportMut.mutateAsync({
+        reason: reportReason,
+        description: reportDetails.trim() || undefined,
+        reportedUserId: listing?.seller?.id,
+        reportedBikeId: listing?.id,
+      });
+      setModalFeedback({ type: 'success', msg: 'Đã gửi báo cáo vi phạm.' });
+      setReportReason('');
+      setReportDetails('');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setModalFeedback(null);
+      }, 2000);
+    } catch (err: unknown) {
+      setModalFeedback({
+        type: 'error',
+        msg:
+          (err as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message || 'Có lỗi xảy ra',
+      });
+    }
+  };
 
   const isOwnListing = useMemo(() => {
     if (!listing || !user?.id) return false;
@@ -166,6 +234,28 @@ export const ListingDetailPage: React.FC = () => {
                 >
                   Đặt mua
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChatModal(true);
+                    setModalFeedback(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 disabled:opacity-60 flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Nhắn tin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReportModal(true);
+                    setModalFeedback(null);
+                  }}
+                  className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 font-medium flex items-center gap-2 transition-colors ml-auto sm:ml-4"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  Báo cáo
+                </button>
               </div>
             )}
             {actionMessage && (
@@ -183,6 +273,139 @@ export const ListingDetailPage: React.FC = () => {
             listing.seller?.name || listing.seller?.email || undefined
           }
         />
+      )}
+
+      {/* Chat Modal */}
+      {showChatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <button
+              onClick={() => setShowChatModal(false)}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Nhắn tin người bán
+              </h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-5 ml-13">
+              Gửi một tin nhắn để hỏi thêm chức năng xe, giấy tờ hoặc trao đổi
+              giá.
+            </p>
+            <form onSubmit={handleSendChat} className="space-y-4">
+              <div>
+                <textarea
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224] resize-none"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  rows={4}
+                  placeholder="Nhập nội dung tin nhắn..."
+                  required
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  {modalFeedback && (
+                    <span
+                      className={`text-sm font-medium ${
+                        modalFeedback.type === 'success'
+                          ? 'text-emerald-600'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      {modalFeedback.msg}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={sendMut.isPending}
+                  className="bg-[#f57224] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#e0651a] disabled:opacity-60 flex items-center gap-2 transition-all shadow-md shadow-[#f57224]/20"
+                >
+                  {sendMut.isPending ? 'Đang gửi...' : 'Gửi tin nhắn'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <button
+              onClick={() => setShowReportModal(false)}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Báo cáo vi phạm
+              </h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-5 ml-13">
+              Phát hiện xe lừa đảo hoặc người bán vi phạm? Tố cáo tới admin.
+            </p>
+            <form onSubmit={handleSendReport} className="space-y-4">
+              <div>
+                <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                  Lý do báo cáo
+                </label>
+                <input
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-colors"
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  required
+                  placeholder="Ví dụ: Xe không có thật, Lừa đảo..."
+                />
+              </div>
+              <div>
+                <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                  Chứng cứ chi tiết
+                </label>
+                <textarea
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none transition-colors"
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  rows={3}
+                  placeholder="Mô tả chi tiết vi phạm để hỗ trợ Admin xử lý..."
+                />
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  {modalFeedback && (
+                    <span
+                      className={`text-sm font-medium ${
+                        modalFeedback.type === 'success'
+                          ? 'text-emerald-600'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      {modalFeedback.msg}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={reportMut.isPending}
+                  className="bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-red-700 disabled:opacity-60 flex items-center gap-2 shadow-md shadow-red-600/20 transition-all"
+                >
+                  {reportMut.isPending ? 'Đang gửi...' : 'Gửi báo cáo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

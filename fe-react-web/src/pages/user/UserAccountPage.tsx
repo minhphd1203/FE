@@ -11,6 +11,9 @@ import {
   LayoutDashboard,
   Settings,
   Headset,
+  MessageSquare,
+  AlertTriangle,
+  Star,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -131,6 +134,24 @@ export const UserAccountPage: React.FC = () => {
       label: 'Cài đặt tài khoản',
       href: '/cai-dat',
       icon: Settings,
+    },
+    {
+      id: 'messages',
+      label: 'Tin nhắn (Liên hệ người bán)',
+      href: '/nhan-tin-seller',
+      icon: MessageSquare,
+    },
+    {
+      id: 'reports',
+      label: 'Báo cáo vi phạm',
+      href: '/bao-cao-vi-pham',
+      icon: AlertTriangle,
+    },
+    {
+      id: 'my-reviews',
+      label: 'Đánh giá của tôi',
+      href: '/danh-gia-tu-toi',
+      icon: Star,
     },
     {
       id: 'help',

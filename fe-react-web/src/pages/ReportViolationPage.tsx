@@ -1,108 +1,39 @@
-import React, { useState } from 'react';
-import { useBuyerReportViolationMutation } from '../hooks/buyer/useBuyerQueries';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export const ReportViolationPage: React.FC = () => {
-  const reportMut = useBuyerReportViolationMutation();
-  const [reason, setReason] = useState('');
-  const [details, setDetails] = useState('');
-  const [reportedUserId, setReportedUserId] = useState('');
-  const [reportedBikeId, setReportedBikeId] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess(false);
-    try {
-      await reportMut.mutateAsync({
-        reason,
-        description: details.trim() || undefined,
-        reportedUserId: reportedUserId.trim() || undefined,
-        reportedBikeId: reportedBikeId.trim() || undefined,
-      });
-      setSuccess(true);
-      setReason('');
-      setDetails('');
-      setReportedUserId('');
-      setReportedBikeId('');
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || 'Có lỗi xảy ra, vui lòng thử lại.',
-      );
-    }
-  };
-
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Báo cáo vi phạm</h1>
-      <p className="text-sm text-gray-500 mt-1 mb-6">
-        Gửi thông tin vi phạm để đội ngũ kiểm duyệt xử lý nhanh hơn.
-      </p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block mb-1 font-medium text-gray-700">
-              ID người bị báo cáo (tùy chọn)
-            </label>
-            <input
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
-              value={reportedUserId}
-              onChange={(e) => setReportedUserId(e.target.value)}
-              placeholder="UUID người dùng"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 font-medium text-gray-700">
-              ID xe liên quan (tùy chọn)
-            </label>
-            <input
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
-              value={reportedBikeId}
-              onChange={(e) => setReportedBikeId(e.target.value)}
-              placeholder="UUID tin đăng"
-            />
-          </div>
+    <div className="max-w-4xl mx-auto px-4 py-8 pb-20">
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Lịch sử báo cáo
+        </h1>
+        <p className="text-gray-500 mt-2">
+          Theo dõi các báo cáo vi phạm bạn đã gửi cho ban quản trị.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px] flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+          <AlertTriangle className="w-10 h-10" />
         </div>
-        <div>
-          <label className="block mb-1 font-medium text-gray-700">Lý do</label>
-          <input
-            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            required
-            placeholder="Nhập lý do vi phạm"
-          />
-        </div>
-        <div>
-          <label className="block mb-1 font-medium text-gray-700">
-            Chi tiết
-          </label>
-          <textarea
-            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-            rows={4}
-            placeholder="Mô tả chi tiết vi phạm (nếu có)"
-          />
-        </div>
-        <div className="pt-2 flex items-center gap-3">
-          <button
-            type="submit"
-            className="bg-[#f57224] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#e0651a] disabled:opacity-60"
-            disabled={reportMut.isPending}
-          >
-            {reportMut.isPending ? 'Đang gửi...' : 'Gửi báo cáo'}
-          </button>
-          {success && (
-            <div className="text-green-600 text-sm">
-              Gửi báo cáo thành công!
-            </div>
-          )}
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-        </div>
-      </form>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          Bạn chưa gửi báo cáo nào
+        </h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-8 leading-relaxed">
+          Nếu phát hiện người bán lừa đảo hoặc xe không đúng thực tế, bạn có thể
+          bấm vào nút <strong className="font-medium">"Báo cáo"</strong> ở trang
+          chi tiết tin đăng.
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+        >
+          <ShieldCheck className="w-5 h-5 text-gray-400" />
+          Quay lại trang chủ
+        </Link>
+      </div>
     </div>
   );
 };

@@ -31,6 +31,7 @@ export const queryKeys = {
         p.limit ?? 10,
       ] as const,
     transaction: (id: string) => ['buyer', 'transaction', id] as const,
+    conversations: () => ['buyer', 'conversations'] as const,
     messages: (
       sellerId: string,
       p?: { bikeId?: string; page?: number; limit?: number },

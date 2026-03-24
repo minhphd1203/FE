@@ -257,11 +257,12 @@ export async function getSellerListingCategories(): Promise<
           const r = item as Record<string, unknown>;
           const rid = r.id == null ? '' : String(r.id).trim();
           if (!rid) return null;
-          return {
+          const opt: ListingCategoryOption = {
             id: rid,
             name: String(r.name ?? r.title ?? 'Danh mục'),
-            slug: typeof r.slug === 'string' ? r.slug : undefined,
           };
+          if (typeof r.slug === 'string') opt.slug = r.slug;
+          return opt;
         })
         .filter((x): x is ListingCategoryOption => x != null);
       if (mapped.length === 0) continue;
@@ -488,8 +489,9 @@ export async function resubmitSellerBike(
 }
 
 export const getMyOffers = async (page: number = 1, limit: number = 10) => {
+  // Map offers to pending transactions (since BE doesn't have a separate offers table)
   const res = await apiClient.get(
-    `/seller/v1/offers?page=${page}&limit=${limit}`,
+    `/seller/v1/transactions?status=pending&page=${page}&limit=${limit}`,
   );
   return res.data;
 };
@@ -499,9 +501,17 @@ export const respondToOffer = async (
   action: 'accept' | 'reject',
   counterOffer?: number,
 ) => {
-  const res = await apiClient.post(`/seller/v1/offers/${offerId}/respond`, {
-    action,
-    counterOffer,
+  const status = action === 'accept' ? 'approved' : 'cancelled';
+  let notes =
+    action === 'accept'
+      ? 'Người bán đã duyệt đề nghị mua'
+      : 'Người bán đã từ chối để nghị mua';
+  if (counterOffer && counterOffer > 0) {
+    notes += ` (Có đề xuất giá mới: ${counterOffer} đ)`;
+  }
+  const res = await apiClient.put(`/seller/v1/transactions/${offerId}`, {
+    status,
+    notes,
   });
   return res.data;
 };

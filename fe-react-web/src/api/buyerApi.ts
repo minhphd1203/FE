@@ -251,6 +251,13 @@ export async function sendMessageToSeller(
   return response.data;
 }
 
+// 11.5 Get all conversations
+export async function getConversations(): Promise<any[]> {
+  const response =
+    await apiClient.get<ApiEnvelope<any[]>>('/buyer/v1/messages');
+  return unwrap<any[]>(response.data) || [];
+}
+
 // 12. Get messages with seller
 export async function getMessagesWithSeller(
   sellerId: string,

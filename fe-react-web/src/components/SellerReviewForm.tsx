@@ -42,6 +42,15 @@ export const SellerReviewForm: React.FC<SellerReviewFormProps> = ({
       setError('Vui lòng nhập mã giao dịch đã hoàn tất (UUID).');
       return;
     }
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tid)) {
+      setError(
+        'Mã giao dịch không đúng định dạng UUID (VD: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). Xin vui lòng copy ID đầy đủ từ mục Quản lý đơn hàng.',
+      );
+      return;
+    }
+
     setError('');
     setSuccess(false);
     try {
@@ -124,8 +133,8 @@ export const SellerReviewForm: React.FC<SellerReviewFormProps> = ({
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
             required
-            placeholder="Lấy từ mục Đơn mua / lịch sử sau khi giao dịch hoàn tất"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#f57224] focus:outline-none focus:ring-2 focus:ring-[#f57224]/20"
+            placeholder="Ví dụ: 577e13f7-1177-4bb6-ab41-b42682bb1858 (Copy nguyên UUID đầy đủ)"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-mono text-gray-900 placeholder:text-gray-400 placeholder:font-sans focus:border-[#f57224] focus:outline-none focus:ring-2 focus:ring-[#f57224]/20"
           />
         </div>
         <div>

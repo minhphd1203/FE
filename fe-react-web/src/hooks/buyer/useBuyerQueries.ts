@@ -3,6 +3,7 @@ import {
   addToWishlist,
   cancelTransaction,
   getBikeDetails,
+  getConversations,
   getMessagesWithSeller,
   getRecommendedBikes,
   getTransactionDetail,
@@ -149,6 +150,13 @@ export function useBuyerTransactionsQuery(params?: {
       const { items } = await getTransactions({ status, page, limit });
       return items;
     },
+  });
+}
+
+export function useBuyerConversationsQuery() {
+  return useQuery({
+    queryKey: queryKeys.buyer.conversations(),
+    queryFn: () => getConversations(),
   });
 }
 

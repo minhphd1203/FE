@@ -1,23 +1,38 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, Store } from 'lucide-react';
 
-export const MyReviewsPage: React.FC = () => (
-  <div className="mx-auto max-w-md text-center py-12 px-4">
-    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
-      <Star className="h-8 w-8 text-amber-500" fill="currentColor" />
+export const MyReviewsPage: React.FC = () => {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 pb-20">
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Đánh giá từ tôi
+        </h1>
+        <p className="text-gray-500 mt-2">
+          Lịch sử các đánh giá bạn đã để lại cho người bán sau khi giao dịch.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px] flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6">
+          <Star className="w-10 h-10" fill="currentColor" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          Chưa có đánh giá nào
+        </h2>
+        <p className="text-gray-500 max-w-md mx-auto mb-8 leading-relaxed">
+          Sau khi đặt mua thành công một chiếc xe trên hệ thống, bạn có thể đánh
+          giá mức độ uy tín của người bán tại trang chi tiết tin đăng.
+        </p>
+        <Link
+          to="/don-mua"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+        >
+          <Store className="w-5 h-5 text-gray-400" />
+          Xem đơn mua của bạn
+        </Link>
+      </div>
     </div>
-    <h1 className="text-xl font-bold text-gray-900">Đánh giá từ tôi</h1>
-    <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-      Danh sách đánh giá bạn đã gửi sẽ hiển thị khi backend cung cấp API. Hiện
-      bạn có thể đánh giá người bán ngay tại trang chi tiết tin đăng sau khi
-      mua.
-    </p>
-    <Link
-      to="/tat-ca-tin-dang"
-      className="mt-6 inline-flex rounded-xl bg-[#f57224] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#e0651a]"
-    >
-      Xem tin đăng
-    </Link>
-  </div>
-);
+  );
+};
