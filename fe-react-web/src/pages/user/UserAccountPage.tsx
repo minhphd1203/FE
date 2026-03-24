@@ -71,10 +71,12 @@ export const UserAccountPage: React.FC = () => {
       name: nextProfile.name,
       role: nextProfile.role,
     };
+    const newOrCurrentToken = (nextProfile as any).token || currentToken;
+
     dispatch(
       setCredentials({
         user: nextUser,
-        token: currentToken,
+        token: newOrCurrentToken,
       }),
     );
     persistAuthSession(
@@ -84,7 +86,7 @@ export const UserAccountPage: React.FC = () => {
         name: nextUser.name,
         role: nextUser.role,
       },
-      currentToken,
+      newOrCurrentToken,
     );
   };
 

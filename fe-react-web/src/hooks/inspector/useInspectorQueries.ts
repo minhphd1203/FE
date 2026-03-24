@@ -102,10 +102,13 @@ export function useInspectorDashboardQuery() {
     queryKey: queryKeys.inspector.dashboard(),
     queryFn: async () => {
       const res = await getInspectorDashboard();
+      const data = (res as any)?.data || {};
       return {
-        inspected:
-          (res as { data?: { inspected?: number } })?.data?.inspected ?? 0,
-        pending: (res as { data?: { pending?: number } })?.data?.pending ?? 0,
+        pending: data.pending ?? 0,
+        inProgress: data.inProgress ?? 0,
+        completed: data.completed ?? 0,
+        passed: data.passed ?? 0,
+        failed: data.failed ?? 0,
       };
     },
   });

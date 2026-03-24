@@ -9,6 +9,7 @@ export interface ProfileUser {
   avatar?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  token?: string;
 }
 
 interface ApiResponse<T> {

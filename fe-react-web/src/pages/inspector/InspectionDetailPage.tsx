@@ -59,6 +59,9 @@ export const InspectionDetailPage: React.FC = () => {
         ? 'Không thể tải thông tin xe'
         : null;
 
+  const isInspecting =
+    inspectionStarted || vehicle?.inspectionStatus === 'in_progress';
+
   const [formData, setFormData] = useState<InspectionFormData>({
     status: '',
     overallCondition: '',
@@ -74,6 +77,7 @@ export const InspectionDetailPage: React.FC = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const categoryIdTrim = vehicle?.categoryId?.trim() ?? '';
   const categoryNameTrim = vehicle?.categoryName?.trim() ?? '';
@@ -137,13 +141,18 @@ export const InspectionDetailPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  const handleFinalSubmit = async (finalStatus: 'passed' | 'failed') => {
     setIsSubmitting(true);
     setError(null);
+    setShowConfirmModal(false);
     try {
       const payload = {
-        status: formData.status,
+        status: finalStatus,
         overallCondition: formData.overallCondition,
         frameCondition: formData.frameCondition,
         wheelCondition: formData.wheelCondition,
@@ -417,255 +426,290 @@ export const InspectionDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* Inspection Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Condition Assessment */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-[#f57224]" />
-            Đánh giá tình trạng
-          </h2>
-
-          <div className="space-y-4">
-            {/* Inspection Result */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Kết quả kiểm định *
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-              >
-                <option value="">Chọn kết quả</option>
-                <option value="passed">Đạt</option>
-                <option value="failed">Không đạt</option>
-              </select>
-            </div>
-
-            {/* Overall Condition */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tình trạng chung *
-              </label>
-              <select
-                name="overallCondition"
-                value={formData.overallCondition}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-              >
-                <option value="">Chọn tình trạng</option>
-                <option value="excellent">Tuyệt vời - Như mới</option>
-                <option value="good">Tốt - Ít sử dụng</option>
-                <option value="fair">Bình thường - Đã sử dụng</option>
-                <option value="poor">Kém - Cần sửa chữa</option>
-              </select>
-            </div>
-
-            {/* Frame */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tình trạng khung *
-              </label>
-              <select
-                name="frameCondition"
-                value={formData.frameCondition}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-              >
-                <option value="">Chọn tình trạng</option>
-                <option value="perfect">Hoàn hảo</option>
-                <option value="minor">Vết nhỏ nhưng không ảnh hưởng</option>
-                <option value="damaged">Bị biến dạng</option>
-              </select>
-            </div>
-
-            {/* Wheels */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tình trạng bánh *
-              </label>
-              <select
-                name="wheelCondition"
-                value={formData.wheelCondition}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-              >
-                <option value="">Chọn tình trạng</option>
-                <option value="new">Bánh mới</option>
-                <option value="good">Bánh tốt</option>
-                <option value="worn">Bánh mòn, cần thay</option>
-              </select>
-            </div>
-
-            {/* Brakes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tình trạng phanh *
-              </label>
-              <select
-                name="brakeCondition"
-                value={formData.brakeCondition}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-              >
-                <option value="">Chọn tình trạng</option>
-                <option value="working">Phanh hoạt động tốt</option>
-                <option value="weak">Phanh yếu, cần điều chỉnh</option>
-                <option value="broken">Phanh hỏng, cần thay</option>
-              </select>
-            </div>
-
-            {/* Drivetrain */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tình trạng truyền động *
-              </label>
-              <select
-                name="drivetrainCondition"
-                value={formData.drivetrainCondition}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-              >
-                <option value="">Chọn tình trạng</option>
-                <option value="smooth">Truyền động mượt</option>
-                <option value="reasonable">Hợp lý, có thể cải thiện</option>
-                <option value="issues">Có vấn đề, cần sửa</option>
-              </select>
-            </div>
-
-            {/* Additional Notes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ghi chú thêm
-              </label>
-              <textarea
-                name="inspectionNote"
-                value={formData.inspectionNote}
-                onChange={handleInputChange}
-                placeholder="Nhập bất kỳ nhận xét hoặc vấn đề khác..."
-                rows={4}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224] resize-none"
-              ></textarea>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Khuyến nghị
-              </label>
-              <textarea
-                name="recommendation"
-                value={formData.recommendation}
-                onChange={handleInputChange}
-                placeholder="Khuyến nghị dành cho buyer/seller..."
-                rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224] resize-none"
-              ></textarea>
-            </div>
+      {/* Khu vực Bắt đầu kiểm định */}
+      {!isInspecting && vehicle?.inspectionStatus !== 'completed' && (
+        <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-8 text-center mt-6">
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-[#f57224]" />
           </div>
-        </div>
-
-        {/* Image Upload */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-[#f57224]" />
-            Upload hình ảnh kiểm định
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Sẵn sàng kiểm định
           </h2>
-
-          <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#f57224] transition-colors"
-            onClick={() => document.getElementById('imageInput')?.click()}
+          <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+            Vui lòng nhấn nút bên dưới để mở biểu mẫu và tiến hành nhập kết quả
+            kiểm định cho chiếc xe này.
+          </p>
+          <button
+            onClick={handleStartInspection}
+            disabled={loading || startMut.isPending}
+            className="px-8 py-3 bg-[#f57224] text-white font-medium rounded-xl hover:bg-[#e06818] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[200px]"
           >
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-700 font-medium">
-              Nhấp để tải lên hoặc kéo thả
-            </p>
-            <p className="text-sm text-gray-500">
-              Hỗ trợ: JPG, PNG (tối đa 5MB)
-            </p>
-            <input
-              id="imageInput"
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-          </div>
+            {startMut.isPending ? 'Đang khởi tạo...' : 'Bắt đầu kiểm định ngay'}
+          </button>
+        </div>
+      )}
 
-          {/* Uploaded Images */}
-          {uploadedImages.length > 0 && (
-            <div className="mt-6">
-              <p className="text-sm font-medium text-gray-700 mb-4">
-                Hình ảnh đã tải ({uploadedImages.length})
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {uploadedImages.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={image}
-                      alt={`Uploaded ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+      {/* Inspection Form */}
+      {isInspecting && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Condition Assessment */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-[#f57224]" />
+              Đánh giá tình trạng
+            </h2>
+
+            <div className="space-y-4">
+              {/* Overall Condition */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tình trạng chung *
+                </label>
+                <select
+                  name="overallCondition"
+                  value={formData.overallCondition}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+                >
+                  <option value="">Chọn tình trạng</option>
+                  <option value="excellent">Tuyệt vời - Như mới</option>
+                  <option value="good">Tốt - Ít sử dụng</option>
+                  <option value="fair">Bình thường - Đã sử dụng</option>
+                  <option value="poor">Kém - Cần sửa chữa</option>
+                </select>
+              </div>
+
+              {/* Frame */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tình trạng khung *
+                </label>
+                <select
+                  name="frameCondition"
+                  value={formData.frameCondition}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+                >
+                  <option value="">Chọn tình trạng</option>
+                  <option value="perfect">Hoàn hảo</option>
+                  <option value="minor">Vết nhỏ nhưng không ảnh hưởng</option>
+                  <option value="damaged">Bị biến dạng</option>
+                </select>
+              </div>
+
+              {/* Wheels */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tình trạng bánh *
+                </label>
+                <select
+                  name="wheelCondition"
+                  value={formData.wheelCondition}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+                >
+                  <option value="">Chọn tình trạng</option>
+                  <option value="new">Bánh mới</option>
+                  <option value="good">Bánh tốt</option>
+                  <option value="worn">Bánh mòn, cần thay</option>
+                </select>
+              </div>
+
+              {/* Brakes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tình trạng phanh *
+                </label>
+                <select
+                  name="brakeCondition"
+                  value={formData.brakeCondition}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+                >
+                  <option value="">Chọn tình trạng</option>
+                  <option value="working">Phanh hoạt động tốt</option>
+                  <option value="weak">Phanh yếu, cần điều chỉnh</option>
+                  <option value="broken">Phanh hỏng, cần thay</option>
+                </select>
+              </div>
+
+              {/* Drivetrain */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tình trạng truyền động *
+                </label>
+                <select
+                  name="drivetrainCondition"
+                  value={formData.drivetrainCondition}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+                >
+                  <option value="">Chọn tình trạng</option>
+                  <option value="smooth">Truyền động mượt</option>
+                  <option value="reasonable">Hợp lý, có thể cải thiện</option>
+                  <option value="issues">Có vấn đề, cần sửa</option>
+                </select>
+              </div>
+
+              {/* Additional Notes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ghi chú thêm
+                </label>
+                <textarea
+                  name="inspectionNote"
+                  value={formData.inspectionNote}
+                  onChange={handleInputChange}
+                  placeholder="Nhập bất kỳ nhận xét hoặc vấn đề khác..."
+                  rows={4}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224] resize-none"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Khuyến nghị
+                </label>
+                <textarea
+                  name="recommendation"
+                  value={formData.recommendation}
+                  onChange={handleInputChange}
+                  placeholder="Khuyến nghị dành cho buyer/seller..."
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224] resize-none"
+                ></textarea>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Submit Button */}
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/inspector')}
-            className="flex-1 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 px-6 py-3 rounded-lg bg-[#f57224] text-white font-medium hover:bg-[#e06818] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Dang lưu...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-5 h-5" />
-                Xác nhận kiểm định
-              </>
+          {/* Image Upload */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-[#f57224]" />
+              Upload hình ảnh kiểm định
+            </h2>
+
+            <div
+              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#f57224] transition-colors"
+              onClick={() => document.getElementById('imageInput')?.click()}
+            >
+              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-700 font-medium">
+                Nhấp để tải lên hoặc kéo thả
+              </p>
+              <p className="text-sm text-gray-500">
+                Hỗ trợ: JPG, PNG (tối đa 5MB)
+              </p>
+              <input
+                id="imageInput"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Uploaded Images */}
+            {uploadedImages.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm font-medium text-gray-700 mb-4">
+                  Hình ảnh đã tải ({uploadedImages.length})
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {uploadedImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={image}
+                        alt={`Uploaded ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-          </button>
-        </div>
-      </form>
+          </div>
 
-      {/* Nút bắt đầu kiểm định */}
-      {!inspectionStarted && (
-        <button
-          onClick={handleStartInspection}
-          className="mb-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          disabled={loading || startMut.isPending}
-        >
-          Bắt đầu kiểm định
-        </button>
+          {/* Submit Button */}
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={() => navigate('/inspector')}
+              className="flex-1 px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 rounded-lg bg-[#f57224] text-white font-medium hover:bg-[#e06818] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Dang lưu...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  Xác nhận kiểm định
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Modal Xác nhận kết quả */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 text-center">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Kết quả kiểm định
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Bạn đánh giá chiếc xe này Đạt hay Không đạt tiêu chuẩn của sàn?
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => handleFinalSubmit('passed')}
+                className="w-full py-3 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-5 h-5" />
+                Xe Đạt Tiêu Chuẩn
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFinalSubmit('failed')}
+                className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <X className="w-5 h-5" />
+                Xe KHÔNG Đạt
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors mt-2"
+              >
+                Hủy, tôi cần kiểm tra lại
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
