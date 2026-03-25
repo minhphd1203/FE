@@ -16,6 +16,7 @@ import {
 } from '../hooks/buyer/useBuyerQueries';
 import { SellerReviewForm } from '../components/SellerReviewForm';
 import { useAppSelector } from '../redux/hooks';
+import { formatChatSendError } from '../utils/chatErrors';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -77,9 +78,7 @@ export const ListingDetailPage: React.FC = () => {
     } catch (err: unknown) {
       setModalFeedback({
         type: 'error',
-        msg:
-          (err as { response?: { data?: { message?: string } } })?.response
-            ?.data?.message || 'Có lỗi xảy ra',
+        msg: formatChatSendError(err),
       });
     }
   };

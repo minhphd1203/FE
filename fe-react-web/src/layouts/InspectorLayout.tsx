@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../redux/hooks';
 import { logout } from '../redux/slices/authSlice';
@@ -18,6 +19,7 @@ const SIDEBAR_ITEMS = [
   { label: 'Trang chủ', icon: LayoutDashboard, href: '/inspector/dashboard' },
   { label: 'Danh sách kiểm định', icon: ListTodo, href: '/inspector' },
   { label: 'Lịch sử kiểm định', icon: History, href: '/inspector/history' },
+  { label: 'Tin nhắn', icon: MessageSquare, href: '/inspector/chat' },
 ];
 
 export const InspectorLayout: React.FC = () => {

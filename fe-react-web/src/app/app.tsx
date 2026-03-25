@@ -24,6 +24,7 @@ import {
   AdminTransactionsPage,
   AdminReportsPage,
   AdminSettingsPage,
+  AdminChatPage,
 } from '../pages/admin';
 import { AdminCategoriesPage } from '../pages/admin/AdminCategoriesPage';
 import {
@@ -51,6 +52,7 @@ import { InspectionListPage } from '../pages/inspector/InspectionListPage';
 import { InspectionDetailPage } from '../pages/inspector/InspectionDetailPage';
 import { InspectionHistoryPage } from '../pages/inspector/InspectionHistoryPage';
 import { InspectionHistoryDetailPage } from '../pages/inspector/InspectionHistoryDetailPage';
+import { InspectorChatPage } from '../pages/inspector/InspectorChatPage';
 import { SellerDashboardPage } from '../pages/seller/SellerDashboardPage';
 import { SellerProfilePage } from '../pages/seller/SellerProfilePage';
 import { SellerBikeDetailPage } from '../pages/seller/SellerBikeDetailPage';
@@ -160,6 +162,7 @@ export function App() {
                 />
                 <Route path="categories" element={<AdminCategoriesPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />
+                <Route path="chat" element={<AdminChatPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
             </Route>
@@ -178,6 +181,7 @@ export function App() {
                   element={<InspectionHistoryDetailPage />}
                 />
                 <Route path="dashboard" element={<InspectorStatsPage />} />
+                <Route path="chat" element={<InspectorChatPage />} />
               </Route>
             </Route>
 

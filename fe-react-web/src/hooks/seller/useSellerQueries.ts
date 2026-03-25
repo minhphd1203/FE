@@ -242,15 +242,11 @@ export function useSellerSendMessageMutation() {
       attachment?: File | null;
     }
   >({
-    mutationFn: ({ partnerId, content, bikeId, attachment }) => {
-      if (attachment) {
-        return sendSellerMessage(
-          partnerId,
-          buildMessageFormData({ content, bikeId, attachment }),
-        );
-      }
-      return sendSellerMessage(partnerId, { content, bikeId });
-    },
+    mutationFn: ({ partnerId, content, bikeId, attachment }) =>
+      sendSellerMessage(
+        partnerId,
+        buildMessageFormData({ content, bikeId, attachment }),
+      ),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['seller', 'messages'] });
     },

@@ -11,6 +11,7 @@ import {
   X,
   ChevronDown,
   DollarSign,
+  MessageSquare,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../redux/hooks';
 import { logout } from '../redux/slices/authSlice';
@@ -24,6 +25,7 @@ const SIDEBAR_ITEMS = [
   { label: 'Danh mục xe', icon: Bike, href: '/admin/categories' },
   { label: 'Giao dịch', icon: DollarSign, href: '/admin/transactions' },
   { label: 'Báo cáo', icon: FileText, href: '/admin/reports' },
+  { label: 'Tin nhắn', icon: MessageSquare, href: '/admin/chat' },
   { label: 'Cài đặt', icon: Settings, href: '/admin/settings' },
 ];
 

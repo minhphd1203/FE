@@ -6,6 +6,8 @@ import {
   getBikeDetails,
   getInspectionDetails,
   getInspectionHistory,
+  getInspectorConversationMessages,
+  getInspectorConversationsList,
   getInspectorDashboard,
   getPendingBikes,
   sendInspectorMessage,
@@ -16,6 +18,11 @@ import { queryKeys } from '../query-keys';
 import { normalizeInspectorBikeDetail } from '../../utils/inspectorBikeDetail';
 import { profileApi } from '../../apis/profileApi';
 import { buildMessageFormData } from '../../utils/messageFormData';
+import {
+  type StaffConversationRow,
+  unwrapMessageList,
+  unwrapStaffConversationList,
+} from '../../utils/staffConversationUnwrap';
 
 export function useInspectorPendingBikesQuery() {
   return useQuery({
@@ -139,7 +146,44 @@ export function useInspectorSellerProfileQuery(
   });
 }
 
+export function useInspectorConversationsQuery() {
+  return useQuery({
+    queryKey: queryKeys.inspector.conversations(),
+    queryFn: async (): Promise<StaffConversationRow[]> => {
+      const raw = await getInspectorConversationsList();
+      return unwrapStaffConversationList(raw);
+    },
+  });
+}
+
+export function useInspectorConversationMessagesQuery(
+  userId: string | undefined,
+  params?: { bikeId?: string; page?: number; limit?: number },
+) {
+  const uid = userId?.trim() ?? '';
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 50;
+  const bikeId = params?.bikeId?.trim();
+  return useQuery({
+    queryKey: queryKeys.inspector.conversationMessages(uid, {
+      bikeId,
+      page,
+      limit,
+    }),
+    queryFn: async () => {
+      const raw = await getInspectorConversationMessages(uid, {
+        bikeId,
+        page,
+        limit,
+      });
+      return unwrapMessageList(raw);
+    },
+    enabled: Boolean(uid),
+  });
+}
+
 export function useInspectorSendMessageMutation() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       userId,
@@ -159,11 +203,28 @@ export function useInspectorSendMessageMutation() {
       });
       return sendInspectorMessage(userId.trim(), fd);
     },
+    onSettled: () => {
+      void qc.invalidateQueries({
+        queryKey: queryKeys.inspector.conversations(),
+      });
+      void qc.invalidateQueries({
+        queryKey: ['inspector', 'conversation-messages'],
+      });
+    },
   });
 }
 
 export function useInspectorCloseConversationMutation() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => closeInspectorConversation(userId.trim()),
+    onSettled: () => {
+      void qc.invalidateQueries({
+        queryKey: queryKeys.inspector.conversations(),
+      });
+      void qc.invalidateQueries({
+        queryKey: ['inspector', 'conversation-messages'],
+      });
+    },
   });
 }
