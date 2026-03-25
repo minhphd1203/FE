@@ -81,8 +81,12 @@ export interface AdminTransaction {
 
 export interface AdminReport {
   id: string;
-  status: 'pending' | 'resolved' | 'closed';
-  reason: string;
+  status: 'pending' | 'resolved' | 'closed' | 'rejected';
+  reason?: string;
+  reasonId?: string | null;
+  reasonText?: string | null;
+  description?: string | null;
+  reportedBikeId?: string | null;
   resolution?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -152,10 +156,10 @@ export const adminApi = {
     return data;
   },
 
-  /** DELETE /api/admin/v1/bike/:id - Xóa tin đăng */
+  /** DELETE /api/admin/v1/bikes/:bikeId — segment bikes (số nhiều), khớp BE */
   deleteBike: async (bikeId: string): Promise<ApiResponse<AdminBike>> => {
     const { data } = await apiClient.delete<ApiResponse<AdminBike>>(
-      `/admin/v1/bike/${bikeId}`,
+      `/admin/v1/bikes/${bikeId}`,
     );
     return data;
   },
@@ -217,7 +221,7 @@ export const adminApi = {
 
   /** GET /api/admin/v1/report - Lấy danh sách báo cáo */
   getReports: async (params?: {
-    status?: 'pending' | 'resolved' | 'closed';
+    status?: 'pending' | 'resolved' | 'closed' | 'rejected';
   }): Promise<ApiResponse<AdminReport[]>> => {
     const { data } = await apiClient.get<ApiResponse<AdminReport[]>>(
       '/admin/v1/report',
@@ -229,11 +233,34 @@ export const adminApi = {
   /** POST /api/admin/v1/report/:id/resolve - Giải quyết báo cáo */
   resolveReport: async (
     reportId: string,
-    body: { resolution: string; status?: 'resolved' | 'closed' },
+    body: {
+      status: 'resolved' | 'closed' | 'rejected';
+      resolution: string;
+    },
   ): Promise<ApiResponse<AdminReport>> => {
     const { data } = await apiClient.post<ApiResponse<AdminReport>>(
       `/admin/v1/report/${reportId}/resolve`,
       body,
+    );
+    return data;
+  },
+
+  /** POST multipart — nhắn buyer/seller */
+  sendMessage: async (
+    userId: string,
+    formData: FormData,
+  ): Promise<ApiResponse<unknown>> => {
+    const { data } = await apiClient.post<ApiResponse<unknown>>(
+      `/admin/v1/messages/${userId}`,
+      formData,
+    );
+    return data;
+  },
+
+  /** POST đóng hội thoại với đối tác */
+  closeConversation: async (userId: string): Promise<ApiResponse<unknown>> => {
+    const { data } = await apiClient.post<ApiResponse<unknown>>(
+      `/admin/v1/conversations/${userId}/close`,
     );
     return data;
   },

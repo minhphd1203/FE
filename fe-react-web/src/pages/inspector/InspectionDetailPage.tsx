@@ -9,12 +9,16 @@ import {
   Image as ImageIcon,
   X,
   ExternalLink,
+  MessageSquare,
+  PhoneOff,
 } from 'lucide-react';
 import {
   useInspectorBikeDetailQuery,
   useInspectorSellerProfileQuery,
   useInspectorStartInspectionMutation,
   useInspectorSubmitInspectionMutation,
+  useInspectorSendMessageMutation,
+  useInspectorCloseConversationMutation,
 } from '../../hooks/inspector/useInspectorQueries';
 import { formatInspectorPrice } from '../../utils/inspectorBikeDetail';
 import { formatDateTimeVi } from '../../utils/formatDisplayDate';
@@ -48,7 +52,12 @@ export const InspectionDetailPage: React.FC = () => {
   );
   const startMut = useInspectorStartInspectionMutation();
   const submitMut = useInspectorSubmitInspectionMutation();
+  const sendMsgMut = useInspectorSendMessageMutation();
+  const closeConvMut = useInspectorCloseConversationMutation();
   const [error, setError] = useState<string | null>(null);
+  const [showSellerMsgModal, setShowSellerMsgModal] = useState(false);
+  const [sellerMsgContent, setSellerMsgContent] = useState('');
+  const [sellerMsgFile, setSellerMsgFile] = useState<File | null>(null);
   const [inspectionStarted, setInspectionStarted] = useState(false);
 
   const loading = bikeLoading || startMut.isPending;
@@ -271,8 +280,126 @@ export const InspectionDetailPage: React.FC = () => {
                 . Vẫn hiển thị đủ dữ liệu tin đăng bên dưới.
               </p>
             )}
+            {vehicle.sellerId && (
+              <div className="md:col-span-2 flex flex-wrap gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSellerMsgContent('');
+                    setSellerMsgFile(null);
+                    setShowSellerMsgModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Nhắn seller
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (
+                      !window.confirm(
+                        'Đóng hội thoại với seller này? (PUT inspector conversations/close)',
+                      )
+                    ) {
+                      return;
+                    }
+                    try {
+                      await closeConvMut.mutateAsync(vehicle.sellerId!);
+                      window.alert('Đã gửi yêu cầu đóng hội thoại.');
+                    } catch (err: unknown) {
+                      const st = (err as { response?: { status?: number } })
+                        ?.response?.status;
+                      if (st === 404) {
+                        window.alert('Chưa có tin nhắn giữa hai bên (404).');
+                      }
+                    }
+                  }}
+                  disabled={closeConvMut.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <PhoneOff className="w-4 h-4" />
+                  Đóng hội thoại
+                </button>
+              </div>
+            )}
           </div>
         </section>
+
+        {showSellerMsgModal && vehicle.sellerId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Nhắn người bán
+              </h3>
+              <p className="mt-1 text-xs text-gray-500 break-all">
+                sellerId: {vehicle.sellerId}
+                <br />
+                bikeId: {vehicle.id}
+              </p>
+              <form
+                className="mt-4 space-y-3"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!sellerMsgContent.trim() || !vehicle.sellerId) return;
+                  try {
+                    await sendMsgMut.mutateAsync({
+                      userId: vehicle.sellerId,
+                      content: sellerMsgContent.trim(),
+                      bikeId: vehicle.id,
+                      attachment: sellerMsgFile,
+                    });
+                    setShowSellerMsgModal(false);
+                    setSellerMsgContent('');
+                    setSellerMsgFile(null);
+                  } catch (err: unknown) {
+                    const msg =
+                      (err as { response?: { data?: { message?: string } } })
+                        ?.response?.data?.message || 'Gửi tin thất bại.';
+                    window.alert(msg);
+                  }
+                }}
+              >
+                <textarea
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[100px]"
+                  value={sellerMsgContent}
+                  onChange={(e) => setSellerMsgContent(e.target.value)}
+                  placeholder="Nội dung (bắt buộc)…"
+                  required
+                />
+                <div>
+                  <label className="text-xs text-gray-600">
+                    Đính kèm (tuỳ chọn)
+                  </label>
+                  <input
+                    type="file"
+                    className="mt-1 block w-full text-sm"
+                    accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+                    onChange={(e) =>
+                      setSellerMsgFile(e.target.files?.[0] ?? null)
+                    }
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSellerMsgModal(false)}
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
+                  >
+                    Huỷ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendMsgMut.isPending}
+                    className="rounded-lg bg-[#f57224] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {sendMsgMut.isPending ? 'Đang gửi…' : 'Gửi'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">

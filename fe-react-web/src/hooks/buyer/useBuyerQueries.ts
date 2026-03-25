@@ -7,6 +7,7 @@ import {
   getMessagesWithSeller,
   getRecommendedBikes,
   getTransactionDetail,
+  getReportReasons,
   getTransactions,
   getWishlist,
   removeFromWishlist,
@@ -15,8 +16,10 @@ import {
   searchBikes,
   sendMessageToSeller,
   type BuyerBike,
+  type ReportReason,
   type WishlistItem,
 } from '../../api/buyerApi';
+import { buildMessageFormData } from '../../utils/messageFormData';
 import {
   createPaymentUrl,
   createRemainingPaymentUrl,
@@ -222,11 +225,20 @@ export function useBuyerCancelTransactionMutation() {
   });
 }
 
+export function useBuyerReportReasonsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.buyer.reportReasons(),
+    queryFn: () => getReportReasons(),
+    enabled: options?.enabled ?? true,
+  });
+}
+
 export function useBuyerReportViolationMutation() {
   return useMutation({
     mutationFn: (data: {
-      reason: string;
-      description?: string;
+      reasonId: string;
+      reasonText?: string;
+      description: string;
       reportedUserId?: string;
       reportedBikeId?: string;
     }) => reportViolation(data),
@@ -251,15 +263,27 @@ export function useBuyerSendMessageMutation() {
       sellerId,
       content,
       bikeId,
+      attachment,
     }: {
       sellerId: string;
       content: string;
       bikeId?: string;
-    }) =>
-      sendMessageToSeller(sellerId.trim(), {
+      attachment?: File | null;
+    }) => {
+      const sid = sellerId.trim();
+      if (attachment) {
+        const fd = buildMessageFormData({
+          content,
+          bikeId: bikeId?.trim(),
+          attachment,
+        });
+        return sendMessageToSeller(sid, fd);
+      }
+      return sendMessageToSeller(sid, {
         content,
         ...(bikeId?.trim() ? { bikeId: bikeId.trim() } : {}),
-      }),
+      });
+    },
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({
         queryKey: ['buyer', 'messages', variables.sellerId.trim()],
@@ -368,4 +392,4 @@ export function useBuyerPaymentVerifyQuery(search: string) {
   });
 }
 
-export type { BuyerBike };
+export type { BuyerBike, ReportReason };

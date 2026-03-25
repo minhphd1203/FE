@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Paperclip } from 'lucide-react';
 import {
   useSellerPartnerMessagesQuery,
   useSellerSendMessageMutation,
 } from '../../hooks/seller/useSellerQueries';
 import { asRecord, pickStr, unwrapApiList } from '../../utils/unwrapApiList';
+import { resolvePublicFileUrl } from '../../utils/publicFileUrl';
 
 function errMsg(err: unknown): string {
   const ax = err as { response?: { data?: { message?: string } } };
@@ -18,6 +19,7 @@ export const SellerMessageThreadPage: React.FC = () => {
   const qpBike = searchParams.get('bikeId') || '';
   const [bikeId, setBikeId] = useState(qpBike);
   const [content, setContent] = useState('');
+  const [attachment, setAttachment] = useState<File | null>(null);
 
   useEffect(() => {
     if (qpBike) setBikeId(qpBike);
@@ -68,6 +70,10 @@ export const SellerMessageThreadPage: React.FC = () => {
             const r = asRecord(m) ?? {};
             const text = pickStr(r, ['content', 'message', 'body', 'text']);
             const at = pickStr(r, ['createdAt', 'sentAt', 'timestamp']);
+            const rawFile = pickStr(r, ['fileUrl', 'file_url']);
+            const fileUrl = rawFile ? resolvePublicFileUrl(rawFile) : '';
+            const isImg =
+              fileUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(fileUrl);
             return (
               <div
                 key={pickStr(r, ['id', '_id']) || `m-${i}`}
@@ -77,6 +83,31 @@ export const SellerMessageThreadPage: React.FC = () => {
                 <p className="text-gray-800 whitespace-pre-wrap">
                   {text || JSON.stringify(m)}
                 </p>
+                {fileUrl &&
+                  (isImg ? (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block"
+                    >
+                      <img
+                        src={fileUrl}
+                        alt=""
+                        className="max-h-40 rounded-md border border-gray-100"
+                      />
+                    </a>
+                  ) : (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-[#f57224] underline"
+                    >
+                      <Paperclip className="w-3 h-3" />
+                      Tệp đính kèm
+                    </a>
+                  ))}
               </div>
             );
           })}
@@ -97,9 +128,11 @@ export const SellerMessageThreadPage: React.FC = () => {
               partnerId,
               bikeId: bikeId.trim(),
               content: content.trim(),
+              attachment,
             })
             .then(() => {
               setContent('');
+              setAttachment(null);
               void msgQ.refetch();
             })
             .catch((err) => window.alert(errMsg(err)));
@@ -112,6 +145,17 @@ export const SellerMessageThreadPage: React.FC = () => {
           onChange={(e) => setContent(e.target.value)}
           placeholder="Nội dung tin nhắn…"
         />
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          <Paperclip className="w-3.5 h-3.5" />
+          <span>Đính kèm</span>
+          <input
+            type="file"
+            className="text-xs"
+            accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+            onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
+          />
+          {attachment && <span className="truncate">{attachment.name}</span>}
+        </label>
         <button
           type="submit"
           disabled={

@@ -10,7 +10,7 @@ import {
 import { queryKeys } from '../query-keys';
 
 const adminReportStatusKey = (
-  filter: 'all' | 'pending' | 'resolved' | 'closed',
+  filter: 'all' | 'pending' | 'resolved' | 'closed' | 'rejected',
 ) => (filter === 'all' ? 'all' : filter);
 
 const adminTxStatusKey = (
@@ -44,7 +44,7 @@ export function useAdminUsersQuery() {
 }
 
 export function useAdminReportsQuery(
-  filterStatus: 'all' | 'pending' | 'resolved' | 'closed',
+  filterStatus: 'all' | 'pending' | 'resolved' | 'closed' | 'rejected',
 ) {
   const sk = adminReportStatusKey(filterStatus);
   return useQuery({
@@ -135,7 +135,7 @@ export function useAdminResolveReportMutation() {
     }: {
       reportId: string;
       resolution: string;
-      status: 'resolved' | 'closed';
+      status: 'resolved' | 'closed' | 'rejected';
     }) => adminApi.resolveReport(reportId, { resolution, status }),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['admin', 'reports'] });
@@ -193,6 +193,24 @@ export function useAdminDeleteCategoryMutation() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.admin.categories() });
     },
+  });
+}
+
+export function useAdminSendMessageMutation() {
+  return useMutation({
+    mutationFn: ({
+      userId,
+      formData,
+    }: {
+      userId: string;
+      formData: FormData;
+    }) => adminApi.sendMessage(userId, formData),
+  });
+}
+
+export function useAdminCloseConversationMutation() {
+  return useMutation({
+    mutationFn: (userId: string) => adminApi.closeConversation(userId),
   });
 }
 

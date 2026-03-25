@@ -1,5 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  useParams,
+  Link,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { ChevronLeft, MessageSquare, AlertTriangle, X } from 'lucide-react';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import {
@@ -7,6 +12,7 @@ import {
   useBuyerBikeDetailsQuery,
   useBuyerSendMessageMutation,
   useBuyerReportViolationMutation,
+  useBuyerReportReasonsQuery,
 } from '../hooks/buyer/useBuyerQueries';
 import { SellerReviewForm } from '../components/SellerReviewForm';
 import { useAppSelector } from '../redux/hooks';
@@ -14,6 +20,7 @@ import { useAppSelector } from '../redux/hooks';
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAppSelector((s) => s.auth.user);
   const {
     data: listing,
@@ -26,7 +33,9 @@ export const ListingDetailPage: React.FC = () => {
   const [showChatModal, setShowChatModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
-  const [reportReason, setReportReason] = useState('');
+  const [chatAttachment, setChatAttachment] = useState<File | null>(null);
+  const [reportReasonId, setReportReasonId] = useState('');
+  const [reportReasonText, setReportReasonText] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [modalFeedback, setModalFeedback] = useState<{
     type: 'success' | 'error';
@@ -35,6 +44,17 @@ export const ListingDetailPage: React.FC = () => {
 
   const sendMut = useBuyerSendMessageMutation();
   const reportMut = useBuyerReportViolationMutation();
+  const { data: reportReasons = [], isLoading: reasonsLoading } =
+    useBuyerReportReasonsQuery({ enabled: showReportModal });
+
+  useEffect(() => {
+    if (searchParams.get('openReport') !== '1') return;
+    setShowReportModal(true);
+    setModalFeedback(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete('openReport');
+    setSearchParams(next, { replace: true });
+  }, [id, searchParams, setSearchParams]);
 
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,11 +63,13 @@ export const ListingDetailPage: React.FC = () => {
     try {
       await sendMut.mutateAsync({
         sellerId: listing.seller.id,
-        content: chatMessage,
+        content: chatMessage.trim(),
         bikeId: listing.id,
+        attachment: chatAttachment,
       });
       setModalFeedback({ type: 'success', msg: 'Gửi tin nhắn thành công!' });
       setChatMessage('');
+      setChatAttachment(null);
       setTimeout(() => {
         setShowChatModal(false);
         setModalFeedback(null);
@@ -65,15 +87,40 @@ export const ListingDetailPage: React.FC = () => {
   const handleSendReport = async (e: React.FormEvent) => {
     e.preventDefault();
     setModalFeedback(null);
+    const desc = reportDetails.trim();
+    if (!reportReasonId) {
+      setModalFeedback({
+        type: 'error',
+        msg: 'Vui lòng chọn lý do báo cáo.',
+      });
+      return;
+    }
+    if (reportReasonId === 'others' && !reportReasonText.trim()) {
+      setModalFeedback({
+        type: 'error',
+        msg: 'Vui lòng mô tả lý do (Khác).',
+      });
+      return;
+    }
+    if (!desc) {
+      setModalFeedback({
+        type: 'error',
+        msg: 'Vui lòng nhập mô tả chi tiết.',
+      });
+      return;
+    }
     try {
       await reportMut.mutateAsync({
-        reason: reportReason,
-        description: reportDetails.trim() || undefined,
+        reasonId: reportReasonId,
+        reasonText:
+          reportReasonId === 'others' ? reportReasonText.trim() : undefined,
+        description: desc,
         reportedUserId: listing?.seller?.id,
         reportedBikeId: listing?.id,
       });
       setModalFeedback({ type: 'success', msg: 'Đã gửi báo cáo vi phạm.' });
-      setReportReason('');
+      setReportReasonId('');
+      setReportReasonText('');
       setReportDetails('');
       setTimeout(() => {
         setShowReportModal(false);
@@ -250,6 +297,8 @@ export const ListingDetailPage: React.FC = () => {
                   onClick={() => {
                     setShowReportModal(true);
                     setModalFeedback(null);
+                    setReportReasonId('');
+                    setReportReasonText('');
                   }}
                   className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 font-medium flex items-center gap-2 transition-colors ml-auto sm:ml-4"
                 >
@@ -308,6 +357,19 @@ export const ListingDetailPage: React.FC = () => {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Đính kèm (tuỳ chọn, tối đa 10MB)
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+                  className="w-full text-sm text-gray-600"
+                  onChange={(e) =>
+                    setChatAttachment(e.target.files?.[0] ?? null)
+                  }
+                />
+              </div>
               <div className="flex items-center justify-between">
                 <div>
                   {modalFeedback && (
@@ -361,24 +423,49 @@ export const ListingDetailPage: React.FC = () => {
                 <label className="block mb-1.5 text-sm font-semibold text-gray-700">
                   Lý do báo cáo
                 </label>
-                <input
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-colors"
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
+                <select
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-colors bg-white"
+                  value={reportReasonId}
+                  onChange={(e) => setReportReasonId(e.target.value)}
                   required
-                  placeholder="Ví dụ: Xe không có thật, Lừa đảo..."
-                />
+                  disabled={reasonsLoading}
+                >
+                  <option value="">
+                    {reasonsLoading ? 'Đang tải…' : 'Chọn lý do'}
+                  </option>
+                  {reportReasons.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+              {reportReasonId === 'others' && (
+                <div>
+                  <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                    Mô tả lý do (Khác) <span className="text-red-600">*</span>
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none transition-colors"
+                    value={reportReasonText}
+                    onChange={(e) => setReportReasonText(e.target.value)}
+                    rows={2}
+                    placeholder="Nêu rõ lý do…"
+                    required
+                  />
+                </div>
+              )}
               <div>
                 <label className="block mb-1.5 text-sm font-semibold text-gray-700">
-                  Chứng cứ chi tiết
+                  Mô tả chi tiết <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none transition-colors"
                   value={reportDetails}
                   onChange={(e) => setReportDetails(e.target.value)}
                   rows={3}
-                  placeholder="Mô tả chi tiết vi phạm để hỗ trợ Admin xử lý..."
+                  placeholder="Mô tả chi tiết vi phạm để hỗ trợ Admin xử lý…"
+                  required
                 />
               </div>
               <div className="flex items-center justify-between pt-2">

@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SearchBikesParams } from '../../api/bikeApi';
 import {
+  closeInspectorConversation,
   fetchBikesForInspector,
   getBikeDetails,
   getInspectionDetails,
   getInspectionHistory,
   getInspectorDashboard,
   getPendingBikes,
+  sendInspectorMessage,
   startInspection,
   submitInspection,
 } from '../../apis/inspectorApi';
 import { queryKeys } from '../query-keys';
 import { normalizeInspectorBikeDetail } from '../../utils/inspectorBikeDetail';
 import { profileApi } from '../../apis/profileApi';
+import { buildMessageFormData } from '../../utils/messageFormData';
 
 export function useInspectorPendingBikesQuery() {
   return useQuery({
@@ -133,5 +136,34 @@ export function useInspectorSellerProfileQuery(
     queryFn: () => profileApi.getProfileByUserId(id),
     enabled: Boolean(id),
     retry: 1,
+  });
+}
+
+export function useInspectorSendMessageMutation() {
+  return useMutation({
+    mutationFn: ({
+      userId,
+      content,
+      bikeId,
+      attachment,
+    }: {
+      userId: string;
+      content: string;
+      bikeId?: string;
+      attachment?: File | null;
+    }) => {
+      const fd = buildMessageFormData({
+        content,
+        bikeId: bikeId?.trim(),
+        attachment,
+      });
+      return sendInspectorMessage(userId.trim(), fd);
+    },
+  });
+}
+
+export function useInspectorCloseConversationMutation() {
+  return useMutation({
+    mutationFn: (userId: string) => closeInspectorConversation(userId.trim()),
   });
 }

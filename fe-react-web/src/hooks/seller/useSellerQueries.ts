@@ -36,6 +36,7 @@ import {
   type SellerTransactionUpdateBody,
 } from '../../apis/sellerApi';
 import { queryKeys } from '../query-keys';
+import { buildMessageFormData } from '../../utils/messageFormData';
 
 export function useSellerListingCategoriesQuery() {
   return useQuery({
@@ -234,10 +235,22 @@ export function useSellerSendMessageMutation() {
   return useMutation<
     SellerSendMessageResponse,
     unknown,
-    { partnerId: string; content: string; bikeId: string }
+    {
+      partnerId: string;
+      content: string;
+      bikeId: string;
+      attachment?: File | null;
+    }
   >({
-    mutationFn: ({ partnerId, content, bikeId }) =>
-      sendSellerMessage(partnerId, { content, bikeId }),
+    mutationFn: ({ partnerId, content, bikeId, attachment }) => {
+      if (attachment) {
+        return sendSellerMessage(
+          partnerId,
+          buildMessageFormData({ content, bikeId, attachment }),
+        );
+      }
+      return sendSellerMessage(partnerId, { content, bikeId });
+    },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['seller', 'messages'] });
     },

@@ -114,6 +114,7 @@ export function App() {
                   path="bao-cao-vi-pham"
                   element={<ReportViolationPage />}
                 />
+                <Route path="bao-cao" element={<ReportViolationPage />} />
                 <Route path="nhan-tin-seller" element={<MessageSellerPage />} />
                 <Route path="yeu-thich" element={<WishlistPage />} />
                 <Route

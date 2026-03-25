@@ -96,6 +96,14 @@ export type BuyerMessage = {
   content?: string;
   createdAt?: string;
   bikeId?: string;
+  fileUrl?: string | null;
+};
+
+export type ReportReason = {
+  id: string;
+  name: string;
+  description?: string;
+  isSystemAutoResolvable?: boolean;
 };
 
 const unwrap = <T>(payload: T | ApiEnvelope<T>): T => {
@@ -220,12 +228,22 @@ export async function removeFromWishlist(bikeId: string) {
   return response.data;
 }
 
+// 9a. Lý do báo cáo (dropdown)
+export async function getReportReasons(): Promise<ReportReason[]> {
+  const response = await apiClient.get<ApiEnvelope<ReportReason[]>>(
+    '/buyer/v1/report-reasons',
+  );
+  const list = unwrap<ReportReason[]>(response.data);
+  return Array.isArray(list) ? list : [];
+}
+
 // 9. Report violation
 export async function reportViolation(data: {
+  reasonId: string;
+  reasonText?: string;
+  description: string;
   reportedUserId?: string;
   reportedBikeId?: string;
-  reason: string;
-  description?: string;
 }) {
   const response = await apiClient.post('/buyer/v1/reports', data);
   return response.data;
@@ -242,10 +260,10 @@ export async function reviewSeller(data: {
   return response.data;
 }
 
-// 11. Send message to seller
+// 11. Send message to seller (JSON hoặc multipart có attachment)
 export async function sendMessageToSeller(
   sellerId: string,
-  data: { content: string; bikeId?: string },
+  data: { content: string; bikeId?: string } | FormData,
 ) {
   const response = await apiClient.post(`/buyer/v1/messages/${sellerId}`, data);
   return response.data;

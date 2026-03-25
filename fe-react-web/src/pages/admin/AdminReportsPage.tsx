@@ -5,7 +5,10 @@ import type { AdminReport } from '../../apis/adminApi';
 import {
   useAdminReportsQuery,
   useAdminResolveReportMutation,
+  useAdminSendMessageMutation,
+  useAdminCloseConversationMutation,
 } from '../../hooks/admin/useAdminQueries';
+import { buildMessageFormData } from '../../utils/messageFormData';
 import {
   Search,
   Filter,
@@ -15,13 +18,26 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  MessageSquare,
+  Ban,
+  PhoneOff,
 } from 'lucide-react';
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-700' },
   resolved: { label: 'Đã giải quyết', color: 'bg-green-100 text-green-700' },
   closed: { label: 'Đã đóng', color: 'bg-gray-100 text-gray-700' },
+  rejected: { label: 'Từ chối', color: 'bg-red-50 text-red-700' },
 };
+
+function reportReasonSummary(report: AdminReport): string {
+  const t =
+    report.reasonText?.trim() ||
+    report.reason?.trim() ||
+    report.description?.trim();
+  if (t) return t.length > 120 ? `${t.slice(0, 120)}…` : t;
+  return report.reasonId?.trim() || '—';
+}
 
 const formatDate = (date?: string | null) => {
   if (!date) return '—';
@@ -44,9 +60,14 @@ type ReportDetailsModalProps = {
   report: AdminReport | null;
   onResolve: (
     report: AdminReport,
-    status: 'resolved' | 'closed',
+    status: 'resolved' | 'closed' | 'rejected',
     resolution: string,
   ) => Promise<void>;
+  onMessageUser: (report: AdminReport, target: 'reporter' | 'reported') => void;
+  onCloseConversation: (
+    report: AdminReport,
+    target: 'reporter' | 'reported',
+  ) => void;
   isBusy: boolean;
 };
 
@@ -55,6 +76,8 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
   onOpenChange,
   report,
   onResolve,
+  onMessageUser,
+  onCloseConversation,
   isBusy,
 }) => {
   const [resolution, setResolution] = useState('');
@@ -73,16 +96,19 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
     {
       title: 'Báo cáo được gửi',
       when: report.createdAt,
-      detail: report.reason,
+      detail: reportReasonSummary(report),
     },
   ];
 
   if (report.status !== 'pending') {
+    const title =
+      report.status === 'resolved'
+        ? 'Báo cáo được giải quyết'
+        : report.status === 'rejected'
+          ? 'Báo cáo bị từ chối'
+          : 'Báo cáo được đóng';
     history.push({
-      title:
-        report.status === 'resolved'
-          ? 'Báo cáo được giải quyết'
-          : 'Báo cáo được đóng',
+      title,
       when: report.updatedAt ?? report.resolvedAt ?? report.createdAt,
       detail: report.resolution || 'Không có nội dung',
     });
@@ -182,10 +208,31 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
                   </div>
                   <div className="sm:col-span-2">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Lý do
+                      Lý do / mô tả
                     </div>
-                    <div className="mt-1 text-sm text-gray-900">
-                      {report.reason}
+                    <div className="mt-1 text-sm text-gray-900 space-y-1">
+                      {report.reasonId && (
+                        <p className="text-xs text-gray-500 font-mono">
+                          reasonId: {report.reasonId}
+                        </p>
+                      )}
+                      {report.reasonText && (
+                        <p className="whitespace-pre-wrap">
+                          Lý do (text): {report.reasonText}
+                        </p>
+                      )}
+                      {report.reason && (
+                        <p className="whitespace-pre-wrap">{report.reason}</p>
+                      )}
+                      {report.description && (
+                        <p className="whitespace-pre-wrap text-gray-700">
+                          {report.description}
+                        </p>
+                      )}
+                      {!report.reasonText &&
+                        !report.reason &&
+                        !report.description &&
+                        '—'}
                     </div>
                   </div>
                   <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
@@ -274,20 +321,95 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
             </Tabs.Root>
           </div>
 
+          {report.status === 'pending' && (
+            <div className="mt-5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Ghi chú xử lý (resolution)
+              </label>
+              <textarea
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#f57224] focus:outline-none focus:ring-2 focus:ring-[#f57224]/20"
+                rows={3}
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                placeholder="Nội dung gửi kèm khi giải quyết, từ chối hoặc đóng báo cáo…"
+              />
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+            <button
+              type="button"
+              disabled={!report.reporter?.id}
+              onClick={() => onMessageUser(report, 'reporter')}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Nhắn buyer
+            </button>
+            <button
+              type="button"
+              disabled={!report.reportedUser?.id}
+              onClick={() => onMessageUser(report, 'reported')}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Nhắn seller
+            </button>
+            <button
+              type="button"
+              disabled={!report.reporter?.id}
+              onClick={() => onCloseConversation(report, 'reporter')}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              <PhoneOff className="w-4 h-4" />
+              Đóng HĐ (buyer)
+            </button>
+            <button
+              type="button"
+              disabled={!report.reportedUser?.id}
+              onClick={() => onCloseConversation(report, 'reported')}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              <PhoneOff className="w-4 h-4" />
+              Đóng HĐ (seller)
+            </button>
+          </div>
+
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-gray-500">
               Mã báo cáo:{' '}
               <span className="font-medium text-gray-700">{report.id}</span>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
                 disabled={isBusy || report.status !== 'pending'}
-                onClick={() => onResolve(report, 'resolved', resolution)}
+                onClick={() =>
+                  onResolve(
+                    report,
+                    'resolved',
+                    resolution.trim() || 'Đã giải quyết',
+                  )
+                }
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
                 Giải quyết
+              </button>
+              <button
+                type="button"
+                disabled={isBusy || report.status !== 'pending'}
+                onClick={() =>
+                  onResolve(
+                    report,
+                    'rejected',
+                    resolution.trim() || 'Từ chối báo cáo',
+                  )
+                }
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+              >
+                <Ban className="w-4 h-4" />
+                Từ chối
               </button>
               <button
                 type="button"
@@ -311,7 +433,7 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
 export const AdminReportsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<
-    'all' | 'pending' | 'resolved' | 'closed'
+    'all' | 'pending' | 'resolved' | 'closed' | 'rejected'
   >('all');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -319,6 +441,13 @@ export const AdminReportsPage: React.FC = () => {
     null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [msgTarget, setMsgTarget] = useState<{
+    userId: string;
+    bikeId?: string;
+    title: string;
+  } | null>(null);
+  const [msgContent, setMsgContent] = useState('');
+  const [msgFile, setMsgFile] = useState<File | null>(null);
 
   const itemsPerPage = 10;
 
@@ -328,17 +457,26 @@ export const AdminReportsPage: React.FC = () => {
     refetch,
   } = useAdminReportsQuery(filterStatus);
   const resolveMut = useAdminResolveReportMutation();
+  const sendMsgMut = useAdminSendMessageMutation();
+  const closeConvMut = useAdminCloseConversationMutation();
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return reports.filter((report) => {
       if (!term) return true;
-      return (
-        report.reason.toLowerCase().includes(term) ||
-        report.reporter?.name.toLowerCase().includes(term) ||
-        report.reportedUser?.name.toLowerCase().includes(term) ||
-        report.reportedBike?.title.toLowerCase().includes(term)
-      );
+      const hay = [
+        report.reason,
+        report.reasonText,
+        report.description,
+        report.reasonId,
+        report.reporter?.name,
+        report.reportedUser?.name,
+        report.reportedBike?.title,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(term);
     });
   }, [reports, searchTerm]);
 
@@ -361,7 +499,7 @@ export const AdminReportsPage: React.FC = () => {
 
   const handleResolve = async (
     report: AdminReport,
-    status: 'resolved' | 'closed',
+    status: 'resolved' | 'closed' | 'rejected',
     resolution: string,
   ) => {
     setActiveId(report.id);
@@ -380,12 +518,163 @@ export const AdminReportsPage: React.FC = () => {
     }
   };
 
+  const openMessageToUser = (
+    report: AdminReport,
+    target: 'reporter' | 'reported',
+  ) => {
+    const userId =
+      target === 'reporter' ? report.reporter?.id : report.reportedUser?.id;
+    if (!userId) return;
+    const bikeId =
+      report.reportedBike?.id ?? report.reportedBikeId ?? undefined;
+    setMsgTarget({
+      userId,
+      bikeId: bikeId?.trim() || undefined,
+      title:
+        target === 'reporter'
+          ? 'Người báo cáo (buyer)'
+          : 'Người bị báo cáo (seller)',
+    });
+    setMsgContent('');
+    setMsgFile(null);
+  };
+
+  const handleSendAdminMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!msgTarget || !msgContent.trim()) return;
+    try {
+      const fd = buildMessageFormData({
+        content: msgContent.trim(),
+        bikeId: msgTarget.bikeId,
+        attachment: msgFile,
+      });
+      await sendMsgMut.mutateAsync({ userId: msgTarget.userId, formData: fd });
+      setMsgTarget(null);
+      setMsgContent('');
+      setMsgFile(null);
+    } catch (err: unknown) {
+      const ax = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      window.alert(
+        ax.response?.data?.message ||
+          (ax.response?.status
+            ? `Gửi tin thất bại (${ax.response.status}).`
+            : 'Gửi tin thất bại.'),
+      );
+    }
+  };
+
+  const handleCloseConversation = async (
+    report: AdminReport,
+    target: 'reporter' | 'reported',
+  ) => {
+    const userId =
+      target === 'reporter' ? report.reporter?.id : report.reportedUser?.id;
+    if (!userId) return;
+    if (
+      !window.confirm(
+        'Đóng hội thoại với người này? Buyer/seller sẽ không gửi tin tiếp tới admin theo luật backend.',
+      )
+    ) {
+      return;
+    }
+    try {
+      await closeConvMut.mutateAsync(userId);
+      window.alert('Đã gửi yêu cầu đóng hội thoại.');
+    } catch (err: unknown) {
+      const ax = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      const status = ax.response?.status;
+      const msg = ax.response?.data?.message;
+      if (status === 404) {
+        window.alert(
+          'Chưa có tin nhắn nào giữa admin và người dùng này — không thể đóng hội thoại (404).',
+        );
+      } else {
+        window.alert(
+          msg ||
+            (status
+              ? `Không thể đóng hội thoại (${status}).`
+              : 'Không thể đóng hội thoại.'),
+        );
+      }
+    }
+  };
+
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
   return (
     <div className="space-y-6">
+      <Dialog.Root
+        open={Boolean(msgTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMsgTarget(null);
+            setMsgContent('');
+            setMsgFile(null);
+          }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl focus:outline-none">
+            <Dialog.Title className="text-lg font-semibold text-gray-900">
+              Gửi tin nhắn — {msgTarget?.title}
+            </Dialog.Title>
+            <p className="mt-1 text-xs text-gray-500 break-all">
+              userId: {msgTarget?.userId}
+              {msgTarget?.bikeId && (
+                <>
+                  <br />
+                  bikeId: {msgTarget.bikeId}
+                </>
+              )}
+            </p>
+            <form onSubmit={handleSendAdminMessage} className="mt-4 space-y-3">
+              <textarea
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[100px]"
+                value={msgContent}
+                onChange={(e) => setMsgContent(e.target.value)}
+                placeholder="Nội dung (bắt buộc)…"
+                required
+              />
+              <div>
+                <label className="text-xs text-gray-600">
+                  Đính kèm (tuỳ chọn)
+                </label>
+                <input
+                  type="file"
+                  className="mt-1 block w-full text-sm"
+                  accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+                  onChange={(e) => setMsgFile(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Dialog.Close asChild>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
+                  >
+                    Huỷ
+                  </button>
+                </Dialog.Close>
+                <button
+                  type="submit"
+                  disabled={sendMsgMut.isPending || !msgContent.trim()}
+                  className="rounded-lg bg-[#f57224] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {sendMsgMut.isPending ? 'Đang gửi…' : 'Gửi'}
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       <ReportDetailsModal
         open={isModalOpen}
         onOpenChange={(open) => {
@@ -394,6 +683,8 @@ export const AdminReportsPage: React.FC = () => {
         }}
         report={selectedReport}
         onResolve={handleResolve}
+        onMessageUser={openMessageToUser}
+        onCloseConversation={handleCloseConversation}
         isBusy={Boolean(activeId)}
       />
 
@@ -428,6 +719,7 @@ export const AdminReportsPage: React.FC = () => {
               <option value="pending">Chờ xử lý</option>
               <option value="resolved">Đã giải quyết</option>
               <option value="closed">Đã đóng</option>
+              <option value="rejected">Từ chối</option>
             </select>
           </div>
         </div>
@@ -512,8 +804,10 @@ export const AdminReportsPage: React.FC = () => {
                           '—'
                         )}
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-700">
-                        {report.reason}
+                      <td className="px-4 py-4 text-sm text-gray-700 max-w-[220px]">
+                        <span className="line-clamp-2">
+                          {reportReasonSummary(report)}
+                        </span>
                       </td>
                       <td className="px-4 py-4">
                         <span
@@ -548,6 +842,23 @@ export const AdminReportsPage: React.FC = () => {
                           >
                             <CheckCircle className="w-4 h-4" />
                             <span>Giải quyết</span>
+                          </button>
+                          <button
+                            disabled={
+                              report.status !== 'pending' ||
+                              activeId === report.id
+                            }
+                            onClick={() =>
+                              handleResolve(
+                                report,
+                                'rejected',
+                                report.resolution ?? 'Từ chối báo cáo',
+                              )
+                            }
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                          >
+                            <Ban className="w-4 h-4" />
+                            <span>Từ chối</span>
                           </button>
                           <button
                             disabled={

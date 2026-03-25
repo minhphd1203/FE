@@ -4,14 +4,23 @@ import {
   useBuyerMessagesWithSellerQuery,
   useBuyerSendMessageMutation,
 } from '../hooks/buyer/useBuyerQueries';
-import { MessageSquare, Send, User, Clock, Bike } from 'lucide-react';
+import {
+  MessageSquare,
+  Send,
+  User,
+  Clock,
+  Bike,
+  Paperclip,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { resolvePublicFileUrl } from '../utils/publicFileUrl';
 
 export const MessageSellerPage: React.FC = () => {
   const [activeSellerId, setActiveSellerId] = useState('');
   const [activeBikeId, setActiveBikeId] = useState('');
   const [message, setMessage] = useState('');
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [error, setError] = useState('');
 
   // 1. Fetch danh sách hội thoại
@@ -45,8 +54,10 @@ export const MessageSellerPage: React.FC = () => {
         sellerId: activeSellerId,
         content: message.trim(),
         bikeId: activeBikeId || undefined,
+        attachment,
       });
       setMessage('');
+      setAttachment(null);
       refetch();
     } catch (err: unknown) {
       setError(
@@ -215,6 +226,11 @@ export const MessageSellerPage: React.FC = () => {
                   const isMine =
                     msg.senderId !== activeSellerId &&
                     msg.sender !== activeSellerId;
+                  const fileUrl = msg.fileUrl
+                    ? resolvePublicFileUrl(String(msg.fileUrl))
+                    : '';
+                  const isImage =
+                    fileUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(fileUrl);
                   return (
                     <div
                       key={idx}
@@ -233,6 +249,31 @@ export const MessageSellerPage: React.FC = () => {
                         <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
                           {msg.content ?? msg.message}
                         </p>
+                        {fileUrl &&
+                          (isImage ? (
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`mt-2 block ${isMine ? 'text-white/90' : ''}`}
+                            >
+                              <img
+                                src={fileUrl}
+                                alt="Đính kèm"
+                                className="max-h-48 rounded-lg object-cover border border-white/20"
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`mt-2 inline-flex items-center gap-1 text-sm underline ${isMine ? 'text-white/90' : 'text-[#f57224]'}`}
+                            >
+                              <Paperclip className="w-3.5 h-3.5 shrink-0" />
+                              Tệp đính kèm
+                            </a>
+                          ))}
                         {msg.createdAt && (
                           <p
                             className={`text-[10px] mt-1 text-right ${isMine ? 'text-white/80' : 'text-gray-400'}`}
@@ -254,7 +295,25 @@ export const MessageSellerPage: React.FC = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 bg-white border-t border-gray-100">
+          <div className="p-4 bg-white border-t border-gray-100 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <label className="inline-flex items-center gap-1 cursor-pointer shrink-0">
+                <Paperclip className="w-4 h-4" />
+                <span>Đính kèm</span>
+                <input
+                  type="file"
+                  className="sr-only"
+                  accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+                  disabled={!activeSellerId}
+                  onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
+                />
+              </label>
+              {attachment && (
+                <span className="truncate text-gray-700">
+                  {attachment.name}
+                </span>
+              )}
+            </div>
             <form onSubmit={handleSend} className="flex gap-2">
               <input
                 type="text"

@@ -653,7 +653,7 @@ export interface SellerSendMessageResponse {
 
 export async function sendSellerMessage(
   partnerId: string,
-  body: SellerSendMessageBody,
+  body: SellerSendMessageBody | FormData,
 ): Promise<SellerSendMessageResponse> {
   const res = await apiClient.post<SellerSendMessageResponse>(
     `/seller/v1/messages/${partnerId}`,

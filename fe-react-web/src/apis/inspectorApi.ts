@@ -2,6 +2,26 @@ import apiClient from './apiClient';
 
 import { searchBikes, SearchBikesParams } from '../api/bikeApi';
 
+export async function sendInspectorMessage(
+  userId: string,
+  formData: FormData,
+): Promise<unknown> {
+  const res = await apiClient.post(
+    `/inspector/v1/messages/${userId}`,
+    formData,
+  );
+  return res.data;
+}
+
+export async function closeInspectorConversation(
+  userId: string,
+): Promise<unknown> {
+  const res = await apiClient.put(
+    `/inspector/v1/conversations/${userId}/close`,
+  );
+  return res.data;
+}
+
 // Inspector APIs
 export const getInspectorDashboard = async () => {
   const res = await apiClient.get('/inspector/v1/dashboard');
