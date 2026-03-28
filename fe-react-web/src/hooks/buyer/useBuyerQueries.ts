@@ -344,22 +344,20 @@ export function useBuyerPaymentVerifyQuery(search: string) {
       const query = new URLSearchParams(qs.startsWith('?') ? qs.slice(1) : qs);
       const transactionId =
         query.get('transactionId') || query.get('vnp_TxnRef') || '';
+      const responseCode = query.get('vnp_ResponseCode');
+      const errorMsg = query.get('_error');
 
       try {
-        if (qs && query.get('vnp_ResponseCode')) {
-          const ret = await getVnpayReturnResult(
-            qs.startsWith('?') ? qs : `?${qs}`,
-          );
-          const status = (ret.data?.status || '').toLowerCase();
-          const isOk =
-            status.includes('success') ||
-            status.includes('paid') ||
-            query.get('vnp_ResponseCode') === '00';
+        // VNPay callback from browser redirect - check response code directly
+        if (responseCode) {
+          const isOk = responseCode === '00';
           return {
             success: isOk,
             message: isOk
               ? 'Thanh toán thành công! Giao dịch đã được xác nhận.'
-              : ret.message || 'Thanh toán chưa thành công.',
+              : errorMsg
+                ? `Thanh toán thất bại: ${decodeURIComponent(errorMsg)}`
+                : `Thanh toán thất bại (Mã lỗi: ${responseCode})`,
           };
         }
 
