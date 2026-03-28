@@ -2,16 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Paperclip } from 'lucide-react';
 import {
+  useSellerMessageThreadsQuery,
   useSellerPartnerMessagesQuery,
   useSellerSendMessageMutation,
 } from '../../hooks/seller/useSellerQueries';
 import { asRecord, pickStr, unwrapApiList } from '../../utils/unwrapApiList';
 import { resolvePublicFileUrl } from '../../utils/publicFileUrl';
-
-function errMsg(err: unknown): string {
-  const ax = err as { response?: { data?: { message?: string } } };
-  return ax.response?.data?.message || 'Gửi tin nhắn thất bại.';
-}
+import { formatChatSendError } from '../../utils/chatErrors';
 
 export const SellerMessageThreadPage: React.FC = () => {
   const { partnerId } = useParams<{ partnerId: string }>();
@@ -28,12 +25,39 @@ export const SellerMessageThreadPage: React.FC = () => {
   const msgQ = useSellerPartnerMessagesQuery(partnerId, {
     bikeId: bikeId.trim() || undefined,
   });
+  const threadsQ = useSellerMessageThreadsQuery();
   const sendMut = useSellerSendMessageMutation();
 
   const messages = useMemo(
     () => unwrapApiList(msgQ.data?.data ?? msgQ.data),
     [msgQ.data],
   );
+
+  const threadRows = useMemo(
+    () => unwrapApiList(threadsQ.data),
+    [threadsQ.data],
+  );
+
+  const conversationClosed = useMemo(() => {
+    const bid = bikeId.trim();
+    if (!partnerId || !bid) return false;
+    const row = threadRows.find((item) => {
+      const r = asRecord(item) ?? {};
+      const partner = asRecord(r.partner) ?? {};
+      const pid =
+        pickStr(r, ['partnerId', 'buyerId', 'userId', 'id']) ||
+        pickStr(partner, ['id']);
+      const bike = asRecord(r.bike) ?? {};
+      const b =
+        pickStr(r, ['bikeId', 'bike_id']) || pickStr(bike, ['id']) || '';
+      return pid === partnerId && b === bid;
+    });
+    const st = pickStr(asRecord(row) ?? {}, [
+      'conversationStatus',
+      'conversation_status',
+    ]);
+    return st === 'closed';
+  }, [threadRows, partnerId, bikeId]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 pb-12">
@@ -48,6 +72,12 @@ export const SellerMessageThreadPage: React.FC = () => {
       <p className="text-xs text-gray-500 mb-4 font-mono break-all">
         Partner: {partnerId}
       </p>
+
+      {conversationClosed && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Hội thoại đã đóng — không thể gửi tin (403 nếu thử).
+        </div>
+      )}
 
       <div className="mb-4">
         <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -122,7 +152,14 @@ export const SellerMessageThreadPage: React.FC = () => {
         className="flex flex-col gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!partnerId || !bikeId.trim() || !content.trim()) return;
+          if (
+            !partnerId ||
+            !bikeId.trim() ||
+            !content.trim() ||
+            conversationClosed
+          ) {
+            return;
+          }
           void sendMut
             .mutateAsync({
               partnerId,
@@ -135,7 +172,7 @@ export const SellerMessageThreadPage: React.FC = () => {
               setAttachment(null);
               void msgQ.refetch();
             })
-            .catch((err) => window.alert(errMsg(err)));
+            .catch((err) => window.alert(formatChatSendError(err)));
         }}
       >
         <textarea
@@ -159,7 +196,11 @@ export const SellerMessageThreadPage: React.FC = () => {
         <button
           type="submit"
           disabled={
-            sendMut.isPending || !bikeId.trim() || !content.trim() || !partnerId
+            sendMut.isPending ||
+            !bikeId.trim() ||
+            !content.trim() ||
+            !partnerId ||
+            conversationClosed
           }
           className="self-end px-6 py-2.5 rounded-lg bg-[#f57224] text-white text-sm font-semibold disabled:opacity-50"
         >

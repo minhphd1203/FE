@@ -14,6 +14,19 @@ export const queryKeys = {
     transactions: (status: string) =>
       ['admin', 'transactions', status] as const,
     categories: () => ['admin', 'categories'] as const,
+    conversations: () => ['admin', 'conversations'] as const,
+    conversationMessages: (
+      userId: string,
+      p?: { bikeId?: string; page?: number; limit?: number },
+    ) =>
+      [
+        'admin',
+        'conversation-messages',
+        userId,
+        p?.bikeId ?? '',
+        p?.page ?? 1,
+        p?.limit ?? 50,
+      ] as const,
   },
   buyer: {
     recommended: (limit: number) => ['buyer', 'recommended', limit] as const,
@@ -56,6 +69,19 @@ export const queryKeys = {
     dashboard: () => ['inspector', 'dashboard'] as const,
     searchBikes: (params: Record<string, unknown>) =>
       ['inspector', 'search-bikes', params] as const,
+    conversations: () => ['inspector', 'conversations'] as const,
+    conversationMessages: (
+      userId: string,
+      p?: { bikeId?: string; page?: number; limit?: number },
+    ) =>
+      [
+        'inspector',
+        'conversation-messages',
+        userId,
+        p?.bikeId ?? '',
+        p?.page ?? 1,
+        p?.limit ?? 50,
+      ] as const,
   },
   seller: {
     /** GET /seller/v1/bikes — tuple để key ổn định giữa các lần render */

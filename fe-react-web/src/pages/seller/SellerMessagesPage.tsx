@@ -68,9 +68,6 @@ export const SellerMessagesPage: React.FC = () => {
             'lastMessage',
           ]);
 
-          // Debugging info
-          console.log('Mapping row:', r, '-> partnerId:', partnerId);
-
           if (!partnerId) return null;
           const q = bikeId ? `?bikeId=${encodeURIComponent(bikeId)}` : '';
           return (

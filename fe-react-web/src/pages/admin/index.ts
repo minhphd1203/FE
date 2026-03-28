@@ -4,3 +4,4 @@ export { AdminListingsPage } from './AdminListingsPage';
 export { AdminTransactionsPage } from './AdminTransactionsPage';
 export { AdminReportsPage } from './AdminReportsPage';
 export { AdminSettingsPage } from './AdminSettingsPage';
+export { AdminChatPage } from './AdminChatPage';

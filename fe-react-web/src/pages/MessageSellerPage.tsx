@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { resolvePublicFileUrl } from '../utils/publicFileUrl';
+import { formatChatSendError } from '../utils/chatErrors';
 
 export const MessageSellerPage: React.FC = () => {
   const [activeSellerId, setActiveSellerId] = useState('');
@@ -60,18 +61,21 @@ export const MessageSellerPage: React.FC = () => {
       setAttachment(null);
       refetch();
     } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || 'Có lỗi xảy ra khi gửi tin nhắn.',
-      );
+      setError(formatChatSendError(err));
     }
   };
 
-  const activePartner = conversations.find(
-    (c) =>
+  const activeConv = conversations.find(
+    (c: {
+      partner?: { id?: string };
+      bike?: { id?: string };
+      conversationStatus?: string;
+    }) =>
       c.partner?.id === activeSellerId &&
-      (c.bike?.id === activeBikeId || c.bike?.id === undefined),
-  )?.partner;
+      String(c.bike?.id ?? '') === String(activeBikeId ?? ''),
+  );
+  const activePartner = activeConv?.partner;
+  const conversationClosed = activeConv?.conversationStatus === 'closed';
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 pb-20">
@@ -202,6 +206,12 @@ export const MessageSellerPage: React.FC = () => {
               )}
             </div>
           </div>
+          {conversationClosed && activeSellerId && (
+            <div className="px-4 py-2 bg-amber-50 text-amber-900 text-xs border-b border-amber-100">
+              Hội thoại đã đóng — bạn không thể gửi tin theo luật hệ thống (403
+              nếu thử gửi).
+            </div>
+          )}
 
           {/* Messages List */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/30">
@@ -304,7 +314,7 @@ export const MessageSellerPage: React.FC = () => {
                   type="file"
                   className="sr-only"
                   accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
-                  disabled={!activeSellerId}
+                  disabled={!activeSellerId || conversationClosed}
                   onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
                 />
               </label>
@@ -325,11 +335,16 @@ export const MessageSellerPage: React.FC = () => {
                 }
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                disabled={!activeSellerId || loading}
+                disabled={!activeSellerId || loading || conversationClosed}
               />
               <button
                 type="submit"
-                disabled={!activeSellerId || !message.trim() || loading}
+                disabled={
+                  !activeSellerId ||
+                  !message.trim() ||
+                  loading ||
+                  conversationClosed
+                }
                 className="w-11 h-11 flex-shrink-0 bg-[#f57224] text-white rounded-full flex items-center justify-center hover:bg-[#e0651a] disabled:opacity-50 transition-colors shadow-sm"
               >
                 <Send className="w-5 h-5 ml-0.5" />

@@ -22,6 +22,21 @@ export async function closeInspectorConversation(
   return res.data;
 }
 
+export async function getInspectorConversationsList(): Promise<unknown> {
+  const res = await apiClient.get('/inspector/v1/conversations');
+  return res.data;
+}
+
+export async function getInspectorConversationMessages(
+  userId: string,
+  params?: { bikeId?: string; page?: number; limit?: number },
+): Promise<unknown> {
+  const res = await apiClient.get(`/inspector/v1/conversations/${userId}`, {
+    params,
+  });
+  return res.data;
+}
+
 // Inspector APIs
 export const getInspectorDashboard = async () => {
   const res = await apiClient.get('/inspector/v1/dashboard');

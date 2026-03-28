@@ -3,11 +3,16 @@ import {
   adminApi,
   type AdminBike,
   type AdminCategory,
+  type AdminConversationThread,
   type AdminReport,
   type AdminTransaction,
   type AdminUser,
 } from '../../apis/adminApi';
 import { queryKeys } from '../query-keys';
+import {
+  unwrapMessageList,
+  unwrapStaffConversationList,
+} from '../../utils/staffConversationUnwrap';
 
 const adminReportStatusKey = (
   filter: 'all' | 'pending' | 'resolved' | 'closed' | 'rejected',
@@ -80,6 +85,44 @@ export function useAdminCategoriesQuery() {
       const res = await adminApi.getCategories();
       return res.data ?? [];
     },
+  });
+}
+
+export function useAdminConversationsQuery() {
+  return useQuery({
+    queryKey: queryKeys.admin.conversations(),
+    queryFn: async (): Promise<AdminConversationThread[]> => {
+      const res = await adminApi.getConversationsList();
+      if (Array.isArray(res.data)) return res.data;
+      return unwrapStaffConversationList(res);
+    },
+  });
+}
+
+export function useAdminConversationMessagesQuery(
+  userId: string | undefined,
+  params?: { bikeId?: string; page?: number; limit?: number },
+) {
+  const uid = userId?.trim() ?? '';
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 50;
+  const bikeId = params?.bikeId?.trim();
+  return useQuery({
+    queryKey: queryKeys.admin.conversationMessages(uid, {
+      bikeId,
+      page,
+      limit,
+    }),
+    queryFn: async () => {
+      const res = await adminApi.getConversationMessages(uid, {
+        bikeId,
+        page,
+        limit,
+      });
+      if (Array.isArray(res.data)) return res.data;
+      return unwrapMessageList(res);
+    },
+    enabled: Boolean(uid),
   });
 }
 
@@ -197,6 +240,7 @@ export function useAdminDeleteCategoryMutation() {
 }
 
 export function useAdminSendMessageMutation() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       userId,
@@ -205,12 +249,25 @@ export function useAdminSendMessageMutation() {
       userId: string;
       formData: FormData;
     }) => adminApi.sendMessage(userId, formData),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.conversations() });
+      void qc.invalidateQueries({
+        queryKey: ['admin', 'conversation-messages'],
+      });
+    },
   });
 }
 
 export function useAdminCloseConversationMutation() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => adminApi.closeConversation(userId),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.conversations() });
+      void qc.invalidateQueries({
+        queryKey: ['admin', 'conversation-messages'],
+      });
+    },
   });
 }
 

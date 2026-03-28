@@ -124,6 +124,24 @@ export interface GetUsersParams {
   role?: string;
 }
 
+/** Thread từ GET /admin/v1/conversations */
+export interface AdminConversationThread {
+  partner?: {
+    id: string;
+    name?: string;
+    email?: string;
+    avatar?: string | null;
+  };
+  bike?: { id: string; title?: string };
+  lastMessage?: {
+    content?: string;
+    createdAt?: string;
+    isMine?: boolean;
+    isRead?: boolean;
+  };
+  conversationStatus?: 'active' | 'closed';
+}
+
 export const adminApi = {
   /** GET /api/admin/v1/bike - Lấy danh sách xe đạp */
   getBikes: async (
@@ -264,6 +282,29 @@ export const adminApi = {
     );
     return data;
   },
+
+  /** GET /admin/v1/conversations — danh sách thread (partner + bike + lastMessage + conversationStatus) */
+  getConversationsList: async (): Promise<
+    ApiResponse<AdminConversationThread[]>
+  > => {
+    const { data } = await apiClient.get<
+      ApiResponse<AdminConversationThread[]>
+    >('/admin/v1/conversations');
+    return data;
+  },
+
+  /** GET /admin/v1/conversations/:userId — lịch sử tin; query bikeId?, page, limit */
+  getConversationMessages: async (
+    userId: string,
+    params?: { bikeId?: string; page?: number; limit?: number },
+  ): Promise<ApiResponse<unknown[]>> => {
+    const { data } = await apiClient.get<ApiResponse<unknown[]>>(
+      `/admin/v1/conversations/${userId}`,
+      { params },
+    );
+    return data;
+  },
+
   /** CATEGORY MANAGEMENT */
   /** GET /api/admin/v1/category - Lấy danh sách danh mục xe */
   getCategories: async (): Promise<ApiResponse<AdminCategory[]>> => {

@@ -271,23 +271,18 @@ export function useBuyerSendMessageMutation() {
       attachment?: File | null;
     }) => {
       const sid = sellerId.trim();
-      if (attachment) {
-        const fd = buildMessageFormData({
-          content,
-          bikeId: bikeId?.trim(),
-          attachment,
-        });
-        return sendMessageToSeller(sid, fd);
-      }
-      return sendMessageToSeller(sid, {
+      const fd = buildMessageFormData({
         content,
-        ...(bikeId?.trim() ? { bikeId: bikeId.trim() } : {}),
+        bikeId: bikeId?.trim(),
+        attachment,
       });
+      return sendMessageToSeller(sid, fd);
     },
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({
         queryKey: ['buyer', 'messages', variables.sellerId.trim()],
       });
+      void qc.invalidateQueries({ queryKey: queryKeys.buyer.conversations() });
     },
   });
 }
