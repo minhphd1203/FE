@@ -100,6 +100,10 @@ export const UserAccountPage: React.FC = () => {
           : await profileApi.upgradeSeller();
       setProfile(nextProfile);
       syncRoleToStore(nextProfile);
+
+      if (nextProfile.role === 'seller') {
+        navigate('/seller');
+      }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -145,13 +149,13 @@ export const UserAccountPage: React.FC = () => {
     },
     {
       id: 'reports',
-      label: 'Báo cáo vi phạm',
+      label: 'Lịch sử báo cáo',
       href: '/bao-cao-vi-pham',
       icon: AlertTriangle,
     },
     {
       id: 'my-reviews',
-      label: 'Đánh giá của tôi',
+      label: 'Lịch sử đánh giá',
       href: '/danh-gia-tu-toi',
       icon: Star,
     },

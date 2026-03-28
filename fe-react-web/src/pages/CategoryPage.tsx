@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { CATEGORIES } from '../constants/data';
 import { ChevronRight, Home } from 'lucide-react';
 import type { BuyerBike } from '../api/buyerApi';
@@ -10,6 +10,10 @@ export const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const category = CATEGORIES.find((c) => c.slug === slug);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sortBy = searchParams.get('sortBy') || 'createdAt';
+  const sortOrder = searchParams.get('sortOrder') || 'desc';
+
   const {
     data: searchResult,
     isLoading: loading,
@@ -17,6 +21,8 @@ export const CategoryPage: React.FC = () => {
   } = useBuyerSearchBikesQuery(
     {
       keyword: category?.label ?? '',
+      sortBy,
+      sortOrder,
       page: 1,
       limit: 48,
     },
@@ -27,6 +33,26 @@ export const CategoryPage: React.FC = () => {
   const error = queryError
     ? (queryError as Error).message || 'Không tải được danh sách.'
     : null;
+
+  const currentSortValue = `${sortBy}_${sortOrder}`;
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    const newParams = new URLSearchParams(searchParams);
+
+    if (val === 'createdAt_desc') {
+      newParams.set('sortBy', 'createdAt');
+      newParams.set('sortOrder', 'desc');
+    } else if (val === 'price_asc') {
+      newParams.set('sortBy', 'price');
+      newParams.set('sortOrder', 'asc');
+    } else if (val === 'price_desc') {
+      newParams.set('sortBy', 'price');
+      newParams.set('sortOrder', 'desc');
+    }
+
+    setSearchParams(newParams);
+  };
 
   if (!category) {
     return (
@@ -58,13 +84,34 @@ export const CategoryPage: React.FC = () => {
         <span className="font-medium text-gray-900">{category.label}</span>
       </div>
 
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{category.label}</h1>
-        {!loading && !error && (
-          <span className="text-sm text-gray-500">
-            {searchResult?.meta?.total ?? listings.length} tin đăng
-          </span>
-        )}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{category.label}</h1>
+          {!loading && !error && (
+            <span className="text-sm text-gray-500 mt-1 block">
+              {searchResult?.meta?.total ?? listings.length} tin đăng
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <label
+            htmlFor="sort-select"
+            className="text-sm text-gray-600 font-medium shrink-0"
+          >
+            Sắp xếp theo:
+          </label>
+          <select
+            id="sort-select"
+            value={currentSortValue}
+            onChange={handleSortChange}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f57224]/50 focus:border-[#f57224] bg-white cursor-pointer"
+          >
+            <option value="createdAt_desc">Mới nhất</option>
+            <option value="price_asc">Giá (Thấp đến cao)</option>
+            <option value="price_desc">Giá (Cao xuống thấp)</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (

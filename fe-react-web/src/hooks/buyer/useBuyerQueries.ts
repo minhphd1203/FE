@@ -15,6 +15,7 @@ import {
   reviewSeller,
   searchBikes,
   sendMessageToSeller,
+  getMyReports,
   type BuyerBike,
   type ReportReason,
   type WishlistItem,
@@ -253,6 +254,13 @@ export function useBuyerReviewSellerMutation() {
       rating: number;
       comment: string;
     }) => reviewSeller(data),
+  });
+}
+
+export function useBuyerMyReportsQuery() {
+  return useQuery({
+    queryKey: ['buyer', 'reports'],
+    queryFn: () => getMyReports(),
   });
 }
 

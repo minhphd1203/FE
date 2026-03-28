@@ -5,15 +5,19 @@ import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import { useBuyerSearchBikesQuery } from '../hooks/buyer/useBuyerQueries';
 
 export const AllListingsPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const keyword = searchParams.get('keyword')?.trim() || undefined;
+  const sortBy = searchParams.get('sortBy') || 'createdAt';
+  const sortOrder = searchParams.get('sortOrder') || 'desc';
 
   const {
     data: searchResult,
     isLoading: loading,
     error: queryError,
   } = useBuyerSearchBikesQuery({
-    keyword,
+    model: keyword, // Backend supports 'model' for partial matching
+    sortBy,
+    sortOrder,
     page: 1,
     limit: 50,
   });
@@ -23,22 +27,63 @@ export const AllListingsPage: React.FC = () => {
     ? (queryError as Error).message || 'Không tải được danh sách tin đăng.'
     : null;
 
+  const currentSortValue = `${sortBy}_${sortOrder}`;
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    const newParams = new URLSearchParams(searchParams);
+
+    if (val === 'createdAt_desc') {
+      newParams.set('sortBy', 'createdAt');
+      newParams.set('sortOrder', 'desc');
+    } else if (val === 'price_asc') {
+      newParams.set('sortBy', 'price');
+      newParams.set('sortOrder', 'asc');
+    } else if (val === 'price_desc') {
+      newParams.set('sortBy', 'price');
+      newParams.set('sortOrder', 'desc');
+    }
+
+    setSearchParams(newParams);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Tất cả tin đăng</h1>
-        {!loading && !error && (
-          <p className="text-sm text-gray-500">
-            {keyword ? (
-              <>
-                Kết quả cho “{keyword}”:{' '}
-                {searchResult?.meta?.total ?? listings.length} tin
-              </>
-            ) : (
-              <>Có {searchResult?.meta?.total ?? listings.length} tin đăng</>
-            )}
-          </p>
-        )}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Tất cả tin đăng</h1>
+          {!loading && !error && (
+            <p className="text-sm text-gray-500 mt-1">
+              {keyword ? (
+                <>
+                  Kết quả cho “{keyword}”:{' '}
+                  {searchResult?.meta?.total ?? listings.length} tin
+                </>
+              ) : (
+                <>Có {searchResult?.meta?.total ?? listings.length} tin đăng</>
+              )}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <label
+            htmlFor="sort-select"
+            className="text-sm text-gray-600 font-medium shrink-0"
+          >
+            Sắp xếp theo:
+          </label>
+          <select
+            id="sort-select"
+            value={currentSortValue}
+            onChange={handleSortChange}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f57224]/50 focus:border-[#f57224] bg-white cursor-pointer"
+          >
+            <option value="createdAt_desc">Mới nhất</option>
+            <option value="price_asc">Giá (Thấp đến cao)</option>
+            <option value="price_desc">Giá (Cao xuống thấp)</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (

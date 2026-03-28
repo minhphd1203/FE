@@ -336,50 +336,51 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
-            <button
-              type="button"
-              disabled={!report.reporter?.id}
-              onClick={() => onMessageUser(report, 'reporter')}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Nhắn buyer
-            </button>
-            <button
-              type="button"
-              disabled={!report.reportedUser?.id}
-              onClick={() => onMessageUser(report, 'reported')}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Nhắn seller
-            </button>
-            <button
-              type="button"
-              disabled={!report.reporter?.id}
-              onClick={() => onCloseConversation(report, 'reporter')}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              <PhoneOff className="w-4 h-4" />
-              Đóng HĐ (buyer)
-            </button>
-            <button
-              type="button"
-              disabled={!report.reportedUser?.id}
-              onClick={() => onCloseConversation(report, 'reported')}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              <PhoneOff className="w-4 h-4" />
-              Đóng HĐ (seller)
-            </button>
+          <div className="mt-5 border-t border-gray-100 pt-5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 block">
+              Hỗ trợ & Liên hệ
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!report.reporter?.id}
+                onClick={() => onMessageUser(report, 'reporter')}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Nhắn người mua
+              </button>
+              <button
+                type="button"
+                disabled={!report.reportedUser?.id}
+                onClick={() => onMessageUser(report, 'reported')}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Nhắn người bán
+              </button>
+              <button
+                type="button"
+                disabled={!report.reporter?.id}
+                onClick={() => onCloseConversation(report, 'reporter')}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+              >
+                <PhoneOff className="w-4 h-4" />
+                Khóa nhắn tin (buyer)
+              </button>
+              <button
+                type="button"
+                disabled={!report.reportedUser?.id}
+                onClick={() => onCloseConversation(report, 'reported')}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+              >
+                <PhoneOff className="w-4 h-4" />
+                Khóa nhắn tin (seller)
+              </button>
+            </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-gray-500">
-              Mã báo cáo:{' '}
-              <span className="font-medium text-gray-700">{report.id}</span>
-            </div>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end border-t border-gray-100 pt-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <button
                 type="button"

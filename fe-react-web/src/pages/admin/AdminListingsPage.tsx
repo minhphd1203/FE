@@ -24,6 +24,7 @@ import {
   useAdminRejectBikeMutation,
 } from '../../hooks/admin/useAdminQueries';
 import { AdminListingDetailModal } from './AdminListingDetailModal';
+import { getBikeImage, handleBikeImageError } from '../../utils/bikeImage';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN').format(price) + ' d';
@@ -338,7 +339,8 @@ export const AdminListingsPage: React.FC = () => {
                           <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                             {img ? (
                               <img
-                                src={img}
+                                src={getBikeImage(img)}
+                                onError={handleBikeImageError}
                                 alt={bike.title}
                                 className="w-full h-full object-cover"
                               />

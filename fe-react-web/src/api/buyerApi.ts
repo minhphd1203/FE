@@ -99,6 +99,19 @@ export type BuyerMessage = {
   fileUrl?: string | null;
 };
 
+export type BuyerReport = {
+  id: string;
+  reasonId?: string;
+  reasonText?: string;
+  description: string;
+  status: string;
+  resolution?: string;
+  createdAt: string;
+  reportedUser?: { name: string; email?: string };
+  reportedBike?: { title: string };
+  reason?: { name: string; description?: string };
+};
+
 export type ReportReason = {
   id: string;
   name: string;
@@ -301,4 +314,12 @@ export async function getTransactionDetail(transactionId: string) {
     return (raw as ApiEnvelope<unknown>).data;
   }
   return raw;
+}
+
+// 14. GET buyer's reports
+export async function getMyReports(): Promise<BuyerReport[]> {
+  const response =
+    await apiClient.get<ApiEnvelope<BuyerReport[]>>('/buyer/v1/reports');
+  const list = unwrap<BuyerReport[]>(response.data);
+  return Array.isArray(list) ? list : [];
 }

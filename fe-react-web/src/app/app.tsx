@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ReduxProvider } from '../providers/ReduxProvider';
 import { ReactQueryProvider } from '../providers/ReactQueryProvider';
 import { AuthProvider } from '../providers/AuthProvider';
+import { Toaster } from 'sonner';
 import { GuestGuard } from '../guards/GuestGuard';
 import { AuthGuard } from '../guards/AuthGuard';
 import { RoleGuard } from '../guards/RoleGuard';
@@ -88,6 +89,7 @@ export function App() {
     <ReduxProvider>
       <ReactQueryProvider>
         <AuthProvider>
+          <Toaster richColors position="top-right" />
           <Routes>
             {/* Chợ / buyer — admin đã đăng nhập luôn chuyển về /admin */}
             <Route element={<RedirectAdminFromMarketplaceGuard />}>

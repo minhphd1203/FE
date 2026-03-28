@@ -102,7 +102,7 @@ export const AdminListingDetailModal: React.FC<
                       className="h-full w-full object-cover"
                       onError={(e) => {
                         e.currentTarget.src =
-                          'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&h=600&fit=crop';
+                          'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
                       }}
                     />
                   ) : (

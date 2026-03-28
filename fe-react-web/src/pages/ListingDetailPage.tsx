@@ -259,8 +259,59 @@ export const ListingDetailPage: React.FC = () => {
               </p>
             )}
 
-            <div className="mt-4 text-sm text-gray-600 leading-relaxed">
-              <p>{listing.description || 'Không có mô tả cho tin đăng này.'}</p>
+            <div className="mt-6 mb-2">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
+                Thông số chi tiết
+              </h3>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <div>
+                  <dt className="text-gray-500 text-xs">Hãng xe</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.brand || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500 text-xs">Dòng xe / Model</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.model || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500 text-xs">Tình trạng</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.condition || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500 text-xs">Năm sản xuất</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.year || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500 text-xs">Màu sắc</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.color || '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500 text-xs">Số km đã đi</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.mileage
+                      ? `${listing.mileage.toLocaleString('vi-VN')} km`
+                      : '—'}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
+                Mô tả sản phẩm
+              </h3>
+              <p className="whitespace-pre-wrap">
+                {listing.description || 'Không có mô tả cho tin đăng này.'}
+              </p>
             </div>
             {!isOwnListing && (
               <div className="pt-4 flex flex-wrap gap-2">
@@ -313,7 +364,7 @@ export const ListingDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {!isOwnListing && (
+      {!isOwnListing && (listing as any).canReview && (
         <SellerReviewForm
           listingId={listing.id}
           sellerId={listing.seller?.id}
