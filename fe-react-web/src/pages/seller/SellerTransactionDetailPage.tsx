@@ -238,7 +238,7 @@ export const SellerTransactionDetailPage: React.FC = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleUpdateStatus('completed')}
+                      onClick={() => handleUpdateStatus('approved')}
                       disabled={updateMut.isPending}
                       className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center gap-2"
                     >
