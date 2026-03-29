@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { logout, setCredentials } from '../../redux/slices/authSlice';
 import { clearAuthSession, persistAuthSession } from '../../utils/authStorage';
@@ -26,6 +27,7 @@ const getRoleLabel = (role: string) => {
 
 export const UserAccountPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const qc = useQueryClient();
   const { user, token } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
   const location = useLocation();
@@ -101,8 +103,21 @@ export const UserAccountPage: React.FC = () => {
       setProfile(nextProfile);
       syncRoleToStore(nextProfile);
 
+      // Invalidate profile queries to refresh cached data
+      void qc.invalidateQueries({ queryKey: ['profile'] });
+      void qc.invalidateQueries({ queryKey: ['seller'] });
+
       if (nextProfile.role === 'seller') {
         navigate('/seller');
+      } else {
+        // Downgraded to buyer - redirect to homepage
+        navigate('/', {
+          replace: true,
+          state: {
+            profileMessage:
+              'Đã hạ cấp về người mua. Tin đăng đã được ẩn theo chính sách hệ thống.',
+          },
+        });
       }
     } catch (err: unknown) {
       const msg =

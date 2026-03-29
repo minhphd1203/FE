@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Paperclip } from 'lucide-react';
 import {
@@ -17,6 +17,7 @@ export const SellerMessageThreadPage: React.FC = () => {
   const [bikeId, setBikeId] = useState(qpBike);
   const [content, setContent] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (qpBike) setBikeId(qpBike);
@@ -170,6 +171,10 @@ export const SellerMessageThreadPage: React.FC = () => {
             .then(() => {
               setContent('');
               setAttachment(null);
+              // Reset file input so same file can be selected again
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
               void msgQ.refetch();
             })
             .catch((err) => window.alert(formatChatSendError(err)));
@@ -186,6 +191,7 @@ export const SellerMessageThreadPage: React.FC = () => {
           <Paperclip className="w-3.5 h-3.5" />
           <span>Đính kèm</span>
           <input
+            ref={fileInputRef}
             type="file"
             className="text-xs"
             accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"

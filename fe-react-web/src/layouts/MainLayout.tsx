@@ -168,7 +168,7 @@ export const MainLayout: React.FC = () => {
                           </DropdownMenu.Item>
                           <DropdownMenu.Item asChild>
                             <Link
-                              to="/seller/ho-so"
+                              to="/tai-khoan"
                               className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm text-gray-800 outline-none data-[highlighted]:bg-orange-50"
                             >
                               <UserCircle className="h-4 w-4 text-gray-500" />

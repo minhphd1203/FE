@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   useInspectorCloseConversationMutation,
   useInspectorConversationMessagesQuery,
@@ -25,6 +25,7 @@ export const InspectorChatPage: React.FC = () => {
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: threads = [], isFetching: loadingThreads } =
     useInspectorConversationsQuery();
@@ -68,6 +69,10 @@ export const InspectorChatPage: React.FC = () => {
       });
       setText('');
       setFile(null);
+      // Reset file input so same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       void refetchMessages();
     } catch (err: unknown) {
       const msg =
@@ -258,6 +263,17 @@ export const InspectorChatPage: React.FC = () => {
                     : '';
                   const isImg =
                     fileUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(fileUrl);
+
+                  // Debug log
+                  if (msg.fileUrl) {
+                    console.log('Message has fileUrl:', {
+                      id: msg.id,
+                      fileUrl: msg.fileUrl,
+                      resolvedUrl: fileUrl,
+                      isImg,
+                    });
+                  }
+
                   return (
                     <div
                       key={String(msg.id ?? idx)}
@@ -320,6 +336,7 @@ export const InspectorChatPage: React.FC = () => {
               <Paperclip className="w-4 h-4" />
               <span>Đính kèm</span>
               <input
+                ref={fileInputRef}
                 type="file"
                 className="text-xs"
                 accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
