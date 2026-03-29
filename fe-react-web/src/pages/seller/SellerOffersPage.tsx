@@ -39,14 +39,8 @@ export const SellerOffersPage: React.FC = () => {
         Đề nghị mua / trả giá
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        GET{' '}
-        <code className="text-xs bg-gray-100 px-1 rounded">
-          /seller/v1/offers
-        </code>
-        — chấp nhận hoặc từ chối qua POST{' '}
-        <code className="text-xs bg-gray-100 px-1 rounded">
-          /seller/v1/offers/&#123;id&#125;/respond
-        </code>
+        Gửi phản hồi cho người mua, quyết định chấp nhận hay từ chối mức giá họ
+        đề nghị.
       </p>
 
       {isLoading && (

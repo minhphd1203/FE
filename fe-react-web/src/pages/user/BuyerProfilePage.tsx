@@ -131,11 +131,8 @@ export const BuyerProfilePage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-gray-900">Hồ sơ người mua</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Chỉ xem thông tin từ{' '}
-              <code className="text-xs bg-gray-100 px-1 rounded">
-                GET /profile/v1/info
-              </code>
-              . App không gọi API cập nhật hồ sơ / đổi mật khẩu / upload avatar.
+              Xem thông tin cá nhân của bạn. Chức năng cập nhật hồ sơ, đổi mật
+              khẩu và đổi ảnh đại diện chưa được hỗ trợ trên ứng dụng.
             </p>
           </div>
           <button
@@ -242,12 +239,8 @@ export const BuyerProfilePage: React.FC = () => {
                           Nâng cấp thành người bán
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Gọi{' '}
-                          <code className="bg-white/80 px-1 rounded text-[11px]">
-                            POST /profile/v1/upgrade-seller
-                          </code>
-                          . Bạn sẽ có thể đăng tin giao dịch trên chợ ngay lập
-                          tức.
+                          Nâng cấp tài khoản của bạn để trở thành người bán. Bạn
+                          sẽ có thể đăng tin giao dịch trên chợ ngay lập tức.
                         </p>
                       </div>
                     </div>

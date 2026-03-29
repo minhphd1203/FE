@@ -46,10 +46,8 @@ export const SellerReviewsPage: React.FC = () => {
         Đánh giá từ người mua
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        GET{' '}
-        <code className="text-xs bg-gray-100 px-1 rounded">
-          /seller/v1/reviews
-        </code>
+        Xem những đánh giá, bình luận của người mua để cải thiện mức độ uy tín
+        của gian hàng.
       </p>
 
       {extra && (

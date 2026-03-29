@@ -32,10 +32,7 @@ export const SellerTransactionsPage: React.FC = () => {
         Đơn hàng từ người mua
       </h1>
       <p className="text-sm text-gray-500 mb-4">
-        GET{' '}
-        <code className="text-xs bg-gray-100 px-1 rounded">
-          /seller/v1/transactions
-        </code>
+        Theo dõi trạng thái các đơn hàng đã được tạo từ bài đăng của bạn.
       </p>
 
       <div className="flex flex-wrap gap-3 mb-6 items-end">

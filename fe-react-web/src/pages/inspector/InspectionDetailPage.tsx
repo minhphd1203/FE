@@ -273,11 +273,8 @@ export const InspectionDetailPage: React.FC = () => {
             )}
             {vehicle.sellerId && sellerProfileQ.isError && (
               <p className="text-sm text-amber-700 md:col-span-2">
-                Không tải được hồ sơ công khai qua{' '}
-                <code className="text-xs bg-amber-100 px-1 rounded">
-                  GET /profile/v1/:sellerId
-                </code>
-                . Vẫn hiển thị đủ dữ liệu tin đăng bên dưới.
+                Không tải được chi tiết hồ sơ công khai của người bán. Các dữ
+                liệu về thông tin xe ở bên dưới vẫn được hiển thị đầy đủ.
               </p>
             )}
             {vehicle.sellerId && (
@@ -299,7 +296,7 @@ export const InspectionDetailPage: React.FC = () => {
                   onClick={async () => {
                     if (
                       !window.confirm(
-                        'Đóng hội thoại với seller này? (PUT inspector conversations/close)',
+                        'Bạn có chắc chắn muốn đóng hội thoại với người bán này không?',
                       )
                     ) {
                       return;

@@ -22,10 +22,8 @@ export const SellerMessagesPage: React.FC = () => {
         Hội thoại với người mua
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        GET{' '}
-        <code className="text-xs bg-gray-100 px-1 rounded">
-          /seller/v1/messages
-        </code>
+        Tương tác trực tiếp với người mua về các vấn đề trao đổi, hỏi đáp xung
+        quanh sản phẩm.
       </p>
 
       {isLoading && <p className="text-gray-500 text-sm">Đang tải…</p>}
@@ -55,7 +53,11 @@ export const SellerMessagesPage: React.FC = () => {
           const partnerId =
             pickStr(r, ['partnerId', 'buyerId', 'userId', 'id']) ||
             pickStr(partner, ['id']);
-          const partnerName = pickStr(partner, ['name', 'email']) || partnerId;
+          const partnerName = String(
+            pickStr(partner, ['name', 'email']) ||
+              partnerId ||
+              'Người mua ẩn danh',
+          );
 
           const bike = asRecord(r.bike) ?? r;
           const bikeId =
@@ -82,12 +84,12 @@ export const SellerMessagesPage: React.FC = () => {
                 </p>
                 {bikeId && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Sản phẩm tham chiếu: {bike?.title || bikeId}
+                    Sản phẩm tham chiếu: {String(bike?.title || bikeId)}
                   </p>
                 )}
                 {preview && (
                   <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {preview}
+                    {String(preview)}
                   </p>
                 )}
               </Link>

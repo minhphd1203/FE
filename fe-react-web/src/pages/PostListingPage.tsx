@@ -16,7 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 function getApiErrorMessage(err: unknown): string {
   const ax = err as {
-    response?: { data?: { message?: string; error?: string } };
+    response?: { data?: { message?: string; error?: string }; status?: number };
     message?: string;
   };
   const d = ax.response?.data;
@@ -174,28 +174,16 @@ export const PostListingPage: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         <p className="text-xs text-gray-500">
-          Gửi lên API dạng <strong>multipart/form-data</strong> theo{' '}
-          <code className="bg-gray-100 px-1 rounded">
-            POST /api/seller/v1/bikes
-          </code>
-          . Sau khi gửi, tin ở trạng thái chờ kiểm định / duyệt; thanh toán chỉ
-          xảy ra khi người mua mua xe.
+          Sau đăng tin, hệ thống sẽ tiến hành kiểm duyệt trước khi hiển thị công
+          khai. Giao dịch thanh toán sẽ được thực hiện khi có người mua.
         </p>
 
         {showDefaultCategoriesHint && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 text-amber-900 text-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>
               {categoriesQueryError
-                ? 'Không gọi được API danh mục — đang dùng danh sách loại xe mặc định trên giao diện.'
-                : 'Chưa nhận được danh mục từ máy chủ — hiển thị các loại xe mặc định. Bật '}
-              {!categoriesQueryError && (
-                <>
-                  <code className="text-xs bg-amber-100/80 px-1 rounded">
-                    GET /api/seller/v1/categories
-                  </code>{' '}
-                  để đồng bộ đúng mã với backend.
-                </>
-              )}
+                ? 'Không tải được danh mục mới nhất — đang dùng danh sách xe mặc định.'
+                : 'Đang hiển thị danh sách loại xe mặc định của hệ thống.'}
             </span>
             <button
               type="button"

@@ -145,7 +145,7 @@ export const AdminChatPage: React.FC = () => {
       setComposeText('');
       setComposeFile(null);
       setComposeOk(
-        'Đã gửi. Hội thoại sẽ xuất hiện trong danh sách (POST /admin/v1/messages/:userId).',
+        'Đã gửi tin nhắn. Cuộc hội thoại của bạn đã được cập nhật vào danh sách bên dưới.',
       );
       setPartnerId(uid);
       setBikeId(composeBikeId.trim());
@@ -173,13 +173,9 @@ export const AdminChatPage: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Tin nhắn</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          Danh sách từ{' '}
-          <code className="text-xs bg-gray-100 px-1 rounded">
-            GET /admin/v1/conversations
-          </code>
-          . Mỗi dòng là một thread đã có tin nhắn — đối tác có thể là buyer,
-          seller hoặc inspector; inspector chỉ hiện sau khi admin và inspector
-          đã trao đổi (BE không tạo dòng “trống” theo role).
+          Quản lý tin nhắn với các tài khoản trong hệ thống. Mỗi dòng là một
+          cuộc hội thoại đã được tạo. Bạn có thể nhắn tin với bất kỳ người dùng
+          nào bao gồm cả nhân viên kiểm định.
         </p>
       </div>
 
@@ -189,20 +185,10 @@ export const AdminChatPage: React.FC = () => {
           Nhắn inspector / user
         </h2>
         <p className="text-xs text-gray-600 mt-1 mb-4">
-          <code className="bg-white/80 px-1 rounded">
-            POST /admin/v1/messages/:userId
-          </code>{' '}
-          — chọn <strong>inspector</strong> từ danh sách (cùng nguồn{' '}
-          <Link
-            to="/admin/users"
-            className="text-[#f57224] font-medium hover:underline"
-          >
-            Người dùng
-          </Link>
-          , role inspector) hoặc dán UUID buyer/seller khác. Multipart:{' '}
-          <code className="bg-white/80 px-1 rounded">content</code> bắt buộc;{' '}
-          <code className="bg-white/80 px-1 rounded">bikeId</code> /{' '}
-          <code className="bg-white/80 px-1 rounded">attachment</code> tuỳ chọn.
+          Gửi tin nhắn chủ động tới <strong>kiểm định viên (inspector)</strong>{' '}
+          từ danh sách hoặc dán UUID của người mua/người bán. Bạn có thể đính
+          kèm thông tin xe (mã xe) hoặc tệp đa phương tiện tùy chọn. Nội dung
+          tin nhắn là bắt buộc.
         </p>
         <form
           onSubmit={handleComposeSend}
@@ -448,7 +434,7 @@ export const AdminChatPage: React.FC = () => {
               </p>
             ) : (
               <div className="space-y-3">
-                {messages.map((msg: Record<string, unknown>, idx: number) => {
+                {messages.map((msg: any, idx: number) => {
                   const sid = String(msg.senderId ?? msg.sender ?? '');
                   const isMine = Boolean(sid) && sid !== partnerId;
                   const fileUrl = msg.fileUrl

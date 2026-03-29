@@ -86,7 +86,7 @@ export const InspectorChatPage: React.FC = () => {
     if (!partnerId.trim()) return;
     if (
       !window.confirm(
-        'Đóng hội thoại với người này? (PUT /inspector/v1/conversations/.../close)',
+        'Bạn có chắc chắn muốn đóng hội thoại với người dùng này không?',
       )
     ) {
       return;
@@ -112,11 +112,8 @@ export const InspectorChatPage: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Tin nhắn</h1>
         <p className="text-gray-500 mt-1 text-sm">
-          GET{' '}
-          <code className="text-xs bg-gray-100 px-1 rounded">
-            /inspector/v1/conversations
-          </code>{' '}
-          — đóng hội thoại dùng PUT (khác admin POST).
+          Quản lý tin nhắn với các tài khoản trong hệ thống. Mỗi dòng là một
+          cuộc hội thoại.
         </p>
       </div>
 
@@ -255,7 +252,7 @@ export const InspectorChatPage: React.FC = () => {
               </p>
             ) : (
               <div className="space-y-3">
-                {messages.map((msg: Record<string, unknown>, idx: number) => {
+                {messages.map((msg: any, idx: number) => {
                   const sid = String(msg.senderId ?? msg.sender ?? '');
                   const isMine = Boolean(sid) && sid !== partnerId;
                   const fileUrl = msg.fileUrl

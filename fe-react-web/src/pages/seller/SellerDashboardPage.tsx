@@ -151,10 +151,7 @@ export const SellerDashboardPage: React.FC = () => {
             Tổng quan kênh bán
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Số liệu từ{' '}
-            <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-              GET /seller/v1/dashboard
-            </code>
+            Tóm tắt thống kê các hoạt động trên kênh bán của bạn.
           </p>
         </div>
         {isFetching && !isLoading && (
@@ -270,11 +267,8 @@ export const SellerDashboardPage: React.FC = () => {
               Tin đăng của tôi
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              <code className="bg-gray-100 px-1 rounded">
-                GET /seller/v1/bikes
-              </code>{' '}
-              — lọc theo Swagger (status, search, sortBy, sortOrder, page,
-              limit)
+              Quản lý danh sách các xe bạn đã đăng bán. Có thể tìm kiếm và lọc
+              theo các tiêu chí.
             </p>
           </div>
         </div>

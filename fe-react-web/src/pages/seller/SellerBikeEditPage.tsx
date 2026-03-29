@@ -15,7 +15,7 @@ import { parseVndPriceInput } from '../../utils/parseVndPrice';
 
 function getApiErrorMessage(err: unknown): string {
   const ax = err as {
-    response?: { data?: { message?: string; error?: string } };
+    response?: { data?: { message?: string; error?: string }; status?: number };
     message?: string;
   };
   const d = ax.response?.data;
@@ -85,8 +85,7 @@ export const SellerBikeEditPage: React.FC = () => {
           ? bike.price.toLocaleString('vi-VN').replace(/\./g, '')
           : '',
       condition: bike.condition || 'excellent',
-      mileage:
-        bike.mileage != null && bike.mileage !== '' ? String(bike.mileage) : '',
+      mileage: bike.mileage != null ? String(bike.mileage) : '',
       color: bike.color ?? '',
       video: bike.video ?? '',
       description: bike.description ?? '',
@@ -196,12 +195,8 @@ export const SellerBikeEditPage: React.FC = () => {
           </Link>
           <h1 className="text-xl font-bold text-gray-900">Sửa tin đăng</h1>
           <p className="text-xs text-amber-800 mt-1">
-            PUT{' '}
-            <code className="bg-amber-100 px-1 rounded">
-              /api/seller/v1/bikes/&#123;id&#125;
-            </code>
-            — sửa phần cốt lõi có thể khiến tin về trạng thái chờ duyệt (theo
-            backend).
+            Lưu ý: Sau khi sửa đổi thông tin chính, bài đăng có thể cần được
+            kiểm duyệt lại bởi hệ thống trước khi có thể hiển thị.
           </p>
         </div>
       </div>

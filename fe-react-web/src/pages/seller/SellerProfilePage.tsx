@@ -132,11 +132,8 @@ export const SellerProfilePage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-gray-900">Hồ sơ người bán</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Chỉ xem thông tin từ{' '}
-              <code className="text-xs bg-gray-100 px-1 rounded">
-                GET /profile/v1/info
-              </code>
-              . App không gọi API cập nhật hồ sơ / đổi mật khẩu / upload avatar.
+              Hồ sơ của bạn được bảo mật. Hiện tại chưa hỗ trợ chỉnh sửa thông
+              tin trực tiếp trên ứng dụng.
             </p>
           </div>
           <button
@@ -242,12 +239,9 @@ export const SellerProfilePage: React.FC = () => {
                           Hạ cấp về người mua
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Gọi{' '}
-                          <code className="bg-white/80 px-1 rounded text-[11px]">
-                            POST /profile/v1/downgrade-seller
-                          </code>
-                          . Tin đang bán sẽ ẩn; không thực hiện nếu còn giao
-                          dịch pending.
+                          Hệ thống sẽ đồng bộ thông tin và cập nhật trạng thái.
+                          Tin đang bán sẽ bị ẩn khỏi hệ thống; không thực hiện
+                          nếu còn giao dịch đang diễn ra.
                         </p>
                       </div>
                     </div>
