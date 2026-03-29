@@ -1,6 +1,21 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Paperclip } from 'lucide-react';
+
+const formatMessageTime = (dateString: string | undefined): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateString;
+  }
+};
 import {
   useSellerMessageThreadsQuery,
   useSellerPartnerMessagesQuery,
@@ -110,7 +125,11 @@ export const SellerMessageThreadPage: React.FC = () => {
                 key={pickStr(r, ['id', '_id']) || `m-${i}`}
                 className="text-sm border-b border-gray-50 pb-2"
               >
-                {at && <p className="text-[10px] text-gray-400 mb-0.5">{at}</p>}
+                {at && (
+                  <p className="text-[10px] text-gray-400 mb-0.5">
+                    {formatMessageTime(at)}
+                  </p>
+                )}
                 <p className="text-gray-800 whitespace-pre-wrap">
                   {text || JSON.stringify(m)}
                 </p>
