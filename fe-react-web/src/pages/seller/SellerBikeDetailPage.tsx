@@ -133,7 +133,7 @@ export const SellerBikeDetailPage: React.FC = () => {
           })}
         </p>
         <p className="mt-1 text-sm text-gray-500">
-          Danh mục: {bike.category?.name ?? bike.categoryId}
+          Danh mục: {bike.category?.name ?? 'Chưa phân loại'}
         </p>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -153,9 +153,7 @@ export const SellerBikeDetailPage: React.FC = () => {
           <div>
             <dt className="text-gray-500">Số km</dt>
             <dd className="font-medium text-gray-900">
-              {bike.mileage != null && bike.mileage !== ''
-                ? String(bike.mileage)
-                : '—'}
+              {bike.mileage != null ? String(bike.mileage) : '—'}
             </dd>
           </div>
           <div className="sm:col-span-2">

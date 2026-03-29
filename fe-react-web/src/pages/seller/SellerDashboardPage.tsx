@@ -416,7 +416,7 @@ export const SellerDashboardPage: React.FC = () => {
                           </p>
                         </td>
                         <td className="px-3 py-2 text-gray-700">
-                          {row.category?.name ?? '—'}
+                          {row.category?.name ?? 'Chưa phân loại'}
                         </td>
                         <td className="px-3 py-2 font-medium tabular-nums">
                           {row.price.toLocaleString('vi-VN')} đ

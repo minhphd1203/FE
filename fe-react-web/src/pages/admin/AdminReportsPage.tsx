@@ -160,8 +160,8 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                       Mã báo cáo
                     </div>
-                    <div className="mt-1 text-sm text-gray-900">
-                      {report.id}
+                    <div className="mt-1 text-sm font-medium font-mono text-[#f57224]">
+                      #{report.id.substring(0, 8).toUpperCase()}
                     </div>
                   </div>
                   <div>
@@ -782,8 +782,8 @@ export const AdminReportsPage: React.FC = () => {
                       key={report.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-4 py-4 text-sm text-gray-700">
-                        {report.id}
+                      <td className="px-4 py-4 text-sm font-medium font-mono text-[#f57224]">
+                        #{report.id.substring(0, 8).toUpperCase()}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-700">
                         {report.reporter?.name ?? '—'}

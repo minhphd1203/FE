@@ -185,7 +185,7 @@ export const AdminListingDetailModal: React.FC<
                     </dt>
                     <dd className="mt-0.5 flex items-center gap-1 font-medium text-gray-900">
                       <Tag className="h-3.5 w-3.5 text-gray-400" />
-                      {bike.category?.name ?? '—'}
+                      {bike.category?.name ?? 'Chưa phân loại'}
                     </dd>
                   </div>
                   {extra.mileage != null && (

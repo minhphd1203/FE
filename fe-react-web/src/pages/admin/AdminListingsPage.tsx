@@ -372,7 +372,7 @@ export const AdminListingsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-4">
                         <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                          {bike.category?.name ?? '—'}
+                          {bike.category?.name ?? 'Chưa phân loại'}
                         </span>
                       </td>
                       <td className="px-4 py-4">

@@ -159,8 +159,8 @@ export const AdminTransactionsPage: React.FC = () => {
                       key={tx.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-4 py-4 text-sm text-gray-700">
-                        {tx.id}
+                      <td className="px-4 py-4 text-sm font-medium font-mono text-[#f57224]">
+                        #{tx.id.substring(0, 8).toUpperCase()}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-700">
                         {tx.bike?.title ?? '—'}

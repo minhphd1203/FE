@@ -238,7 +238,7 @@ export const InspectionDetailPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{vehicle.title}</h1>
           <p className="text-xs text-gray-400 mt-1 font-mono">
-            Mã tin: {vehicle.id}
+            Mã tin: #{vehicle.id.substring(0, 8).toUpperCase()}
           </p>
         </div>
 
@@ -255,8 +255,10 @@ export const InspectionDetailPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Mã người bán (sellerId)</p>
-              <p className="text-sm font-mono text-gray-900 break-all">
-                {vehicle.sellerId ?? '—'}
+              <p className="text-sm font-mono text-gray-900">
+                {vehicle.sellerId
+                  ? `#${vehicle.sellerId.substring(0, 8).toUpperCase()}`
+                  : '—'}
               </p>
             </div>
             {sellerFromApi?.email && (

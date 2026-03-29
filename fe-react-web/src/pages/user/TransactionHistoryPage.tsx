@@ -136,7 +136,9 @@ export const TransactionHistoryPage: React.FC = () => {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {trx.id}
+                        <span className="font-mono text-[#f57224]">
+                          #{trx.id.substring(0, 8).toUpperCase()}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
