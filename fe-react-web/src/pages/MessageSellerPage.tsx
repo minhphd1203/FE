@@ -200,8 +200,11 @@ export const MessageSellerPage: React.FC = () => {
                   : 'Chưa chọn hội thoại'}
               </p>
               {activeSellerId && (
-                <p className="text-xs text-gray-500 truncate">
-                  ID: <span className="font-mono">{activeSellerId}</span>
+                <p className="text-xs text-[#f57224] truncate">
+                  ID:{' '}
+                  <span className="font-mono font-medium">
+                    #{activeSellerId.substring(0, 8).toUpperCase()}
+                  </span>
                 </p>
               )}
             </div>
@@ -252,8 +255,9 @@ export const MessageSellerPage: React.FC = () => {
                         {msg.bikeId &&
                           !isMine &&
                           msg.bikeId !== activeBikeId && (
-                            <div className="text-[10px] opacity-70 mb-1 border-b border-gray-200 pb-1 font-mono">
-                              Tham chiếu xe: {msg.bikeId}
+                            <div className="text-[10px] opacity-70 mb-1 border-b border-white/20 pb-1 font-mono">
+                              Tham chiếu xe: #
+                              {msg.bikeId.substring(0, 8).toUpperCase()}
                             </div>
                           )}
                         <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
