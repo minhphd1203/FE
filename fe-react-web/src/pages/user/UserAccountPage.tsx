@@ -15,6 +15,7 @@ import {
   MessageSquare,
   AlertTriangle,
   Star,
+  User,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -263,7 +264,19 @@ export const UserAccountPage: React.FC = () => {
                   to="/seller/ho-so"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
+                  <User className="w-4 h-4 text-gray-500" />
                   Hồ sơ người bán
+                </Link>
+              </div>
+            )}
+            {profile?.role !== 'seller' && (
+              <div className="mt-4 flex flex-col gap-2">
+                <Link
+                  to="/ho-so-buyer"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-gray-800 text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <User className="w-4 h-4 text-gray-500" />
+                  Hồ sơ người mua
                 </Link>
               </div>
             )}

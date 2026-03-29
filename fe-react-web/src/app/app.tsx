@@ -39,6 +39,7 @@ import {
   SettingsPage as UserSettingsPage,
   HelpPage,
   UserAccountPage,
+  BuyerProfilePage,
 } from '../pages/user';
 import { ListingDetailPage } from '../pages/ListingDetailPage';
 
@@ -135,6 +136,7 @@ export function App() {
                 <Route path="cai-dat" element={<UserSettingsPage />} />
                 <Route path="tro-giup" element={<HelpPage />} />
                 <Route path="tai-khoan" element={<UserAccountPage />} />
+                <Route path="ho-so-buyer" element={<BuyerProfilePage />} />
 
                 {/* Fallback cho các đường dẫn public chưa có trang riêng */}
                 <Route path="*" element={<NotFoundPage />} />
