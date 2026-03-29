@@ -238,13 +238,6 @@ export const SellerTransactionDetailPage: React.FC = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleUpdateStatus('approved')}
-                      disabled={updateMut.isPending}
-                      className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-md transition-all flex items-center gap-2"
-                    >
-                      <CheckCircle2 className="w-4 h-4" /> Hoàn tất đơn hàng
-                    </button>
-                    <button
                       onClick={() => handleUpdateStatus('cancelled')}
                       disabled={updateMut.isPending}
                       className="px-6 py-2.5 rounded-xl border border-red-200 text-red-600 bg-white font-bold hover:bg-red-50 transition-all flex items-center gap-2"
