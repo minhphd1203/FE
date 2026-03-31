@@ -9,6 +9,9 @@ import { authApi } from '../../apis/authApi';
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'buyer' | 'seller' | null>(
+    null,
+  );
   const {
     register,
     handleSubmit,
@@ -20,6 +23,12 @@ export const RegisterPage: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     setError(null);
+
+    if (!selectedRole) {
+      setError('Vui lòng chọn loại tài khoản');
+      return;
+    }
+
     try {
       // Gửi dữ liệu đăng ký, bỏ confirmPassword và mọi field thừa
       const { confirmPassword, ...raw } = data;
@@ -28,6 +37,7 @@ export const RegisterPage: React.FC = () => {
         password: raw.password,
         name: raw.name,
         phone: raw.phone,
+        role: selectedRole,
       };
       await authApi.register(registerData);
       reset();
@@ -54,16 +64,34 @@ export const RegisterPage: React.FC = () => {
 
       <main className="max-w-md mx-auto px-4 pt-20 py-8 sm:py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Phần đầu: tiêu đề + minh họa */}
-          <div className="px-6 pt-6 pb-4 relative">
-            <div className="pr-14">
-              <h1 className="text-xl font-bold text-gray-900">Tạo tài khoản</h1>
-              <p className="text-gray-500 mt-1 text-sm">
-                Mua thì hời, bán thì lời.
-              </p>
-            </div>
-            <div className="absolute right-6 top-6 w-12 h-12 rounded-full bg-[#f57224]/15 flex items-center justify-center text-2xl">
-              🐣
+          {/* Role Selection */}
+          <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+            <p className="text-sm font-medium text-gray-700 mb-3">
+              Loại tài khoản
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedRole('buyer')}
+                className={`py-3 px-4 rounded-lg font-medium text-sm transition-all border-2 ${
+                  selectedRole === 'buyer'
+                    ? 'border-[#f57224] bg-[#f57224]/10 text-[#f57224]'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Người Mua
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRole('seller')}
+                className={`py-3 px-4 rounded-lg font-medium text-sm transition-all border-2 ${
+                  selectedRole === 'seller'
+                    ? 'border-[#f57224] bg-[#f57224]/10 text-[#f57224]'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Người Bán
+              </button>
             </div>
           </div>
 
@@ -186,12 +214,10 @@ export const RegisterPage: React.FC = () => {
               )}
             </div>
 
-            {/* BE tự set role mặc định (buyer), nên FE không cần chọn ở giao diện */}
-
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-[#f57224] text-white font-semibold rounded-lg hover:bg-[#e0651a] focus:outline-none focus:ring-2 focus:ring-[#f57224] focus:ring-offset-2 disabled:opacity-50 transition-colors"
+              disabled={isSubmitting || !selectedRole}
+              className="w-full py-3 px-4 bg-[#f57224] text-white font-semibold rounded-lg hover:bg-[#e0651a] focus:outline-none focus:ring-2 focus:ring-[#f57224] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? 'Đang xử lý...' : 'Tạo tài khoản'}
             </button>

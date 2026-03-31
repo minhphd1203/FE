@@ -3,6 +3,7 @@ import apiClient from './apiClient';
 export interface LoginCredentials {
   email: string;
   password: string;
+  role?: 'buyer' | 'seller';
 }
 
 export interface RegisterData {
@@ -10,6 +11,7 @@ export interface RegisterData {
   password: string;
   name: string;
   phone?: string;
+  role: 'buyer' | 'seller';
 }
 
 export interface AuthResponse {
