@@ -3,7 +3,13 @@ import apiClient from './apiClient';
 export interface LoginCredentials {
   email: string;
   password: string;
-  role?: 'buyer' | 'seller';
+  role: 'buyer' | 'seller' | 'admin' | 'inspector';
+}
+
+export interface CheckRolesResponse {
+  email: string;
+  roles: string[];
+  hasMultipleRoles: boolean;
 }
 
 export interface RegisterData {
@@ -25,6 +31,22 @@ export interface AuthResponse {
 }
 
 export const authApi = {
+  checkRoles: async (credentials: {
+    email: string;
+    password: string;
+  }): Promise<CheckRolesResponse> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      data: CheckRolesResponse;
+      message?: string;
+    }>('/auth/check-roles', credentials);
+    const { data } = response.data;
+    if (!data || !data.roles) {
+      throw new Error(response.data.message || 'Không thể kiểm tra roles');
+    }
+    return data;
+  },
+
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await apiClient.post<{
       success: boolean;

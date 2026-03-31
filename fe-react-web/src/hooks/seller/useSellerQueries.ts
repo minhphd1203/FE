@@ -247,8 +247,15 @@ export function useSellerSendMessageMutation() {
         partnerId,
         buildMessageFormData({ content, bikeId, attachment }),
       ),
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ['seller', 'messages'] });
+    onSettled: (_d, _e, { partnerId, bikeId }) => {
+      // Invalidate the specific conversation thread (important for message threading)
+      void qc.invalidateQueries({
+        queryKey: queryKeys.seller.partnerMessages(partnerId, { bikeId }),
+      });
+      // Also refresh the thread list
+      void qc.invalidateQueries({
+        queryKey: queryKeys.seller.messageThreads(),
+      });
     },
   });
 }

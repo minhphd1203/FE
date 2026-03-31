@@ -296,10 +296,12 @@ export function useBuyerSendMessageMutation() {
       });
       return sendMessageToSeller(sid, fd);
     },
-    onSuccess: (_data, variables) => {
+    onSettled: (_d, _e, { sellerId, bikeId }) => {
+      // Invalidate the specific conversation thread (important for message threading)
       void qc.invalidateQueries({
-        queryKey: ['buyer', 'messages', variables.sellerId.trim()],
+        queryKey: queryKeys.buyer.messages(sellerId.trim(), { bikeId }),
       });
+      // Also refresh the conversations list
       void qc.invalidateQueries({ queryKey: queryKeys.buyer.conversations() });
     },
   });
