@@ -1,14 +1,22 @@
 import React from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { CATEGORIES } from '../constants/data';
 import { ChevronRight, Home } from 'lucide-react';
 import type { BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
-import { useBuyerSearchBikesQuery } from '../hooks/buyer/useBuyerQueries';
+import {
+  useBuyerCategoriesQuery,
+  useBuyerSearchBikesQuery,
+} from '../hooks/buyer/useBuyerQueries';
 
 export const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const category = CATEGORIES.find((c) => c.slug === slug);
+
+  // Fetch all categories from API
+  const { data: allCategories = [], isLoading: categoriesLoading } =
+    useBuyerCategoriesQuery();
+
+  // Find category from API data
+  const category = allCategories.find((c) => c.slug === slug);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const sortBy = searchParams.get('sortBy') || 'createdAt';
@@ -20,7 +28,7 @@ export const CategoryPage: React.FC = () => {
     error: queryError,
   } = useBuyerSearchBikesQuery(
     {
-      keyword: category?.label ?? '',
+      categoryId: category?.id ?? '',
       sortBy,
       sortOrder,
       page: 1,

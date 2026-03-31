@@ -15,7 +15,9 @@ export const AllListingsPage: React.FC = () => {
     isLoading: loading,
     error: queryError,
   } = useBuyerSearchBikesQuery({
-    model: keyword, // Backend supports 'model' for partial matching
+    brand: keyword,
+    model: keyword,
+    title: keyword,
     sortBy,
     sortOrder,
     page: 1,

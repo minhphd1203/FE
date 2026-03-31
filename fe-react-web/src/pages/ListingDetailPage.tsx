@@ -265,6 +265,12 @@ export const ListingDetailPage: React.FC = () => {
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
+                  <dt className="text-gray-500 text-xs">Danh mục</dt>
+                  <dd className="font-medium text-gray-900">
+                    {listing.category?.name || '—'}
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-gray-500 text-xs">Hãng xe</dt>
                   <dd className="font-medium text-gray-900">
                     {listing.brand || '—'}

@@ -8,7 +8,6 @@ import {
   extractBikeIdFromPostResponse,
   type ListingCategoryOption,
 } from '../apis/sellerApi';
-import { CATEGORIES } from '../constants/data';
 import { parseVndPriceInput } from '../utils/parseVndPrice';
 import { Camera, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -33,14 +32,6 @@ function getApiErrorMessage(err: unknown): string {
 
 type ImageItem = { file: File; preview: string };
 
-const FALLBACK_LISTING_CATEGORIES: ListingCategoryOption[] = CATEGORIES.map(
-  (c) => ({
-    id: String(c.id),
-    name: c.label,
-    slug: c.slug,
-  }),
-);
-
 export const PostListingPage: React.FC = () => {
   const navigate = useNavigate();
   const postBikeMut = useSellerPostBikeMutation();
@@ -53,13 +44,11 @@ export const PostListingPage: React.FC = () => {
   } = useSellerListingCategoriesQuery();
 
   const categoryOptions = useMemo((): ListingCategoryOption[] => {
-    if (apiCategories && apiCategories.length > 0) return apiCategories;
-    return FALLBACK_LISTING_CATEGORIES;
+    return apiCategories && apiCategories.length > 0 ? apiCategories : [];
   }, [apiCategories]);
 
-  const categoriesFromApi = Boolean(apiCategories && apiCategories.length > 0);
-  const showDefaultCategoriesHint =
-    categoriesFetched && !categoriesLoading && !categoriesFromApi;
+  const categoriesLoadError =
+    categoriesFetched && !categoriesLoading && !categoryOptions.length;
 
   const [imageItems, setImageItems] = useState<ImageItem[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -178,17 +167,17 @@ export const PostListingPage: React.FC = () => {
           khai. Giao dịch thanh toán sẽ được thực hiện khi có người mua.
         </p>
 
-        {showDefaultCategoriesHint && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 text-amber-900 text-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        {categoriesLoadError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 text-red-900 text-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>
               {categoriesQueryError
-                ? 'Không tải được danh mục mới nhất — đang dùng danh sách xe mặc định.'
-                : 'Đang hiển thị danh sách loại xe mặc định của hệ thống.'}
+                ? 'Không tải được danh mục từ máy chủ.'
+                : 'Danh mục không khả dụng.'}
             </span>
             <button
               type="button"
               onClick={() => void refetchCategories()}
-              className="text-sm font-medium text-amber-950 underline shrink-0"
+              className="text-sm font-medium text-red-950 underline shrink-0"
             >
               Thử tải lại
             </button>

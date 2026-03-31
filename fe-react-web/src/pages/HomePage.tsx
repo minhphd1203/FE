@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CATEGORIES } from '../constants/data';
+import { Bike } from 'lucide-react';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
-import { useBuyerRecommendedBikesQuery } from '../hooks/buyer/useBuyerQueries';
+import {
+  useBuyerRecommendedBikesQuery,
+  useBuyerCategoriesQuery,
+} from '../hooks/buyer/useBuyerQueries';
 
 export const HomePage: React.FC = () => {
   const {
@@ -10,6 +13,8 @@ export const HomePage: React.FC = () => {
     isLoading: loading,
     error: queryError,
   } = useBuyerRecommendedBikesQuery(10);
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useBuyerCategoriesQuery();
   const error = queryError
     ? (queryError as Error).message || 'Lỗi không xác định'
     : null;
@@ -19,26 +24,29 @@ export const HomePage: React.FC = () => {
       {/* ========== DANH MỤC (grid icon + text như Chợ Tốt) ========== */}
       <section className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Danh mục</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            return (
+        {categoriesLoading ? (
+          <div className="text-center text-gray-500 py-8">
+            Đang tải danh mục...
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {categories.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/danh-muc/${cat.slug}`}
                 className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-orange-50 transition-colors group"
               >
-                <Icon
+                <Bike
                   className="w-9 h-9 text-gray-500 shrink-0 group-hover:text-[#f57224] transition-colors"
                   strokeWidth={1.5}
                 />
                 <span className="text-sm font-medium text-gray-700 text-center group-hover:text-[#f57224]">
-                  {cat.label}
+                  {cat.name}
                 </span>
               </Link>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ========== TIN ĐĂNG MỚI / NỔI BẬT (card như Chợ Tốt) ========== */}

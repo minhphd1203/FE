@@ -29,9 +29,7 @@ export const searchBikes = async (params: {
 };
 
 export const getBikeDetail = async (bikeId: string) => {
-  const res = await apiClient.get(`/buyer/v1/bikes/${bikeId}`, {
-    skipAuth: true,
-  });
+  const res = await apiClient.get(`/buyer/v1/bikes/${bikeId}`);
   return res.data;
 };
 

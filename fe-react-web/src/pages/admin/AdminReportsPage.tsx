@@ -575,7 +575,7 @@ export const AdminReportsPage: React.FC = () => {
     if (!userId) return;
     if (
       !window.confirm(
-        'Đóng hội thoại với người này? Buyer/seller sẽ không gửi tin tiếp tới admin theo luật backend.',
+        'Đóng hội thoại với người này? Buyer/seller sẽ không gửi tin tiếp tới admin.',
       )
     ) {
       return;

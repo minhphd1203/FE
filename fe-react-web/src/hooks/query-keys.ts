@@ -29,6 +29,7 @@ export const queryKeys = {
       ] as const,
   },
   buyer: {
+    categories: () => ['buyer', 'categories'] as const,
     recommended: (limit: number) => ['buyer', 'recommended', limit] as const,
     search: (params: Record<string, unknown>) =>
       ['buyer', 'search', params] as const,

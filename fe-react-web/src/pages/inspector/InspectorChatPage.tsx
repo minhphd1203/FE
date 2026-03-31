@@ -235,7 +235,6 @@ export const InspectorChatPage: React.FC = () => {
           {isClosed && partnerId && (
             <div className="px-4 py-2 bg-amber-50 text-amber-900 text-sm border-b border-amber-100">
               Hội thoại đã đóng — phía buyer/seller có thể không gửi tiếp theo
-              luật backend.
             </div>
           )}
 

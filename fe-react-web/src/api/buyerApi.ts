@@ -119,6 +119,15 @@ export type ReportReason = {
   isSystemAutoResolvable?: boolean;
 };
 
+export type BuyerCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 const unwrap = <T>(payload: T | ApiEnvelope<T>): T => {
   if (payload && typeof payload === 'object' && 'data' in (payload as object)) {
     return ((payload as ApiEnvelope<T>).data ?? []) as T;
@@ -151,6 +160,15 @@ function readListEnvelope<T>(raw: unknown): {
   return { items: [] };
 }
 
+// 0. Get all categories (public endpoint)
+export async function getCategories(): Promise<BuyerCategory[]> {
+  const response = await apiClient.get<ApiEnvelope<BuyerCategory[]>>(
+    '/buyer/v1/categories',
+    { skipAuth: true },
+  );
+  return unwrap<BuyerCategory[]>(response.data) || [];
+}
+
 // 1. Recommended bikes for homepage (đọc công khai — không gửi token)
 export async function getRecommendedBikes(limit = 10): Promise<BuyerBike[]> {
   const response = await apiClient.get<ApiEnvelope<BuyerBike[]>>(
@@ -165,6 +183,7 @@ export async function searchBikes(params?: {
   keyword?: string;
   brand?: string;
   model?: string;
+  categoryId?: string;
   minPrice?: number;
   maxPrice?: number;
   condition?: string;
@@ -191,7 +210,6 @@ export async function searchBikes(params?: {
 export async function getBikeDetails(bikeId: string): Promise<BuyerBike> {
   const response = await apiClient.get<ApiEnvelope<BuyerBike>>(
     `/buyer/v1/bikes/${bikeId}`,
-    { skipAuth: true },
   );
   return unwrap<BuyerBike>(response.data);
 }

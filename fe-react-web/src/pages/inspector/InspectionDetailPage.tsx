@@ -155,6 +155,17 @@ export const InspectionDetailPage: React.FC = () => {
     setShowConfirmModal(true);
   };
 
+  // Derive inspection status based on overallCondition
+  const getDerivedInspectionStatus = (
+    condition: string,
+  ): 'passed' | 'failed' | '' => {
+    if (condition === 'poor') return 'failed';
+    if (['excellent', 'good', 'fair'].includes(condition)) return 'passed';
+    return '';
+  };
+
+  const derivedStatus = getDerivedInspectionStatus(formData.overallCondition);
+
   const handleFinalSubmit = async (finalStatus: 'passed' | 'failed') => {
     setIsSubmitting(true);
     setError(null);
@@ -586,26 +597,6 @@ export const InspectionDetailPage: React.FC = () => {
             </h2>
 
             <div className="space-y-4">
-              {/* Overall Condition */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tình trạng chung *
-                </label>
-                <select
-                  name="overallCondition"
-                  value={formData.overallCondition}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
-                >
-                  <option value="">Chọn tình trạng</option>
-                  <option value="excellent">Tuyệt vời - Như mới</option>
-                  <option value="good">Tốt - Ít sử dụng</option>
-                  <option value="fair">Bình thường - Đã sử dụng</option>
-                  <option value="poor">Kém - Cần sửa chữa</option>
-                </select>
-              </div>
-
               {/* Frame */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -679,6 +670,26 @@ export const InspectionDetailPage: React.FC = () => {
                   <option value="smooth">Truyền động mượt</option>
                   <option value="reasonable">Hợp lý, có thể cải thiện</option>
                   <option value="issues">Có vấn đề, cần sửa</option>
+                </select>
+              </div>
+
+              {/* Overall Condition - Final Evaluation */}
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tình trạng chung (Đánh giá cuối cùng) *
+                </label>
+                <select
+                  name="overallCondition"
+                  value={formData.overallCondition}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#f57224]"
+                >
+                  <option value="">Chọn tình trạng</option>
+                  <option value="excellent">Tuyệt vời - Như mới</option>
+                  <option value="good">Tốt - Ít sử dụng</option>
+                  <option value="fair">Bình thường - Đã sử dụng</option>
+                  <option value="poor">Kém - Cần sửa chữa</option>
                 </select>
               </div>
 
@@ -803,17 +814,47 @@ export const InspectionDetailPage: React.FC = () => {
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 text-center">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Kết quả kiểm định
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Chọn kết quả kiểm định
             </h3>
-            <p className="text-gray-600 mb-6">
-              Bạn đánh giá chiếc xe này Đạt hay Không đạt tiêu chuẩn của sàn?
-            </p>
+
+            <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <span className="font-medium">Tình trạng chung:</span>{' '}
+                {formData.overallCondition}
+              </p>
+            </div>
+
+            {derivedStatus === 'failed' && (
+              <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200">
+                <p className="text-sm text-red-800 font-medium">
+                  ⚠️ Tình trạng "Kém" bắt buộc phải Không Đạt
+                  <br />
+                  <span className="text-xs text-red-700 mt-1 block">
+                    Bạn chỉ có thể chọn "Xe KHÔNG Đạt"
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {derivedStatus === 'passed' && (
+              <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200">
+                <p className="text-sm text-green-800 font-medium">
+                  ✓ Bạn có thể chọn Đạt hoặc Không Đạt
+                </p>
+              </div>
+            )}
+
             <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => handleFinalSubmit('passed')}
-                className="w-full py-3 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                disabled={derivedStatus === 'failed' || isSubmitting}
+                className={`w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-colors ${
+                  derivedStatus === 'failed'
+                    ? 'bg-gray-300 cursor-not-allowed opacity-50'
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
               >
                 <CheckCircle className="w-5 h-5" />
                 Xe Đạt Tiêu Chuẩn
@@ -821,7 +862,8 @@ export const InspectionDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleFinalSubmit('failed')}
-                className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-5 h-5" />
                 Xe KHÔNG Đạt
@@ -829,9 +871,10 @@ export const InspectionDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors mt-2"
+                disabled={isSubmitting}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Hủy, tôi cần kiểm tra lại
+                Hủy
               </button>
             </div>
           </div>

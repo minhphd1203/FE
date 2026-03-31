@@ -3,6 +3,7 @@ import {
   addToWishlist,
   cancelTransaction,
   getBikeDetails,
+  getCategories,
   getConversations,
   getMessagesWithSeller,
   getRecommendedBikes,
@@ -17,6 +18,7 @@ import {
   sendMessageToSeller,
   getMyReports,
   type BuyerBike,
+  type BuyerCategory,
   type ReportReason,
   type WishlistItem,
 } from '../../api/buyerApi';
@@ -47,6 +49,13 @@ function mapSellerDetailToBuyerBike(d: SellerBikeDetail): BuyerBike {
   };
 }
 
+export function useBuyerCategoriesQuery() {
+  return useQuery({
+    queryKey: queryKeys.buyer.categories(),
+    queryFn: () => getCategories(),
+  });
+}
+
 export function useBuyerRecommendedBikesQuery(limit = 10) {
   return useQuery({
     queryKey: queryKeys.buyer.recommended(limit),
@@ -71,6 +80,7 @@ export function useBuyerSearchBikesQuery(
     keyword?: string;
     brand?: string;
     model?: string;
+    categoryId?: string;
     minPrice?: number;
     maxPrice?: number;
     condition?: string;
