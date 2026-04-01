@@ -67,6 +67,7 @@ import { SellerMessagesPage } from '../pages/seller/SellerMessagesPage';
 import { SellerMessageThreadPage } from '../pages/seller/SellerMessageThreadPage';
 import { SellerReviewsPage } from '../pages/seller/SellerReviewsPage';
 import { SellerSalesStatsPage } from '../pages/seller/SellerSalesStatsPage';
+import { SellerDeliveryPage } from '../pages/seller/SellerDeliveryPage';
 
 const NotFoundPage: React.FC = () => (
   <div className="py-16 flex flex-col items-center gap-4 text-center">
@@ -207,6 +208,7 @@ export function App() {
                   path="don-hang/:id"
                   element={<SellerTransactionDetailPage />}
                 />
+                <Route path="giao-hang/:id" element={<SellerDeliveryPage />} />
                 <Route path="tin-nhan" element={<SellerMessagesPage />} />
                 <Route
                   path="tin-nhan/:partnerId"

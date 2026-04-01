@@ -122,9 +122,14 @@ export const OrderTrackingPage: React.FC = () => {
       icon: Clock,
       label: 'Đã đặt hàng',
       description: 'Yêu cầu mua xe của bạn đã được gửi đi thành công.',
-      isCompleted: ['pending', 'approved', 'completed', 'paid'].includes(
-        status,
-      ),
+      isCompleted: [
+        'pending',
+        'approved',
+        'completed',
+        'paid',
+        'shipping',
+        'delivered',
+      ].includes(status),
       isActive: status === 'pending',
     },
     {
@@ -132,7 +137,13 @@ export const OrderTrackingPage: React.FC = () => {
       icon: Package,
       label: 'Đã xác nhận',
       description: 'Người bán đã chấp nhận yêu cầu và đang chuẩn bị xe.',
-      isCompleted: ['approved', 'completed', 'paid'].includes(status),
+      isCompleted: [
+        'approved',
+        'completed',
+        'paid',
+        'shipping',
+        'delivered',
+      ].includes(status),
       isActive: status === 'approved',
     },
     {
@@ -140,24 +151,26 @@ export const OrderTrackingPage: React.FC = () => {
       icon: CreditCard,
       label: 'Thanh toán',
       description: 'Giao dịch đã được thanh toán (cọc hoặc toàn bộ).',
-      isCompleted: ['completed', 'paid'].includes(status),
-      isActive: false,
+      isCompleted: ['completed', 'paid', 'shipping', 'delivered'].includes(
+        status,
+      ),
+      isActive: ['completed', 'paid'].includes(status),
     },
     {
       id: 'shipping',
       icon: Truck,
       label: 'Đang vận chuyển',
       description: 'Xe đang được vận chuyển đến địa chỉ của bạn.',
-      isCompleted: false, // Giả lập hoặc theo dõi thực tế nếu có
-      isActive: ['completed', 'paid'].includes(status),
+      isCompleted: ['shipping', 'delivered'].includes(status),
+      isActive: status === 'shipping',
     },
     {
       id: 'received',
       icon: CheckCircle2,
       label: 'Đã nhận xe',
       description: 'Giao dịch hoàn tất và xe đã về tay chủ mới.',
-      isCompleted: false,
-      isActive: false,
+      isCompleted: status === 'delivered',
+      isActive: status === 'delivered',
       isLast: true,
     },
   ];
