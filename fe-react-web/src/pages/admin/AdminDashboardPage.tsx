@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   Clock,
   CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { AdminBike, AdminUser } from '../../apis/adminApi';
 import {
@@ -36,12 +37,22 @@ const getStatusBadge = (status: string) => {
     case 'rejected':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-          <ShoppingCart className="w-3 h-3" />
-          Bị từ chối
+          <XCircle className="w-3 h-3" />
+          Từ chối
+        </span>
+      );
+    case 'sold':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          Đã bán
         </span>
       );
     default:
-      return null;
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+          {status}
+        </span>
+      );
   }
 };
 
@@ -210,7 +221,7 @@ export const AdminDashboardPage: React.FC = () => {
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {listing.seller?.name || 'Không xác định'} •{' '}
-                      {new Date(listing.createdAt).toLocaleString()}
+                      {new Date(listing.createdAt).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 ml-4">

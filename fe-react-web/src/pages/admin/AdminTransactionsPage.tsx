@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-700' },
-  completed: { label: 'Hoàn thành', color: 'bg-green-100 text-green-700' },
+  pending: { label: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700' },
+  approved: { label: 'Đã duyệt (Chờ TT)', color: 'bg-blue-100 text-blue-700' },
+  completed: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-700' },
   cancelled: { label: 'Đã hủy', color: 'bg-red-100 text-red-700' },
+  paid: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-700' },
 };
 
 export const AdminTransactionsPage: React.FC = () => {

@@ -29,6 +29,7 @@ import {
 import {
   translateBikeCondition,
   translateInspectionStatus,
+  translateInspectionDetail,
 } from '../../utils/translations';
 
 interface InspectionFormData {
@@ -607,7 +608,7 @@ export const InspectionDetailPage: React.FC = () => {
                 >
                   <option value="">Chọn tình trạng</option>
                   <option value="perfect">Hoàn hảo</option>
-                  <option value="minor">Vết nhỏ nhưng không ảnh hưởng</option>
+                  <option value="minor">Trầy xước nhỏ</option>
                   <option value="damaged">Bị biến dạng</option>
                 </select>
               </div>
@@ -645,7 +646,7 @@ export const InspectionDetailPage: React.FC = () => {
                 >
                   <option value="">Chọn tình trạng</option>
                   <option value="working">Phanh hoạt động tốt</option>
-                  <option value="weak">Phanh yếu, cần điều chỉnh</option>
+                  <option value="weak">Phanh yếu, cần chỉnh</option>
                   <option value="broken">Phanh hỏng, cần thay</option>
                 </select>
               </div>
@@ -664,8 +665,8 @@ export const InspectionDetailPage: React.FC = () => {
                 >
                   <option value="">Chọn tình trạng</option>
                   <option value="smooth">Truyền động mượt</option>
-                  <option value="reasonable">Hợp lý, có thể cải thiện</option>
-                  <option value="issues">Có vấn đề, cần sửa</option>
+                  <option value="reasonable">Bình thường</option>
+                  <option value="issues">Có trục trặc</option>
                 </select>
               </div>
 
@@ -817,7 +818,7 @@ export const InspectionDetailPage: React.FC = () => {
             <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
               <p className="text-sm text-blue-800">
                 <span className="font-medium">Tình trạng chung:</span>{' '}
-                {formData.overallCondition}
+                {translateBikeCondition(formData.overallCondition)}
               </p>
             </div>
 

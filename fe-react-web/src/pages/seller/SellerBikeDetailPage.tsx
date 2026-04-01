@@ -12,6 +12,7 @@ import {
   translateInspectionStatus,
   translateBikeCondition,
   translateTransactionStatus,
+  translateInspectionDetail,
 } from '../../utils/translations';
 
 export const SellerBikeDetailPage: React.FC = () => {
@@ -290,11 +291,7 @@ export const SellerBikeDetailPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">
-                            {newestInspection.status === 'passed'
-                              ? 'Đạt Tiêu Chuẩn'
-                              : newestInspection.status === 'failed'
-                                ? 'Không Đạt Tiêu Chuẩn'
-                                : 'Chờ Kết Quả'}
+                            {translateInspectionStatus(newestInspection.status)}
                           </p>
                           <p className="text-xs text-gray-600 mt-1">
                             {new Date(
@@ -330,27 +327,27 @@ export const SellerBikeDetailPage: React.FC = () => {
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Khung Xe</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {translateBikeCondition(
+                            {translateInspectionDetail(
                               newestInspection.frameCondition,
-                            ) || '—'}
+                            )}
                           </p>
                         </div>
 
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Bánh Xe</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {translateBikeCondition(
+                            {translateInspectionDetail(
                               newestInspection.wheelCondition,
-                            ) || '—'}
+                            )}
                           </p>
                         </div>
 
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Hệ Phanh</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {translateBikeCondition(
+                            {translateInspectionDetail(
                               newestInspection.brakeCondition,
-                            ) || '—'}
+                            )}
                           </p>
                         </div>
 
@@ -359,9 +356,9 @@ export const SellerBikeDetailPage: React.FC = () => {
                             Truyền Động
                           </p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {translateBikeCondition(
+                            {translateInspectionDetail(
                               newestInspection.drivetrainCondition,
-                            ) || '—'}
+                            )}
                           </p>
                         </div>
                       </div>

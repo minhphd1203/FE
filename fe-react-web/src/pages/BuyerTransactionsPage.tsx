@@ -77,18 +77,10 @@ export const BuyerTransactionsPage: React.FC = () => {
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-800 border-amber-200',
     approved: 'bg-blue-100 text-blue-800 border-blue-200',
-    completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
     refunded: 'bg-red-100 text-red-800 border-red-200',
-  };
-
-  const statusLabels: Record<string, string> = {
-    pending: 'Chờ duyệt',
-    approved: 'Đã duyệt (Chờ TT)',
-    completed: 'Đã thanh toán',
-    paid: 'Đã thanh toán',
-    cancelled: 'Đã huỷ',
   };
 
   return (
@@ -112,9 +104,9 @@ export const BuyerTransactionsPage: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="">Tất cả trạng thái</option>
-            <option value="pending">Chờ xử lý</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="completed">Hoàn thành</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt (Chờ TT)</option>
+            <option value="completed">Đã thanh toán</option>
             <option value="cancelled">Đã huỷ</option>
           </select>
         </div>

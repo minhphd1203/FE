@@ -15,9 +15,10 @@ export const INSPECTION_STATUS_VNI: Record<string, string> = {
 };
 
 export const TRANSACTION_STATUS_VNI: Record<string, string> = {
-  pending: 'Chờ xử lý',
-  approved: 'Đã duyệt',
-  completed: 'Hoàn thành',
+  pending: 'Chờ duyệt',
+  approved: 'Đã duyệt (Chờ TT)',
+  completed: 'Đã thanh toán',
+  paid: 'Đã thanh toán',
   cancelled: 'Đã hủy',
   refunded: 'Đã hoàn tiền',
 };
@@ -27,6 +28,25 @@ export const BIKE_CONDITION_VNI: Record<string, string> = {
   good: 'Tốt',
   fair: 'Khá',
   poor: 'Cũ / Cần sửa',
+};
+
+export const INSPECTION_DETAIL_VNI: Record<string, string> = {
+  // Frame
+  perfect: 'Hoàn hảo',
+  minor: 'Trầy xước nhỏ',
+  damaged: 'Bị biến dạng',
+  // Wheels
+  new: 'Bánh mới',
+  good: 'Bánh tốt',
+  worn: 'Bánh mòn, cần thay',
+  // Brakes
+  working: 'Phanh hoạt động tốt',
+  weak: 'Phanh yếu, cần chỉnh',
+  broken: 'Phanh hỏng, cần thay',
+  // Drivetrain
+  smooth: 'Truyền động mượt',
+  reasonable: 'Bình thường',
+  issues: 'Có trục trặc',
 };
 
 export const translateBikeStatus = (status?: string) =>
@@ -40,3 +60,6 @@ export const translateTransactionStatus = (status?: string) =>
 
 export const translateBikeCondition = (condition?: string) =>
   condition ? BIKE_CONDITION_VNI[condition.toLowerCase()] || condition : '—';
+
+export const translateInspectionDetail = (detail?: string) =>
+  detail ? INSPECTION_DETAIL_VNI[detail.toLowerCase()] || detail : '—';
