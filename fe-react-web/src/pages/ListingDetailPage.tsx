@@ -17,6 +17,10 @@ import {
 import { SellerReviewForm } from '../components/SellerReviewForm';
 import { useAppSelector } from '../redux/hooks';
 import { formatChatSendError } from '../utils/chatErrors';
+import {
+  translateBikeStatus,
+  translateBikeCondition,
+} from '../utils/translations';
 
 export const ListingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -254,7 +258,7 @@ export const ListingDetailPage: React.FC = () => {
               <p className="text-xs text-gray-400">
                 Trạng thái tin:{' '}
                 <span className="font-medium text-gray-600">
-                  {listing.status}
+                  {translateBikeStatus(listing.status)}
                 </span>
               </p>
             )}
@@ -285,7 +289,7 @@ export const ListingDetailPage: React.FC = () => {
                 <div>
                   <dt className="text-gray-500 text-xs">Tình trạng</dt>
                   <dd className="font-medium text-gray-900">
-                    {listing.condition || '—'}
+                    {translateBikeCondition(listing.condition)}
                   </dd>
                 </div>
                 <div>
@@ -298,14 +302,6 @@ export const ListingDetailPage: React.FC = () => {
                   <dt className="text-gray-500 text-xs">Màu sắc</dt>
                   <dd className="font-medium text-gray-900">
                     {listing.color || '—'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500 text-xs">Số km đã đi</dt>
-                  <dd className="font-medium text-gray-900">
-                    {listing.mileage
-                      ? `${listing.mileage.toLocaleString('vi-VN')} km`
-                      : '—'}
                   </dd>
                 </div>
               </dl>

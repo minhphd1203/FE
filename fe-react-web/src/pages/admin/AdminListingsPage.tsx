@@ -25,6 +25,10 @@ import {
 } from '../../hooks/admin/useAdminQueries';
 import { AdminListingDetailModal } from './AdminListingDetailModal';
 import { getBikeImage, handleBikeImageError } from '../../utils/bikeImage';
+import {
+  translateBikeStatus,
+  translateBikeCondition,
+} from '../../utils/translations';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN').format(price) + ' d';
@@ -57,7 +61,7 @@ const getStatusBadge = (status: string) => {
     default:
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-          {status}
+          {translateBikeStatus(status)}
         </span>
       );
   }

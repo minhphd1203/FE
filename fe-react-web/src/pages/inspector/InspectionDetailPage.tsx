@@ -26,6 +26,10 @@ import {
   getSellerListingCategories,
   resolveBikeMediaUrl,
 } from '../../apis/sellerApi';
+import {
+  translateBikeCondition,
+  translateInspectionStatus,
+} from '../../utils/translations';
 
 interface InspectionFormData {
   status: 'passed' | 'failed' | '';
@@ -425,7 +429,7 @@ export const InspectionDetailPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Tình trạng (condition)</p>
               <p className="text-lg font-semibold text-gray-900">
-                {vehicle.condition?.trim() ? vehicle.condition : '—'}
+                {translateBikeCondition(vehicle.condition)}
               </p>
             </div>
             <div>
@@ -444,14 +448,6 @@ export const InspectionDetailPage: React.FC = () => {
               <p className="text-sm text-gray-600">Năm sản xuất</p>
               <p className="text-lg font-semibold text-gray-900">
                 {vehicle.year != null ? vehicle.year : '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Số km đã đi</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {vehicle.mileage != null && vehicle.mileage !== ''
-                  ? String(vehicle.mileage)
-                  : '—'}
               </p>
             </div>
             <div>

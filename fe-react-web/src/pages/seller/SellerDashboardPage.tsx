@@ -17,6 +17,10 @@ import {
   useSellerResubmitBikeMutation,
 } from '../../hooks/seller/useSellerQueries';
 import { resolveBikeMediaUrl } from '../../apis/sellerApi';
+import {
+  translateBikeStatus,
+  translateInspectionStatus,
+} from '../../utils/translations';
 
 const StatCard: React.FC<{
   label: string;
@@ -287,11 +291,11 @@ export const SellerDashboardPage: React.FC = () => {
               }}
             >
               <option value="">Tất cả</option>
-              <option value="pending">pending</option>
-              <option value="approved">approved</option>
-              <option value="rejected">rejected</option>
-              <option value="hidden">hidden</option>
-              <option value="sold">sold</option>
+              <option value="pending">Đang chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Bị từ chối</option>
+              <option value="hidden">Đang ẩn</option>
+              <option value="sold">Đã bán</option>
             </select>
           </div>
           <div className="flex-1 min-w-[180px]">
@@ -423,11 +427,11 @@ export const SellerDashboardPage: React.FC = () => {
                         </td>
                         <td className="px-3 py-2">
                           <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800">
-                            {row.status}
+                            {translateBikeStatus(row.status)}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-xs text-gray-600">
-                          {row.inspectionStatus}
+                          {translateInspectionStatus(row.inspectionStatus)}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex flex-col gap-1.5 items-start">

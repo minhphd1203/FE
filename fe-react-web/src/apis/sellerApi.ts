@@ -377,8 +377,31 @@ export interface SellerBikeDetailCategory {
 }
 
 /** BE có thể trả thêm field — giữ mở cho mảng inspections / transactions */
-export type SellerBikeDetailInspection = Record<string, unknown>;
-export type SellerBikeDetailTransaction = Record<string, unknown>;
+export interface SellerBikeDetailInspection {
+  status: string;
+  createdAt: string;
+  overallCondition: string;
+  frameCondition?: string;
+  wheelCondition?: string;
+  brakeCondition?: string;
+  drivetrainCondition?: string;
+  inspectionNote?: string;
+  recommendation?: string;
+  inspectionImages?: string[];
+}
+
+export interface SellerBikeDetailTransaction {
+  createdAt: string;
+  amount: number;
+  status: string;
+  paymentMethod: string;
+  notes?: string;
+  buyer?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+}
 
 export interface SellerBikeDetail {
   id: string;

@@ -7,6 +7,12 @@ import {
 } from '../../hooks/seller/useSellerQueries';
 import { resolveBikeMediaUrl } from '../../apis/sellerApi';
 import { formatDateTimeVi } from '../../utils/formatDisplayDate';
+import {
+  translateBikeStatus,
+  translateInspectionStatus,
+  translateBikeCondition,
+  translateTransactionStatus,
+} from '../../utils/translations';
 
 export const SellerBikeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -119,10 +125,10 @@ export const SellerBikeDetailPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">{bike.title}</h1>
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-              {bike.status}
+              {translateBikeStatus(bike.status)}
             </span>
             <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
-              Kiểm định: {bike.inspectionStatus}
+              Kiểm định: {translateInspectionStatus(bike.inspectionStatus)}
             </span>
           </div>
         </div>
@@ -144,7 +150,9 @@ export const SellerBikeDetailPage: React.FC = () => {
           </div>
           <div>
             <dt className="text-gray-500">Tình trạng</dt>
-            <dd className="font-medium text-gray-900">{bike.condition}</dd>
+            <dd className="font-medium text-gray-900">
+              {translateBikeCondition(bike.condition)}
+            </dd>
           </div>
           <div>
             <dt className="text-gray-500">Màu</dt>
@@ -304,7 +312,9 @@ export const SellerBikeDetailPage: React.FC = () => {
                               : 'bg-amber-100 text-amber-700'
                         }`}
                       >
-                        {newestInspection.overallCondition}
+                        {translateBikeCondition(
+                          newestInspection.overallCondition,
+                        )}
                       </span>
                     </div>
                   </div>
@@ -320,21 +330,27 @@ export const SellerBikeDetailPage: React.FC = () => {
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Khung Xe</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.frameCondition || '—'}
+                            {translateBikeCondition(
+                              newestInspection.frameCondition,
+                            ) || '—'}
                           </p>
                         </div>
 
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Bánh Xe</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.wheelCondition || '—'}
+                            {translateBikeCondition(
+                              newestInspection.wheelCondition,
+                            ) || '—'}
                           </p>
                         </div>
 
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Hệ Phanh</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.brakeCondition || '—'}
+                            {translateBikeCondition(
+                              newestInspection.brakeCondition,
+                            ) || '—'}
                           </p>
                         </div>
 
@@ -343,7 +359,9 @@ export const SellerBikeDetailPage: React.FC = () => {
                             Truyền Động
                           </p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.drivetrainCondition || '—'}
+                            {translateBikeCondition(
+                              newestInspection.drivetrainCondition,
+                            ) || '—'}
                           </p>
                         </div>
                       </div>
@@ -378,28 +396,31 @@ export const SellerBikeDetailPage: React.FC = () => {
                     )}
 
                     {/* Inspection Images */}
-                    {newestInspection.inspectionImages?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 mb-3">
-                          Ảnh Kiểm Định (
-                          {newestInspection.inspectionImages.length})
-                        </p>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                          {newestInspection.inspectionImages.map((img, i) => (
-                            <div
-                              key={i}
-                              className="rounded border border-gray-300 overflow-hidden"
-                            >
-                              <img
-                                src={img}
-                                alt={`inspection-${i}`}
-                                className="w-full h-24 object-cover"
-                              />
-                            </div>
-                          ))}
+                    {newestInspection.inspectionImages &&
+                      newestInspection.inspectionImages.length > 0 && (
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 mb-3">
+                            Ảnh Kiểm Định (
+                            {newestInspection.inspectionImages?.length})
+                          </p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                            {newestInspection.inspectionImages?.map(
+                              (img, i) => (
+                                <div
+                                  key={i}
+                                  className="rounded border border-gray-300 overflow-hidden"
+                                >
+                                  <img
+                                    src={img}
+                                    alt={`inspection-${i}`}
+                                    className="w-full h-24 object-cover"
+                                  />
+                                </div>
+                              ),
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
               ) : null;
@@ -473,13 +494,7 @@ export const SellerBikeDetailPage: React.FC = () => {
                                 : 'bg-red-100 text-red-700'
                         }`}
                       >
-                        {tx.status === 'completed'
-                          ? 'Hoàn tất'
-                          : tx.status === 'approved'
-                            ? 'Đã duyệt'
-                            : tx.status === 'pending'
-                              ? 'Chờ xác nhận'
-                              : 'Đã hủy'}
+                        {translateTransactionStatus(tx.status)}
                       </span>
                     </div>
                   </div>

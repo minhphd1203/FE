@@ -48,6 +48,7 @@ import { MessageSellerPage } from '../pages/MessageSellerPage';
 import { WishlistPage } from '../pages/WishlistPage';
 import { BuyerTransactionsPage } from '../pages/BuyerTransactionsPage';
 import { BuyerTransactionDetailPage } from '../pages/BuyerTransactionDetailPage';
+import { OrderTrackingPage } from '../pages/OrderTrackingPage';
 import { AllListingsPage } from '../pages/AllListingsPage';
 import { InspectorStatsPage } from '../pages/inspector/InspectorStatsPage';
 import { InspectionListPage } from '../pages/inspector/InspectionListPage';
@@ -126,6 +127,7 @@ export function App() {
                   path="don-mua/:id"
                   element={<BuyerTransactionDetailPage />}
                 />
+                <Route path="theo-doi/:id" element={<OrderTrackingPage />} />
                 <Route path="don-mua" element={<BuyerTransactionsPage />} />
                 <Route
                   path="lich-su-giao-dich"
