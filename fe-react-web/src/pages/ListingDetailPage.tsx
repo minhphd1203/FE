@@ -263,57 +263,77 @@ export const ListingDetailPage: React.FC = () => {
               </p>
             )}
 
-            <div className="mt-6 mb-2">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
-                Thông số chi tiết
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-gray-500 text-xs">Danh mục</dt>
-                  <dd className="font-medium text-gray-900">
-                    {listing.category?.name || '—'}
-                  </dd>
+            <div className="mt-8 space-y-6">
+              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-[#f57224] rounded-full"></span>
+                  Thông số kỹ thuật
+                </h3>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="space-y-1">
+                    <dt className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                      Danh mục
+                    </dt>
+                    <dd className="font-semibold text-gray-900 text-sm">
+                      {listing.category?.name || '—'}
+                    </dd>
+                  </div>
+                  <div className="space-y-1">
+                    <dt className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                      Hãng xe
+                    </dt>
+                    <dd className="font-semibold text-gray-900 text-sm">
+                      {listing.brand || '—'}
+                    </dd>
+                  </div>
+                  <div className="space-y-1">
+                    <dt className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                      Dòng xe / Model
+                    </dt>
+                    <dd className="font-semibold text-gray-900 text-sm">
+                      {listing.model || '—'}
+                    </dd>
+                  </div>
+                  <div className="space-y-1">
+                    <dt className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                      Tình trạng
+                    </dt>
+                    <dd className="font-semibold text-gray-900 text-sm">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-gray-200 shadow-sm text-[#f57224]">
+                        {translateBikeCondition(listing.condition)}
+                      </span>
+                    </dd>
+                  </div>
+                  <div className="space-y-1">
+                    <dt className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                      Năm sản xuất
+                    </dt>
+                    <dd className="font-semibold text-gray-900 text-sm">
+                      {listing.year || '—'}
+                    </dd>
+                  </div>
+                  <div className="space-y-1">
+                    <dt className="text-gray-400 text-[11px] font-bold uppercase tracking-wider">
+                      Màu sắc
+                    </dt>
+                    <dd className="font-semibold text-gray-900 text-sm">
+                      {listing.color || '—'}
+                    </dd>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-gray-500 text-xs">Hãng xe</dt>
-                  <dd className="font-medium text-gray-900">
-                    {listing.brand || '—'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500 text-xs">Dòng xe / Model</dt>
-                  <dd className="font-medium text-gray-900">
-                    {listing.model || '—'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500 text-xs">Tình trạng</dt>
-                  <dd className="font-medium text-gray-900">
-                    {translateBikeCondition(listing.condition)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500 text-xs">Năm sản xuất</dt>
-                  <dd className="font-medium text-gray-900">
-                    {listing.year || '—'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-500 text-xs">Màu sắc</dt>
-                  <dd className="font-medium text-gray-900">
-                    {listing.color || '—'}
-                  </dd>
-                </div>
-              </dl>
-            </div>
+              </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
-                Mô tả sản phẩm
-              </h3>
-              <p className="whitespace-pre-wrap">
-                {listing.description || 'Không có mô tả cho tin đăng này.'}
-              </p>
+              <div className="pt-2">
+                <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-[#f57224] rounded-full"></span>
+                  Mô tả sản phẩm
+                </h3>
+                <div className="relative">
+                  <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap font-medium bg-white rounded-xl">
+                    {listing.description || 'Không có mô tả cho tin đăng này.'}
+                  </p>
+                </div>
+              </div>
             </div>
             {!isOwnListing && (
               <div className="pt-4 flex flex-wrap gap-2">
