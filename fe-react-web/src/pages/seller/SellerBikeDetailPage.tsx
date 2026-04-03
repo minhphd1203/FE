@@ -251,9 +251,9 @@ export const SellerBikeDetailPage: React.FC = () => {
               const newestInspection =
                 bike.inspections?.length > 0
                   ? [...bike.inspections].sort(
-                      (a, b) =>
-                        new Date(b.createdAt).getTime() -
-                        new Date(a.createdAt).getTime(),
+                      (a: any, b: any) =>
+                        new Date(b.createdAt as string).getTime() -
+                        new Date(a.createdAt as string).getTime(),
                     )[0]
                   : null;
               return newestInspection ? (
@@ -267,44 +267,44 @@ export const SellerBikeDetailPage: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${
-                            newestInspection.status === 'passed'
+                            (newestInspection as any).status === 'passed'
                               ? 'bg-green-100 text-green-700'
-                              : newestInspection.status === 'failed'
+                              : (newestInspection as any).status === 'failed'
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-amber-100 text-amber-700'
                           }`}
                         >
-                          {newestInspection.status === 'passed'
+                          {(newestInspection as any).status === 'passed'
                             ? '✓'
-                            : newestInspection.status === 'failed'
+                            : (newestInspection as any).status === 'failed'
                               ? '✕'
                               : '−'}
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">
-                            {newestInspection.status === 'passed'
+                            {(newestInspection as any).status === 'passed'
                               ? 'Đạt Tiêu Chuẩn'
-                              : newestInspection.status === 'failed'
+                              : (newestInspection as any).status === 'failed'
                                 ? 'Không Đạt Tiêu Chuẩn'
                                 : 'Chờ Kết Quả'}
                           </p>
                           <p className="text-xs text-gray-600 mt-1">
                             {new Date(
-                              newestInspection.createdAt,
+                              (newestInspection as any).createdAt as string,
                             ).toLocaleDateString('vi-VN')}
                           </p>
                         </div>
                       </div>
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded text-xs font-semibold ${
-                          newestInspection.status === 'passed'
+                          (newestInspection as any).status === 'passed'
                             ? 'bg-green-100 text-green-700'
-                            : newestInspection.status === 'failed'
+                            : (newestInspection as any).status === 'failed'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-amber-100 text-amber-700'
                         }`}
                       >
-                        {newestInspection.overallCondition}
+                        {(newestInspection as any).overallCondition as string}
                       </span>
                     </div>
                   </div>
@@ -320,21 +320,24 @@ export const SellerBikeDetailPage: React.FC = () => {
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Khung Xe</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.frameCondition || '—'}
+                            {((newestInspection as any)
+                              .frameCondition as string) || '—'}
                           </p>
                         </div>
 
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Bánh Xe</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.wheelCondition || '—'}
+                            {((newestInspection as any)
+                              .wheelCondition as string) || '—'}
                           </p>
                         </div>
 
                         <div className="rounded border border-gray-300 p-3 bg-white">
                           <p className="text-xs text-gray-600 mb-2">Hệ Phanh</p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.brakeCondition || '—'}
+                            {((newestInspection as any)
+                              .brakeCondition as string) || '—'}
                           </p>
                         </div>
 
@@ -343,34 +346,49 @@ export const SellerBikeDetailPage: React.FC = () => {
                             Truyền Động
                           </p>
                           <p className="text-sm font-semibold text-gray-900">
-                            {newestInspection.drivetrainCondition || '—'}
+                            {((newestInspection as any)
+                              .drivetrainCondition as string) || '—'}
                           </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Notes & Recommendations */}
-                    {(newestInspection.inspectionNote ||
-                      newestInspection.recommendation) && (
+                    {(((newestInspection as any).inspectionNote as
+                      | string
+                      | null) ||
+                      ((newestInspection as any).recommendation as
+                        | string
+                        | null)) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {newestInspection.inspectionNote && (
+                        {((newestInspection as any).inspectionNote as
+                          | string
+                          | null) && (
                           <div className="rounded border border-gray-300 bg-white p-4">
                             <p className="text-xs font-semibold text-gray-700 mb-2 uppercase">
                               Ghi Chú
                             </p>
                             <p className="text-sm text-gray-700">
-                              {newestInspection.inspectionNote}
+                              {
+                                (newestInspection as any)
+                                  .inspectionNote as string
+                              }
                             </p>
                           </div>
                         )}
 
-                        {newestInspection.recommendation && (
+                        {((newestInspection as any).recommendation as
+                          | string
+                          | null) && (
                           <div className="rounded border border-gray-300 bg-white p-4">
                             <p className="text-xs font-semibold text-gray-700 mb-2 uppercase">
                               Khuyến Nghị
                             </p>
                             <p className="text-sm text-gray-700">
-                              {newestInspection.recommendation}
+                              {
+                                (newestInspection as any)
+                                  .recommendation as string
+                              }
                             </p>
                           </div>
                         )}
@@ -378,14 +396,28 @@ export const SellerBikeDetailPage: React.FC = () => {
                     )}
 
                     {/* Inspection Images */}
-                    {newestInspection.inspectionImages?.length > 0 && (
+                    {(
+                      ((newestInspection as any).inspectionImages as
+                        | string[]
+                        | undefined) ?? []
+                    ).length > 0 && (
                       <div>
                         <p className="text-sm font-semibold text-gray-900 mb-3">
                           Ảnh Kiểm Định (
-                          {newestInspection.inspectionImages.length})
+                          {
+                            (
+                              ((newestInspection as any).inspectionImages as
+                                | string[]
+                                | undefined) ?? []
+                            ).length
+                          }
+                          )
                         </p>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                          {newestInspection.inspectionImages.map((img, i) => (
+                          {(
+                            (newestInspection as any)
+                              .inspectionImages as string[]
+                          ).map((img: string, i: number) => (
                             <div
                               key={i}
                               className="rounded border border-gray-300 overflow-hidden"
@@ -442,7 +474,7 @@ export const SellerBikeDetailPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {bike.transactions.map((tx, idx) => (
+            {bike.transactions.map((tx: any, idx) => (
               <div
                 key={idx}
                 className="rounded-lg border border-gray-200 bg-gray-50 overflow-hidden"
@@ -452,32 +484,34 @@ export const SellerBikeDetailPage: React.FC = () => {
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900">
-                        {tx.buyer?.name || 'Ẩn danh'}
+                        {((tx.buyer as any)?.name as string) || 'Ẩn danh'}
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
-                        {new Date(tx.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(tx.createdAt as string).toLocaleDateString(
+                          'vi-VN',
+                        )}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-[#f57224]">
-                        {(tx.amount || 0).toLocaleString('vi-VN')} đ
+                        {((tx.amount as number) || 0).toLocaleString('vi-VN')} đ
                       </p>
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold mt-2 ${
-                          tx.status === 'completed'
+                          (tx.status as string) === 'completed'
                             ? 'bg-green-100 text-green-700'
-                            : tx.status === 'approved'
+                            : (tx.status as string) === 'approved'
                               ? 'bg-blue-100 text-blue-700'
-                              : tx.status === 'pending'
+                              : (tx.status as string) === 'pending'
                                 ? 'bg-amber-100 text-amber-700'
                                 : 'bg-red-100 text-red-700'
                         }`}
                       >
-                        {tx.status === 'completed'
+                        {(tx.status as string) === 'completed'
                           ? 'Hoàn tất'
-                          : tx.status === 'approved'
+                          : (tx.status as string) === 'approved'
                             ? 'Đã duyệt'
-                            : tx.status === 'pending'
+                            : (tx.status as string) === 'pending'
                               ? 'Chờ xác nhận'
                               : 'Đã hủy'}
                       </span>
@@ -496,13 +530,13 @@ export const SellerBikeDetailPage: React.FC = () => {
                       <div className="rounded border border-gray-300 p-3 bg-white">
                         <p className="text-xs text-gray-600">Email</p>
                         <p className="text-sm font-semibold text-gray-900 mt-1 break-all">
-                          {tx.buyer?.email || '—'}
+                          {((tx.buyer as any)?.email as string) || '—'}
                         </p>
                       </div>
                       <div className="rounded border border-gray-300 p-3 bg-white">
                         <p className="text-xs text-gray-600">Điện Thoại</p>
                         <p className="text-sm font-semibold text-gray-900 mt-1">
-                          {tx.buyer?.phone || '—'}
+                          {((tx.buyer as any)?.phone as string) || '—'}
                         </p>
                       </div>
                       <div className="rounded border border-gray-300 p-3 bg-white">
@@ -510,11 +544,11 @@ export const SellerBikeDetailPage: React.FC = () => {
                           Phương Thức Thanh Toán
                         </p>
                         <p className="text-sm font-semibold text-gray-900 mt-1">
-                          {tx.paymentMethod === 'vnpay'
+                          {(tx.paymentMethod as string) === 'vnpay'
                             ? 'VNPay'
-                            : tx.paymentMethod === 'transfer'
+                            : (tx.paymentMethod as string) === 'transfer'
                               ? 'Chuyển khoản'
-                              : tx.paymentMethod === 'cash'
+                              : (tx.paymentMethod as string) === 'cash'
                                 ? 'Tiền mặt'
                                 : 'Trực tiếp'}
                         </p>
@@ -523,12 +557,14 @@ export const SellerBikeDetailPage: React.FC = () => {
                   </div>
 
                   {/* Notes */}
-                  {tx.notes && (
+                  {(tx.notes as string | null) && (
                     <div className="rounded border border-gray-300 bg-white p-4">
                       <p className="text-xs font-semibold text-gray-700 mb-2 uppercase">
                         Ghi Chú
                       </p>
-                      <p className="text-sm text-gray-700">{tx.notes}</p>
+                      <p className="text-sm text-gray-700">
+                        {tx.notes as string}
+                      </p>
                     </div>
                   )}
                 </div>

@@ -89,12 +89,12 @@ export const CategoryPage: React.FC = () => {
           Trang chủ
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-gray-900">{category.label}</span>
+        <span className="font-medium text-gray-900">{category.name}</span>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{category.label}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
           {!loading && !error && (
             <span className="text-sm text-gray-500 mt-1 block">
               {searchResult?.meta?.total ?? listings.length} tin đăng
