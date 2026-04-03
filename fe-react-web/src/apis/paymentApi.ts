@@ -8,6 +8,7 @@ export interface CreateTransactionRequest {
   transactionType?: string;
   /** Swagger: e.g. vnpay */
   paymentMethod?: string | null;
+  shippingAddress?: string;
 }
 
 export interface CreateTransactionResponse {

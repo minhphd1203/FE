@@ -63,7 +63,6 @@ export const SellerBikeEditPage: React.FC = () => {
     year: '',
     price: '',
     condition: 'excellent',
-    mileage: '',
     color: '',
     video: '',
     description: '',
@@ -85,7 +84,6 @@ export const SellerBikeEditPage: React.FC = () => {
           ? bike.price.toLocaleString('vi-VN').replace(/\./g, '')
           : '',
       condition: bike.condition || 'excellent',
-      mileage: bike.mileage != null ? String(bike.mileage) : '',
       color: bike.color ?? '',
       video: bike.video ?? '',
       description: bike.description ?? '',
@@ -143,7 +141,6 @@ export const SellerBikeEditPage: React.FC = () => {
       price: amount,
       condition: formData.condition,
       categoryId: catId,
-      mileage: formData.mileage.trim(),
       color: formData.color.trim(),
       video: formData.video.trim(),
       imageFiles:
@@ -327,20 +324,7 @@ export const SellerBikeEditPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Số km (tuỳ chọn)
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#f57224] focus:ring-1 focus:ring-[#f57224]"
-              value={formData.mileage}
-              onChange={(e) =>
-                setFormData({ ...formData, mileage: e.target.value })
-              }
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Màu

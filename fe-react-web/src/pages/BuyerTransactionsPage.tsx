@@ -15,6 +15,7 @@ import {
   useBuyerCreateRemainingPaymentUrlMutation,
 } from '../hooks/buyer/useBuyerQueries';
 import { VnpayPaymentModal } from '../components/VnpayPaymentModal';
+import { translateTransactionStatus } from '../utils/translations';
 
 export const BuyerTransactionsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -76,17 +77,10 @@ export const BuyerTransactionsPage: React.FC = () => {
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-800 border-amber-200',
     approved: 'bg-blue-100 text-blue-800 border-blue-200',
-    completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    completed: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
-  };
-
-  const statusLabels: Record<string, string> = {
-    pending: 'Chờ duyệt',
-    approved: 'Đã duyệt (Chờ TT)',
-    completed: 'Đã thanh toán',
-    paid: 'Đã thanh toán',
-    cancelled: 'Đã huỷ',
+    refunded: 'bg-red-100 text-red-800 border-red-200',
   };
 
   return (
@@ -111,8 +105,8 @@ export const BuyerTransactionsPage: React.FC = () => {
           >
             <option value="">Tất cả trạng thái</option>
             <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="completed">Hoàn thành</option>
+            <option value="approved">Đã duyệt (Chờ TT)</option>
+            <option value="completed">Đã thanh toán</option>
             <option value="cancelled">Đã huỷ</option>
           </select>
         </div>
@@ -171,7 +165,7 @@ export const BuyerTransactionsPage: React.FC = () => {
                       <span
                         className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${statusColors[item.status] || 'bg-gray-100 text-gray-700'}`}
                       >
-                        {statusLabels[item.status] || item.status}
+                        {translateTransactionStatus(item.status)}
                       </span>
                       {isDeposit && (
                         <span className="px-2.5 py-1 text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200 rounded-md">
@@ -215,6 +209,14 @@ export const BuyerTransactionsPage: React.FC = () => {
                       onClick={() => navigate(`/don-mua/${item.id}`)}
                     >
                       Chi tiết
+                    </button>
+
+                    <button
+                      type="button"
+                      className="px-4 py-2 text-sm font-bold rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 transition-colors flex items-center gap-1"
+                      onClick={() => navigate(`/theo-doi/${item.id}`)}
+                    >
+                      Theo dõi
                     </button>
 
                     {isPending && (

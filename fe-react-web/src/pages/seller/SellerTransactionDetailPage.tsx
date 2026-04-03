@@ -10,6 +10,7 @@ import {
   CreditCard,
   ExternalLink,
   CalendarDays,
+  Truck,
 } from 'lucide-react';
 import {
   useSellerTransactionDetailQuery,
@@ -246,6 +247,26 @@ export const SellerTransactionDetailPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {(status === 'completed' || status === 'paid') && (
+              <div className="p-6 rounded-2xl border border-orange-100 bg-orange-50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-orange-900 mb-1 flex items-center gap-2">
+                    <Truck className="w-5 h-5" /> Chuẩn bị giao hàng
+                  </h3>
+                  <p className="text-sm text-orange-800/80">
+                    Người mua đã thanh toán thành công. Vui lòng chuẩn bị xe và
+                    bàn giao cho đơn vị vận chuyển.
+                  </p>
+                </div>
+                <Link
+                  to={`/seller/giao-hang/${id}`}
+                  className="shrink-0 px-6 py-3 bg-[#f57224] text-white rounded-xl font-bold hover:bg-[#e0651a] shadow-lg shadow-orange-200 transition-all flex items-center gap-2"
+                >
+                  Xử lý giao hàng <ExternalLink className="w-4 h-4" />
+                </Link>
               </div>
             )}
 

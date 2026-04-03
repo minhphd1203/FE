@@ -376,37 +376,31 @@ export interface SellerBikeDetailCategory {
   updatedAt: string;
 }
 
-/** Inspection result from inspector */
+/** BE có thể trả thêm field — giữ mở cho mảng inspections / transactions */
 export interface SellerBikeDetailInspection {
-  id?: string;
-  createdAt: string;
   status: string;
+  createdAt: string;
   overallCondition: string;
-  frameCondition: string;
-  wheelCondition: string;
-  brakeCondition: string;
-  drivetrainCondition: string;
-  inspectionNote?: string | null;
-  recommendation?: string | null;
+  frameCondition?: string;
+  wheelCondition?: string;
+  brakeCondition?: string;
+  drivetrainCondition?: string;
+  inspectionNote?: string;
+  recommendation?: string;
   inspectionImages?: string[];
-  [key: string]: unknown;
 }
 
-/** Transaction (offer) from buyer */
 export interface SellerBikeDetailTransaction {
-  id?: string;
   createdAt: string;
   amount: number;
   status: string;
-  paymentMethod?: string;
-  notes?: string | null;
+  paymentMethod: string;
+  notes?: string;
   buyer?: {
-    id?: string;
     name?: string;
     email?: string;
     phone?: string;
-  } | null;
-  [key: string]: unknown;
+  };
 }
 
 export interface SellerBikeDetail {

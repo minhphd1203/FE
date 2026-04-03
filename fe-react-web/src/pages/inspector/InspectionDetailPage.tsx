@@ -26,6 +26,11 @@ import {
   getSellerListingCategories,
   resolveBikeMediaUrl,
 } from '../../apis/sellerApi';
+import {
+  translateBikeCondition,
+  translateInspectionStatus,
+  translateInspectionDetail,
+} from '../../utils/translations';
 
 interface InspectionFormData {
   status: 'passed' | 'failed' | '';
@@ -87,6 +92,8 @@ export const InspectionDetailPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showRejectionReasonForm, setShowRejectionReasonForm] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const categoryIdTrim = vehicle?.categoryId?.trim() ?? '';
   const categoryNameTrim = vehicle?.categoryName?.trim() ?? '';
@@ -425,7 +432,7 @@ export const InspectionDetailPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Tình trạng (condition)</p>
               <p className="text-lg font-semibold text-gray-900">
-                {vehicle.condition?.trim() ? vehicle.condition : '—'}
+                {translateBikeCondition(vehicle.condition)}
               </p>
             </div>
             <div>
@@ -444,14 +451,6 @@ export const InspectionDetailPage: React.FC = () => {
               <p className="text-sm text-gray-600">Năm sản xuất</p>
               <p className="text-lg font-semibold text-gray-900">
                 {vehicle.year != null ? vehicle.year : '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Số km đã đi</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {vehicle.mileage != null && vehicle.mileage !== ''
-                  ? String(vehicle.mileage)
-                  : '—'}
               </p>
             </div>
             <div>
@@ -611,7 +610,7 @@ export const InspectionDetailPage: React.FC = () => {
                 >
                   <option value="">Chọn tình trạng</option>
                   <option value="perfect">Hoàn hảo</option>
-                  <option value="minor">Vết nhỏ nhưng không ảnh hưởng</option>
+                  <option value="minor">Trầy xước nhỏ</option>
                   <option value="damaged">Bị biến dạng</option>
                 </select>
               </div>
@@ -649,7 +648,7 @@ export const InspectionDetailPage: React.FC = () => {
                 >
                   <option value="">Chọn tình trạng</option>
                   <option value="working">Phanh hoạt động tốt</option>
-                  <option value="weak">Phanh yếu, cần điều chỉnh</option>
+                  <option value="weak">Phanh yếu, cần chỉnh</option>
                   <option value="broken">Phanh hỏng, cần thay</option>
                 </select>
               </div>
@@ -668,8 +667,8 @@ export const InspectionDetailPage: React.FC = () => {
                 >
                   <option value="">Chọn tình trạng</option>
                   <option value="smooth">Truyền động mượt</option>
-                  <option value="reasonable">Hợp lý, có thể cải thiện</option>
-                  <option value="issues">Có vấn đề, cần sửa</option>
+                  <option value="reasonable">Bình thường</option>
+                  <option value="issues">Có trục trặc</option>
                 </select>
               </div>
 
@@ -821,7 +820,7 @@ export const InspectionDetailPage: React.FC = () => {
             <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
               <p className="text-sm text-blue-800">
                 <span className="font-medium">Tình trạng chung:</span>{' '}
-                {formData.overallCondition}
+                {translateBikeCondition(formData.overallCondition)}
               </p>
             </div>
 
@@ -861,7 +860,7 @@ export const InspectionDetailPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleFinalSubmit('failed')}
+                onClick={() => setShowRejectionReasonForm(true)}
                 disabled={isSubmitting}
                 className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -875,6 +874,62 @@ export const InspectionDetailPage: React.FC = () => {
                 className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nhập Lý Do Từ Chối */}
+      {showRejectionReasonForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Lý do xe không đạt
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Vui lòng nhập chi tiết lý do vì sao xe không đạt tiêu chuẩn
+            </p>
+
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Mô tả chi tiết lý do từ chối. Ví dụ: Khung xe bị gẫy ở phần đầu, không thể sửa chữa..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none mb-4"
+              rows={5}
+            />
+            <p className="text-xs text-gray-500 mb-4">
+              {rejectionReason.length} / 20 ký tự tối thiểu
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRejectionReasonForm(false);
+                  setRejectionReason('');
+                }}
+                disabled={isSubmitting}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (rejectionReason.trim().length < 20) {
+                    alert('Lý do phải có ít nhất 20 ký tự');
+                    return;
+                  }
+                  // Gọi handleFinalSubmit với status 'failed' và lý do
+                  await handleFinalSubmit('failed');
+                  setShowRejectionReasonForm(false);
+                  setRejectionReason('');
+                }}
+                disabled={isSubmitting || rejectionReason.trim().length < 20}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Đang gửi...' : 'Xác nhận'}
               </button>
             </div>
           </div>

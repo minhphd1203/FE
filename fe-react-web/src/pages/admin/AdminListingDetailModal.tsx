@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, ExternalLink, User, Tag, Calendar, Hash } from 'lucide-react';
 import type { AdminBike } from '../../apis/adminApi';
+import {
+  translateBikeStatus,
+  translateBikeCondition,
+  translateInspectionStatus,
+} from '../../utils/translations';
 
 const API_ORIGIN =
   (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(
@@ -35,12 +40,6 @@ type AdminListingDetailModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bike: AdminBike | null;
-};
-
-const statusLabel: Record<string, string> = {
-  approved: 'Đang hiển thị',
-  pending: 'Chờ duyệt',
-  rejected: 'Đã từ chối',
 };
 
 export const AdminListingDetailModal: React.FC<
@@ -150,7 +149,7 @@ export const AdminListingDetailModal: React.FC<
                           : 'bg-red-100 text-red-800'
                     }`}
                   >
-                    {statusLabel[bike.status] ?? bike.status}
+                    {translateBikeStatus(bike.status)}
                   </span>
                 </div>
 
@@ -176,7 +175,7 @@ export const AdminListingDetailModal: React.FC<
                       Tình trạng
                     </dt>
                     <dd className="mt-0.5 font-medium text-gray-900">
-                      {bike.condition}
+                      {translateBikeCondition(bike.condition)}
                     </dd>
                   </div>
                   <div className="rounded-lg bg-gray-50 px-3 py-2">
