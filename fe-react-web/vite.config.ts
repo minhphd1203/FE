@@ -9,16 +9,16 @@ import path from 'path';
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../node_modules/.vite/fe-react-web',
+  proxy: {
+    '/api': {
+      target: 'http://localhost:3000',
+      changeOrigin: true,
+      secure: false,
+    },
+  },
   server: {
     port: 4200,
     host: 'localhost',
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
   preview: {
     port: 4200,

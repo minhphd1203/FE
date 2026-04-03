@@ -56,6 +56,8 @@ export const adminTransactionSchema = z
     createdAt: dateTimeStringSchema,
     updatedAt: dateTimeStringSchema,
     notes: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+    shippingAddress: z.string().nullable().optional(),
   })
   .passthrough();
 

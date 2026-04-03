@@ -8,6 +8,8 @@ export interface CreateTransactionRequest {
   transactionType?: string;
   /** Swagger: e.g. vnpay */
   paymentMethod?: string | null;
+  /** Địa chỉ giao hàng — một số BE dùng `address` (cột DB), một số dùng `shippingAddress` */
+  address?: string;
   shippingAddress?: string;
 }
 

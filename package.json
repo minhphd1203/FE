@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "nx serve fe-react-web",
+    "ngrok": "ngrok http 5173",
     "build": "nx build fe-react-web",
     "test": "nx test fe-react-web",
     "lint": "nx lint fe-react-web",

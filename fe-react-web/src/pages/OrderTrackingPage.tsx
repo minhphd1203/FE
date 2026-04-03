@@ -111,10 +111,15 @@ export const OrderTrackingPage: React.FC = () => {
     seller,
     status,
     shippingAddress,
+    address,
     createdAt,
     amount,
     transactionType,
   } = transaction as any;
+  const deliveryLine =
+    (typeof address === 'string' && address.trim()) ||
+    (typeof shippingAddress === 'string' && shippingAddress.trim()) ||
+    '';
 
   const steps = [
     {
@@ -223,13 +228,13 @@ export const OrderTrackingPage: React.FC = () => {
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <MapPin className="w-4 h-4" /> Địa chỉ giao hàng
                 </h3>
-                {shippingAddress ? (
+                {deliveryLine ? (
                   <div className="space-y-1">
                     <p className="font-bold text-gray-900">
                       Người nhận: {transaction.fullName || 'Người mua'}
                     </p>
                     <p className="text-sm text-gray-600 leading-relaxed font-medium">
-                      {shippingAddress}
+                      {deliveryLine}
                     </p>
                   </div>
                 ) : (

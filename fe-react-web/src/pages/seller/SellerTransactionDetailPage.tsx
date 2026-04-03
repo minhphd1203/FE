@@ -11,6 +11,7 @@ import {
   ExternalLink,
   CalendarDays,
   Truck,
+  MapPin,
 } from 'lucide-react';
 import {
   useSellerTransactionDetailQuery,
@@ -113,7 +114,14 @@ export const SellerTransactionDetailPage: React.FC = () => {
     paymentMethod,
     createdAt,
     notes: buyerNotes,
+    address,
+    shippingAddress,
+    fullName,
   } = transaction as any;
+  const deliveryAddress =
+    (typeof address === 'string' && address.trim()) ||
+    (typeof shippingAddress === 'string' && shippingAddress.trim()) ||
+    '';
   const isPending = status === 'pending';
   const isApproved = status === 'approved';
   // const isCompleted = status === 'completed' || status === 'paid';
@@ -338,6 +346,25 @@ export const SellerTransactionDetailPage: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {deliveryAddress && (
+                <div className="mt-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5" />
+                    Địa chỉ giao hàng (người mua)
+                  </p>
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    {fullName ? (
+                      <>
+                        <span className="font-medium">Người nhận: </span>
+                        {fullName}
+                        <br />
+                      </>
+                    ) : null}
+                    {deliveryAddress}
+                  </p>
+                </div>
+              )}
 
               {buyerNotes && (
                 <div className="mt-6 bg-gray-50 p-4 rounded-xl border border-gray-100">

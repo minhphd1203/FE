@@ -75,7 +75,20 @@ export const SellerDeliveryPage: React.FC = () => {
     );
   }
 
-  const { bike, buyer, status, amount, createdAt } = transaction as any;
+  const {
+    bike,
+    buyer,
+    status,
+    amount,
+    createdAt,
+    address,
+    shippingAddress,
+    fullName,
+  } = transaction as any;
+  const deliveryAddress =
+    (typeof address === 'string' && address.trim()) ||
+    (typeof shippingAddress === 'string' && shippingAddress.trim()) ||
+    '';
 
   const handleArrangeShipment = async () => {
     if (!shippingMethod) {
@@ -486,7 +499,23 @@ export const SellerDeliveryPage: React.FC = () => {
                         Địa chỉ nhận
                       </p>
                       <p className="text-xs font-bold text-gray-700 leading-relaxed">
-                        Khu Công Nghệ Cao, Tân Phú, Quận 9, TP. Hồ Chí Minh
+                        {deliveryAddress ? (
+                          <>
+                            {fullName ? (
+                              <>
+                                <span className="text-gray-500 font-semibold">
+                                  {fullName}
+                                </span>
+                                <br />
+                              </>
+                            ) : null}
+                            {deliveryAddress}
+                          </>
+                        ) : (
+                          <span className="text-gray-400 font-medium italic">
+                            Chưa có địa chỉ giao hàng trên đơn.
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

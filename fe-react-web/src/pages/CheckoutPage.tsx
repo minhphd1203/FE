@@ -140,13 +140,15 @@ export const CheckoutPage: React.FC = () => {
     if (finalAmount <= 0) return;
     setError(null);
     try {
+      const addressLine = `${formData.addressDetail}, ${formData.ward}, ${formData.district}, ${formData.province}`;
       await createTxMut.mutateAsync({
         bikeId,
         amount: finalAmount,
         notes: formData.note || `Yêu cầu mua xe ${bike?.title || ''}`,
         transactionType,
         paymentMethod: method === 'cod' ? null : 'vnpay',
-        shippingAddress: `${formData.addressDetail}, ${formData.ward}, ${formData.district}, ${formData.province}`,
+        address: addressLine,
+        shippingAddress: addressLine,
       });
       setIsSuccess(true);
     } catch (err: unknown) {

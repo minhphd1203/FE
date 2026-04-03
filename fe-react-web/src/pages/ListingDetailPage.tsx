@@ -5,7 +5,13 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { ChevronLeft, MessageSquare, AlertTriangle, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import {
   useBuyerAddToWishlistMutation,
@@ -51,6 +57,31 @@ export const ListingDetailPage: React.FC = () => {
   const reportMut = useBuyerReportViolationMutation();
   const { data: reportReasons = [], isLoading: reasonsLoading } =
     useBuyerReportReasonsQuery({ enabled: showReportModal });
+
+  const [galleryActiveIdx, setGalleryActiveIdx] = useState(0);
+
+  useEffect(() => {
+    setGalleryActiveIdx(0);
+  }, [id]);
+
+  const galleryImages = useMemo(() => {
+    if (!listing) return [];
+    const arr = Array.isArray(listing.images)
+      ? listing.images.filter(
+          (u): u is string => typeof u === 'string' && u.trim().length > 0,
+        )
+      : [];
+    if (arr.length > 0) return arr;
+    const single = listing.image;
+    if (typeof single === 'string' && single.trim()) return [single];
+    return [];
+  }, [listing]);
+
+  useEffect(() => {
+    setGalleryActiveIdx((i) =>
+      galleryImages.length === 0 ? 0 : Math.min(i, galleryImages.length - 1),
+    );
+  }, [galleryImages]);
 
   useEffect(() => {
     if (searchParams.get('openReport') !== '1') return;
@@ -218,23 +249,83 @@ export const ListingDetailPage: React.FC = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="grid md:grid-cols-2 gap-0">
-          <div className="bg-gray-100 flex items-center justify-center">
-            {listing.images?.[0] || listing.image ? (
-              <img
-                src={getBikeImage(
-                  listing.images?.[0] || listing.image,
-                  listing.title,
-                )}
-                alt={listing.title}
-                className="w-full h-full object-cover"
-                onError={(e) => handleBikeImageError(e, listing.title)}
-              />
-            ) : (
-              <img
-                src={getBikeImage(undefined, listing.title)}
-                alt="Xe dap"
-                className="w-full h-full object-cover"
-              />
+          <div className="bg-gray-100 flex flex-col min-h-[240px] md:min-h-0">
+            <div className="relative flex-1 min-h-[220px] md:aspect-square md:max-h-[min(100vw,520px)] flex items-center justify-center bg-gray-200">
+              {galleryImages.length > 0 ? (
+                <>
+                  <img
+                    src={getBikeImage(
+                      galleryImages[galleryActiveIdx],
+                      listing.title,
+                    )}
+                    alt={`${listing.title} — ảnh ${galleryActiveIdx + 1}`}
+                    className="w-full h-full object-contain md:object-cover max-h-[70vh] md:max-h-none"
+                    onError={(e) => handleBikeImageError(e, listing.title)}
+                  />
+                  {galleryImages.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Ảnh trước"
+                        onClick={() =>
+                          setGalleryActiveIdx(
+                            (i) =>
+                              (i - 1 + galleryImages.length) %
+                              galleryImages.length,
+                          )
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 text-gray-800 shadow-md border border-gray-200 hover:bg-white"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Ảnh sau"
+                        onClick={() =>
+                          setGalleryActiveIdx(
+                            (i) => (i + 1) % galleryImages.length,
+                          )
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 text-gray-800 shadow-md border border-gray-200 hover:bg-white"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/55 text-white text-xs px-2.5 py-1">
+                        {galleryActiveIdx + 1} / {galleryImages.length}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <img
+                  src={getBikeImage(undefined, listing.title)}
+                  alt="Xe dap"
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+            {galleryImages.length > 1 && (
+              <div className="flex gap-2 p-3 overflow-x-auto border-t border-gray-200/80 bg-gray-100">
+                {galleryImages.map((src, i) => (
+                  <button
+                    key={`${src}-${i}`}
+                    type="button"
+                    onClick={() => setGalleryActiveIdx(i)}
+                    className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f57224] ${
+                      i === galleryActiveIdx
+                        ? 'border-[#f57224] ring-2 ring-[#f57224]/25'
+                        : 'border-transparent opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={getBikeImage(src, listing.title)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => handleBikeImageError(e, listing.title)}
+                    />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
