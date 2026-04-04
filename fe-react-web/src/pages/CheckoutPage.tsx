@@ -133,20 +133,22 @@ export const CheckoutPage: React.FC = () => {
   const finalAmount =
     transactionType === 'full_payment'
       ? Number(amount || bike?.price || 0)
-      : Number((amount || bike?.price || 0) * 0.1);
+      : Number((amount || bike?.price || 0) * 0.3);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (finalAmount <= 0) return;
     setError(null);
     try {
+      const addressLine = `${formData.addressDetail}, ${formData.ward}, ${formData.district}, ${formData.province}`;
       await createTxMut.mutateAsync({
         bikeId,
         amount: finalAmount,
         notes: formData.note || `Yêu cầu mua xe ${bike?.title || ''}`,
         transactionType,
         paymentMethod: method === 'cod' ? null : 'vnpay',
-        shippingAddress: `${formData.addressDetail}, ${formData.ward}, ${formData.district}, ${formData.province}`,
+        address: addressLine,
+        shippingAddress: addressLine,
       });
       setIsSuccess(true);
     } catch (err: unknown) {
@@ -466,7 +468,7 @@ export const CheckoutPage: React.FC = () => {
                     />
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-gray-900 text-base">
-                        Đặt cọc trước (10%)
+                        Đặt cọc trước (30%)
                       </span>
                       <div
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${transactionType === 'deposit' ? 'border-[#f57224]' : 'border-gray-300'}`}
@@ -477,7 +479,8 @@ export const CheckoutPage: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-sm text-gray-500 font-medium">
-                      Giữ chỗ ngay, xem xe và thanh toán phần còn lại sau
+                      Thanh toán 30% trước để giữ chỗ, phần còn lại sẽ được
+                      thanh toán sau.
                     </p>
                   </label>
                 </div>
@@ -632,9 +635,9 @@ export const CheckoutPage: React.FC = () => {
                 {transactionType === 'deposit' && (
                   <div className="flex justify-between items-center px-3 py-2 bg-orange-50 font-semibold text-[#f57224] rounded-lg mt-2 border border-orange-100">
                     <span className="flex items-center gap-1.5">
-                      <ChevronLeft className="w-4 h-4" /> Đặt cọc 10%
+                      <ChevronLeft className="w-4 h-4" /> Đặt cọc 30%
                     </span>
-                    <span>- 90%</span>
+                    <span>Còn lại 70%</span>
                   </div>
                 )}
               </div>

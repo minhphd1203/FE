@@ -38,11 +38,14 @@ export const AdminTransactionsPage: React.FC = () => {
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return transactions.filter((tx) => {
+      const addr =
+        `${tx.address ?? ''} ${tx.shippingAddress ?? ''}`.toLowerCase();
       const matchTerm =
         !term ||
         tx.bike?.title.toLowerCase().includes(term) ||
         tx.buyer?.name.toLowerCase().includes(term) ||
-        tx.seller?.name.toLowerCase().includes(term);
+        tx.seller?.name.toLowerCase().includes(term) ||
+        addr.includes(term);
       return matchTerm;
     });
   }, [transactions, searchTerm]);

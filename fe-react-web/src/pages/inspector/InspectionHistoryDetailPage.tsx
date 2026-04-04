@@ -149,6 +149,17 @@ export const InspectionHistoryDetailPage: React.FC = () => {
                 </p>
               </div>
             )}
+
+            {inspection?.status === 'failed' && inspection?.reason?.trim() && (
+              <div className="mt-4 bg-red-50 p-4 rounded-lg border border-red-100">
+                <h3 className="text-sm font-medium text-red-800 mb-1">
+                  Lý do không đạt
+                </h3>
+                <p className="text-sm text-red-900 whitespace-pre-wrap">
+                  {inspection.reason}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="w-full md:w-56 shrink-0 flex flex-col gap-4">

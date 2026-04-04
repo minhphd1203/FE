@@ -6,6 +6,10 @@ export const createTransactionRequestSchema = z.object({
   bikeId: z.string().min(1),
   amount: z.coerce.number().positive(),
   notes: z.string().optional(),
+  transactionType: z.string().optional(),
+  paymentMethod: z.string().nullable().optional(),
+  address: z.string().optional(),
+  shippingAddress: z.string().optional(),
 });
 
 /** POST /buyer/v1/transactions (api/buyerApi — amount string | number) */

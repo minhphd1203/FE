@@ -13,8 +13,9 @@ export const HomePage: React.FC = () => {
     isLoading: loading,
     error: queryError,
   } = useBuyerRecommendedBikesQuery(10);
-  const { data: categories = [], isLoading: categoriesLoading } =
+  const { data: categoriesRaw, isLoading: categoriesLoading } =
     useBuyerCategoriesQuery();
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
   const error = queryError
     ? (queryError as Error).message || 'Lỗi không xác định'
     : null;

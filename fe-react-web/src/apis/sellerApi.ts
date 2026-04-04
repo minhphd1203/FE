@@ -387,6 +387,7 @@ export interface SellerBikeDetailInspection {
   drivetrainCondition?: string;
   inspectionNote?: string;
   recommendation?: string;
+  reason?: string | null;
   inspectionImages?: string[];
 }
 
@@ -396,6 +397,8 @@ export interface SellerBikeDetailTransaction {
   status: string;
   paymentMethod: string;
   notes?: string;
+  address?: string | null;
+  shippingAddress?: string | null;
   buyer?: {
     name?: string;
     email?: string;

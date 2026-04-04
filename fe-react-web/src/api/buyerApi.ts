@@ -56,6 +56,8 @@ export type BuyerBikeInspection = {
   wheelCondition?: string;
   inspectionNote?: string;
   recommendation?: string;
+  /** Lý do không đạt khi inspector từ chối */
+  reason?: string | null;
   createdAt?: string;
 };
 
@@ -75,6 +77,10 @@ export type BuyerTransaction = {
   status?: string;
   paymentMethod?: string | null;
   notes?: string;
+  /** Địa chỉ giao hàng (BE có thể trả `address` và/hoặc `shippingAddress`) */
+  address?: string | null;
+  shippingAddress?: string | null;
+  fullName?: string | null;
   createdAt?: string;
   updatedAt?: string;
   bike?: BuyerBike;
@@ -135,6 +141,20 @@ const unwrap = <T>(payload: T | ApiEnvelope<T>): T => {
   return payload as T;
 };
 
+/** BE đôi khi trả `{ items }` / `{ categories }` thay vì mảng trực tiếp */
+function coerceArray<T>(value: unknown): T[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === 'object') {
+    const o = value as Record<string, unknown>;
+    for (const key of ['items', 'categories', 'data', 'bikes'] as const) {
+      const v = o[key];
+      if (Array.isArray(v)) return v as T[];
+    }
+  }
+  return [];
+}
+
 function stripParams(
   params?: Record<string, unknown>,
 ): Record<string, string | number> {
@@ -166,7 +186,7 @@ export async function getCategories(): Promise<BuyerCategory[]> {
     '/buyer/v1/categories',
     { skipAuth: true },
   );
-  return unwrap<BuyerCategory[]>(response.data) || [];
+  return coerceArray<BuyerCategory>(unwrap(response.data));
 }
 
 // 1. Recommended bikes for homepage (đọc công khai — không gửi token)
@@ -175,7 +195,7 @@ export async function getRecommendedBikes(limit = 10): Promise<BuyerBike[]> {
     '/buyer/v1/bikes/recommended',
     { params: { limit }, skipAuth: true },
   );
-  return unwrap<BuyerBike[]>(response.data) || [];
+  return coerceArray<BuyerBike>(unwrap(response.data));
 }
 
 // 2. Search bikes with filters (Swagger: brand, model, sortBy, sortOrder, page, limit, …)

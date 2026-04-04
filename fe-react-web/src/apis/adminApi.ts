@@ -60,6 +60,8 @@ export interface AdminTransaction {
   createdAt: string;
   updatedAt: string;
   notes?: string | null;
+  address?: string | null;
+  shippingAddress?: string | null;
   bike?: {
     id: string;
     title: string;

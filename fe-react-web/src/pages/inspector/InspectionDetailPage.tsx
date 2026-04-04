@@ -173,7 +173,10 @@ export const InspectionDetailPage: React.FC = () => {
 
   const derivedStatus = getDerivedInspectionStatus(formData.overallCondition);
 
-  const handleFinalSubmit = async (finalStatus: 'passed' | 'failed') => {
+  const handleFinalSubmit = async (
+    finalStatus: 'passed' | 'failed',
+    opts?: { reason?: string },
+  ) => {
     setIsSubmitting(true);
     setError(null);
     setShowConfirmModal(false);
@@ -188,6 +191,9 @@ export const InspectionDetailPage: React.FC = () => {
         inspectionNote: formData.inspectionNote,
         recommendation: formData.recommendation,
         inspectionImages: uploadedImages,
+        ...(finalStatus === 'failed' && opts?.reason
+          ? { reason: opts.reason }
+          : {}),
       };
       await submitMut.mutateAsync({ bikeId: id!, data: payload });
       setShowSuccess(true);
@@ -860,7 +866,10 @@ export const InspectionDetailPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setShowRejectionReasonForm(true)}
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setShowRejectionReasonForm(true);
+                }}
                 disabled={isSubmitting}
                 className="w-full py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -921,8 +930,9 @@ export const InspectionDetailPage: React.FC = () => {
                     alert('Lý do phải có ít nhất 20 ký tự');
                     return;
                   }
-                  // Gọi handleFinalSubmit với status 'failed' và lý do
-                  await handleFinalSubmit('failed');
+                  await handleFinalSubmit('failed', {
+                    reason: rejectionReason.trim(),
+                  });
                   setShowRejectionReasonForm(false);
                   setRejectionReason('');
                 }}

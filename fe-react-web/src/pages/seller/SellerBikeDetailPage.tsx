@@ -364,6 +364,18 @@ export const SellerBikeDetailPage: React.FC = () => {
                       </div>
                     </div>
 
+                    {newestInspection.status === 'failed' &&
+                      newestInspection.reason?.trim() && (
+                        <div className="rounded border border-red-200 bg-red-50 p-4">
+                          <p className="text-xs font-semibold text-red-800 mb-2 uppercase">
+                            Lý do không đạt
+                          </p>
+                          <p className="text-sm text-red-900 whitespace-pre-wrap">
+                            {newestInspection.reason}
+                          </p>
+                        </div>
+                      )}
+
                     {/* Notes & Recommendations */}
                     {(newestInspection.inspectionNote ||
                       newestInspection.recommendation) && (
@@ -517,6 +529,16 @@ export const SellerBikeDetailPage: React.FC = () => {
                           {tx.buyer?.phone || '—'}
                         </p>
                       </div>
+                      {(tx.address?.trim() || tx.shippingAddress?.trim()) && (
+                        <div className="rounded border border-gray-300 p-3 bg-white md:col-span-3">
+                          <p className="text-xs text-gray-600">
+                            Địa chỉ giao hàng
+                          </p>
+                          <p className="text-sm font-semibold text-gray-900 mt-1 leading-relaxed">
+                            {tx.address?.trim() || tx.shippingAddress}
+                          </p>
+                        </div>
+                      )}
                       <div className="rounded border border-gray-300 p-3 bg-white">
                         <p className="text-xs text-gray-600">
                           Phương Thức Thanh Toán
