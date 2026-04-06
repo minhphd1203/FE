@@ -12,6 +12,10 @@ import {
   CalendarDays,
   MapPin,
 } from 'lucide-react';
+import {
+  useFulfillmentDetailQuery,
+  useConfirmReceiptMutation,
+} from '../hooks/useFulfillmentQueries';
 import { SellerReviewForm } from '../components/SellerReviewForm';
 import { VnpayPaymentModal } from '../components/VnpayPaymentModal';
 import {
@@ -21,10 +25,18 @@ import {
 } from '../hooks/buyer/useBuyerQueries';
 import { useAppSelector } from '../redux/hooks';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
+import { toast } from 'sonner';
+import { Truck } from 'lucide-react';
+import { RootState } from '../redux/store';
 
 export const BuyerTransactionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const authed = useAppSelector((s) => s.auth.isAuthenticated);
+  const authed = useAppSelector((s: RootState) => s.auth.isAuthenticated);
+
+  // Fetch fulfillment details alongside transaction details
+  const { data: fullData } = useFulfillmentDetailQuery(id);
+  const confirmReceiptMut = useConfirmReceiptMutation();
+
   const {
     data: transaction,
     isLoading,
@@ -43,6 +55,16 @@ export const BuyerTransactionDetailPage: React.FC = () => {
   const handleOpenPaymentModal = (type: 'initial' | 'remaining') => {
     setPaymentType(type);
     setShowPaymentModal(true);
+  };
+
+  const handleConfirmReceipt = async () => {
+    if (!id) return;
+    try {
+      await confirmReceiptMut.mutateAsync(id);
+      toast.success('Xác nhận đã nhận hàng thành công!');
+    } catch (err) {
+      toast.error('Lỗi khi xác nhận nhận hàng');
+    }
   };
 
   if (!authed) {
@@ -110,6 +132,9 @@ export const BuyerTransactionDetailPage: React.FC = () => {
     shippingAddress,
     fullName,
   } = transaction as any;
+
+  const deliveryStatus = fullData?.data?.deliveryStatus;
+
   const deliveryAddress =
     (typeof address === 'string' && address.trim()) ||
     (typeof shippingAddress === 'string' && shippingAddress.trim()) ||
@@ -126,7 +151,20 @@ export const BuyerTransactionDetailPage: React.FC = () => {
   const canPayRemaining =
     isCompleted && isDeposit && Number(remainingBalance) > 0;
 
+  // Xác nhận nhận hàng: Khi status là completed/paid VÀ deliveryStatus là delivered
+  const canConfirmReceipt =
+    isCompleted && deliveryStatus === 'delivered' && status !== 'completed'; // Giả sử completed là trạng thái cuối cùng sau khi confirm receipt
+
   const getStatusBadge = () => {
+    // Override badge if delivered but not confirmed
+    if (deliveryStatus === 'delivered' && isCompleted) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold">
+          <Truck className="w-4 h-4" /> Đã giao hàng (Chờ xác nhận)
+        </span>
+      );
+    }
+
     switch (status) {
       case 'pending':
         return (
@@ -231,6 +269,16 @@ export const BuyerTransactionDetailPage: React.FC = () => {
                         : 'Bạn đã thanh toán cọc. Vui lòng hoàn tất thanh toán số dư để nhận xe.'}
                   </p>
                 </div>
+
+                {canConfirmReceipt && (
+                  <button
+                    onClick={handleConfirmReceipt}
+                    className="shrink-0 whitespace-nowrap px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    Xác nhận đã nhận hàng
+                  </button>
+                )}
 
                 {canPayInitial && (
                   <button
@@ -449,7 +497,13 @@ export const BuyerTransactionDetailPage: React.FC = () => {
         open={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         isPending={createPaymentMut.isPending || createRemainingMut.isPending}
-        requestPayment={async ({ bankCode, language }) => {
+        requestPayment={async ({
+          bankCode,
+          language,
+        }: {
+          bankCode?: string;
+          language?: string;
+        }) => {
           if (!transaction?.id || !paymentType) {
             throw new Error('Thiếu thông tin đơn thanh toán.');
           }

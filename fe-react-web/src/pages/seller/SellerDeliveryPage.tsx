@@ -17,19 +17,20 @@ import {
   Info,
 } from 'lucide-react';
 import {
-  useSellerTransactionDetailQuery,
-  useSellerUpdateTransactionMutation,
-} from '../../hooks/seller/useSellerQueries';
+  useFulfillmentDetailQuery,
+  useUpdateDeliveryStatusMutation,
+} from '../../hooks/useFulfillmentQueries';
 import { getBikeImage, handleBikeImageError } from '../../utils/bikeImage';
 import { toast } from 'sonner';
 
 export const SellerDeliveryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading, error } = useSellerTransactionDetailQuery(id);
-  const updateMut = useSellerUpdateTransactionMutation();
 
-  const [step, setStep] = useState(1);
+  // Use the specific fulfillment query for more accurate delivery data
+  const { data, isLoading, error } = useFulfillmentDetailQuery(id);
+  const deliveryMut = useUpdateDeliveryStatusMutation();
+
   const [shippingMethod, setShippingMethod] = useState<
     'pickup' | 'carrier' | null
   >(null);
@@ -37,13 +38,20 @@ export const SellerDeliveryPage: React.FC = () => {
 
   const transaction = data?.data;
 
+  // Derive current step from deliveryStatus
+  // null -> 1 (Packing)
+  // preparing -> 2 (Shipping)
+  // delivering/delivered -> 3 (Timeline/Done)
+  const currentStatus = transaction?.deliveryStatus;
+  const step = !currentStatus ? 1 : currentStatus === 'preparing' ? 2 : 3;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[#f57224] border-t-transparent rounded-full animate-spin"></div>
           <p className="text-gray-500 font-medium">
-            Đang tải cấu hình giao hàng...
+            Đang tải dữ liệu giao hàng...
           </p>
         </div>
       </div>
@@ -78,17 +86,37 @@ export const SellerDeliveryPage: React.FC = () => {
   const {
     bike,
     buyer,
-    status,
     amount,
-    createdAt,
+    deliveryUpdatedAt,
     address,
     shippingAddress,
-    fullName,
-  } = transaction as any;
+    fullName: transactionFullName,
+    createdAt,
+  } = transaction;
+
+  const fullName = transactionFullName || buyer.fullName || buyer.name;
   const deliveryAddress =
     (typeof address === 'string' && address.trim()) ||
     (typeof shippingAddress === 'string' && shippingAddress.trim()) ||
     '';
+
+  const handleConfirmPacking = async () => {
+    setIsProcessing(true);
+    try {
+      await deliveryMut.mutateAsync({
+        transactionId: id!,
+        body: {
+          status: 'preparing',
+          deliveryNotes: 'Người bán đã đóng gói xong. Đang chờ vận chuyển.',
+        },
+      });
+      toast.success('Đã xác nhận đóng gói!');
+    } catch (err) {
+      toast.error('Lỗi khi cập nhật trạng thái đóng gói');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleArrangeShipment = async () => {
     if (!shippingMethod) {
@@ -98,38 +126,19 @@ export const SellerDeliveryPage: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // Simulate backend update for shipping
-      await updateMut.mutateAsync({
+      await deliveryMut.mutateAsync({
         transactionId: id!,
         body: {
-          status: 'shipping', // If backend supports it, otherwise use completed with notes
-          notes: `[GIAO_HANG] Phương thức: ${shippingMethod === 'pickup' ? 'Người mua tự lấy' : 'Đơn vị vận chuyển'}. Trạng thái: Đang chuẩn bị hàng.`,
+          status: 'delivering',
+          deliveryNotes: `Đang giao hàng. Phương thức: ${shippingMethod === 'pickup' ? 'Người mua tự lấy' : 'Đơn vị vận chuyển (Chợ Xe Đạp Express)'}.`,
         },
       });
-      setStep(3);
-      toast.success('Hệ thống đã xác nhận phương thức giao hàng!');
+      toast.success('Đã bắt đầu quy trình giao hàng!');
     } catch (err) {
-      // Fallback if 'shipping' status is not allowed
-      try {
-        await updateMut.mutateAsync({
-          transactionId: id!,
-          body: {
-            status: status, // maintain current
-            notes: `[SHIP_INFO] ${shippingMethod === 'carrier' ? 'Vận chuyển chuyên nghiệp' : 'Tự lấy hàng'}`,
-          },
-        });
-        setStep(3);
-      } catch (innerErr) {
-        toast.error('Lỗi khi cập nhật trạng thái giao hàng');
-      }
+      toast.error('Lỗi khi cập nhật trạng thái vận chuyển');
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleConfirmPacking = () => {
-    setStep(2);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -342,12 +351,6 @@ export const SellerDeliveryPage: React.FC = () => {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => setStep(1)}
-                  className="flex-1 py-4 px-6 bg-white border-2 border-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                >
-                  <ChevronLeft className="w-5 h-5" /> Quay lại
-                </button>
-                <button
                   onClick={handleArrangeShipment}
                   disabled={!shippingMethod || isProcessing}
                   className="flex-[2] py-4 px-6 bg-[#f57224] text-white rounded-2xl font-black hover:bg-[#e0651a] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-2"
@@ -451,10 +454,7 @@ export const SellerDeliveryPage: React.FC = () => {
               <div className="flex gap-4">
                 <div className="w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden shrink-0 border border-gray-100">
                   <img
-                    src={getBikeImage(
-                      bike?.image || bike?.images?.[0],
-                      bike?.title,
-                    )}
+                    src={getBikeImage(bike?.images?.[0], bike?.title)}
                     alt={bike?.title}
                     className="w-full h-full object-cover"
                     onError={(e) => handleBikeImageError(e, bike?.title)}

@@ -1,361 +1,296 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
-  useBuyerConversationsQuery,
-  useBuyerMessagesWithSellerQuery,
-  useBuyerSendMessageMutation,
-} from '../hooks/buyer/useBuyerQueries';
+  useConversationsQuery,
+  useMessageThreadQuery,
+  useSendMessageMutation,
+} from '../hooks/useMessageQueries';
 import {
-  MessageSquare,
+  MessageCircle,
   Send,
   User,
   Clock,
   Bike,
-  Paperclip,
+  ChevronRight,
+  Search,
+  MessageSquare,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { resolvePublicFileUrl } from '../utils/publicFileUrl';
-import { formatChatSendError } from '../utils/chatErrors';
+import { toast } from 'sonner';
 
 export const MessageSellerPage: React.FC = () => {
-  const [activeSellerId, setActiveSellerId] = useState('');
+  const [activePartnerId, setActivePartnerId] = useState('');
   const [activeBikeId, setActiveBikeId] = useState('');
   const [message, setMessage] = useState('');
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [error, setError] = useState('');
+  const messageEndRef = useRef<HTMLDivElement>(null);
 
-  // 1. Fetch danh sách hội thoại
-  const { data: conversations = [], isFetching: isFetchingConversations } =
-    useBuyerConversationsQuery();
+  // 1. Fetch unified conversations
+  const { data: convsData, isLoading: isConvsLoading } =
+    useConversationsQuery();
+  const conversations = convsData?.data || [];
 
-  // 2. Fetch chi tiết tin nhắn khi có activeSellerId
-  const {
-    data: messages = [],
-    refetch,
-    isFetching: isFetchingMessages,
-  } = useBuyerMessagesWithSellerQuery(activeSellerId, {
-    bikeId: activeBikeId || undefined,
-  });
+  // 2. Fetch thread detail
+  const { data: threadData, isLoading: isThreadLoading } =
+    useMessageThreadQuery(activePartnerId, activeBikeId);
+  const messages = threadData?.data || [];
 
-  const sendMut = useBuyerSendMessageMutation();
-  const loading = sendMut.isPending || isFetchingMessages;
+  const sendMut = useSendMessageMutation();
 
-  const handleSelectConversation = (partnerId: string, bikeId: string) => {
-    setActiveSellerId(partnerId);
-    setActiveBikeId(bikeId);
-    setError('');
-  };
+  useEffect(() => {
+    if (messages.length > 0 && messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isThreadLoading]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeSellerId || !message.trim()) return;
-    setError('');
+    if (!activePartnerId || !activeBikeId || !message.trim()) return;
     try {
       await sendMut.mutateAsync({
-        sellerId: activeSellerId,
+        partnerId: activePartnerId,
+        bikeId: activeBikeId,
         content: message.trim(),
-        bikeId: activeBikeId || undefined,
-        attachment,
       });
       setMessage('');
-      setAttachment(null);
-      refetch();
-    } catch (err: unknown) {
-      setError(formatChatSendError(err));
+    } catch (err) {
+      toast.error('Không thể gửi tin nhắn.');
     }
   };
 
   const activeConv = conversations.find(
-    (c: {
-      partner?: { id?: string };
-      bike?: { id?: string };
-      conversationStatus?: string;
-    }) =>
-      c.partner?.id === activeSellerId &&
-      String(c.bike?.id ?? '') === String(activeBikeId ?? ''),
+    (c) =>
+      c.partner.id === activePartnerId &&
+      String(c.lastMessage.bikeId) === String(activeBikeId),
   );
-  const activePartner = activeConv?.partner;
-  const conversationClosed = activeConv?.conversationStatus === 'closed';
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 pb-20">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          Hội thoại với người bán
-        </h1>
-        <p className="text-gray-500">
-          Lịch sử trò chuyện về các xe bạn đang quan tâm hoặc đã hỏi mua.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#FDFCFB] pb-20">
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        <header className="mb-10">
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
+            Hộp thư Trò chuyện
+          </h1>
+          <p className="text-gray-500 font-medium">
+            Nơi kết nối và trao đổi trực tiếp với những người bán xe uy tín.
+          </p>
+        </header>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Sidebar: Conversation List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[600px]">
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#f57224]" />
-              Danh sách tin nhắn
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {isFetchingConversations && conversations.length === 0 ? (
-              <p className="text-center text-gray-500 py-10 text-sm">
-                Đang tải danh sách...
-              </p>
-            ) : conversations.length === 0 ? (
-              <div className="text-center py-10 px-4">
-                <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <MessageSquare className="w-6 h-6" />
-                </div>
-                <p className="text-gray-500 text-sm">
-                  Chưa có cuộc hội thoại nào.
-                </p>
+        <div className="grid lg:grid-cols-12 gap-8 h-[750px]">
+          {/* Left: Conversation List */}
+          <div className="lg:col-span-4 bg-white rounded-[40px] shadow-2xl shadow-orange-100/30 border border-gray-50 flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-gray-50">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm hội thoại..."
+                  className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-orange-100 transition-all"
+                />
               </div>
-            ) : (
-              <div className="space-y-1">
-                {conversations.map((conv, idx) => {
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+              {isConvsLoading ? (
+                <div className="py-20 flex flex-col items-center opacity-30">
+                  <div className="w-8 h-8 border-4 border-[#f57224] border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+                    Đang tải danh sách...
+                  </p>
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="py-20 text-center px-6">
+                  <div className="w-16 h-16 bg-orange-50 text-orange-200 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare className="w-8 h-8" />
+                  </div>
+                  <p className="text-gray-400 font-bold text-sm leading-relaxed">
+                    Bạn chưa có cuộc trò chuyện nào.
+                    <br />
+                    Hãy bắt đầu hỏi mua sản phẩm!
+                  </p>
+                </div>
+              ) : (
+                conversations.map((conv, idx) => {
                   const isActive =
-                    activeSellerId === conv.partner?.id &&
-                    activeBikeId === (conv.bike?.id || '');
+                    activePartnerId === conv.partner.id &&
+                    activeBikeId === (conv.lastMessage.bikeId || '');
                   return (
                     <button
                       key={idx}
-                      onClick={() =>
-                        handleSelectConversation(
-                          conv.partner?.id,
-                          conv.bike?.id || '',
-                        )
-                      }
-                      className={`w-full text-left p-3 rounded-xl transition-colors flex gap-3 items-start
-                        ${isActive ? 'bg-[#f57224]/5 border border-[#f57224]/20' : 'hover:bg-gray-50 border border-transparent'}`}
+                      onClick={() => {
+                        setActivePartnerId(conv.partner.id);
+                        setActiveBikeId(conv.lastMessage.bikeId || '');
+                      }}
+                      className={`w-full text-left p-4 rounded-[28px] transition-all flex gap-4 items-center group
+                        ${isActive ? 'bg-orange-50/50 ring-2 ring-orange-100 shadow-lg shadow-orange-100/20' : 'hover:bg-gray-50'}`}
                     >
-                      <img
-                        src={
-                          conv.partner?.avatar ||
-                          'https://via.placeholder.com/40'
-                        }
-                        alt={conv.partner?.name || 'Seller'}
-                        className="w-12 h-12 rounded-full object-cover border border-gray-200 shrink-0"
-                      />
+                      <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-gray-100 border-2 border-white shadow-sm flex items-center justify-center text-gray-300">
+                        {conv.partner.avatar ? (
+                          <img
+                            src={conv.partner.avatar}
+                            alt={conv.partner.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-6 h-6" />
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
+                        <div className="flex justify-between items-center mb-1">
                           <p
-                            className={`font-semibold text-sm truncate pr-2 ${isActive ? 'text-[#f57224]' : 'text-gray-900'}`}
+                            className={`font-black text-[15px] truncate ${isActive ? 'text-[#f57224]' : 'text-gray-900'}`}
                           >
-                            {conv.partner?.name || 'Người bán (Đã xóa)'}
+                            {conv.partner.name}
                           </p>
-                          {conv.lastMessage?.createdAt && (
-                            <span className="text-[11px] text-gray-400 shrink-0 flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {formatDistanceToNow(
-                                new Date(conv.lastMessage.createdAt),
-                                {
-                                  addSuffix: true,
-                                  locale: vi,
-                                },
-                              ).replace('khoảng ', '')}
+                          {conv.unreadCount > 0 && (
+                            <span className="w-5 h-5 bg-[#f57224] text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg shadow-orange-200">
+                              {conv.unreadCount}
                             </span>
                           )}
                         </div>
-                        {conv.bike?.title && (
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1 truncate">
-                            <Bike className="w-3.5 h-3.5" />
-                            <span className="truncate">{conv.bike.title}</span>
-                          </div>
-                        )}
-                        <p
-                          className={`text-sm truncate ${conv.lastMessage?.isRead === false && !conv.lastMessage?.isMine ? 'font-semibold text-gray-900' : 'text-gray-500'}`}
-                        >
-                          {conv.lastMessage?.isMine ? 'Bạn: ' : ''}
-                          {conv.lastMessage?.content || ''}
+                        <p className="text-xs font-medium text-gray-500 line-clamp-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                          {conv.lastMessage.content}
                         </p>
                       </div>
+                      <ChevronRight
+                        className={`w-4 h-4 transition-all ${isActive ? 'text-[#f57224] translate-x-1' : 'text-gray-200 opacity-0 group-hover:opacity-100'}`}
+                      />
                     </button>
                   );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Chat Area */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[600px]">
-          {/* Chat Header */}
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0 overflow-hidden border border-gray-200">
-              {activePartner?.avatar ? (
-                <img
-                  src={activePartner.avatar}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-5 h-5" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 leading-tight truncate">
-                {activeSellerId
-                  ? activePartner?.name || 'Người bán'
-                  : 'Chưa chọn hội thoại'}
-              </p>
-              {activeSellerId && (
-                <p className="text-xs text-[#f57224] truncate">
-                  ID:{' '}
-                  <span className="font-mono font-medium">
-                    #{activeSellerId.substring(0, 8).toUpperCase()}
-                  </span>
-                </p>
+                })
               )}
             </div>
           </div>
-          {conversationClosed && activeSellerId && (
-            <div className="px-4 py-2 bg-amber-50 text-amber-900 text-xs border-b border-amber-100">
-              Hội thoại đã đóng — bạn không thể gửi tin theo luật hệ thống (403
-              nếu thử gửi).
-            </div>
-          )}
 
-          {/* Messages List */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/30">
-            {!activeSellerId ? (
-              <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                <MessageSquare className="w-12 h-12 text-gray-400 mb-3" />
-                <p className="text-gray-500">
-                  Chọn một cuộc hội thoại bên trái để bắt đầu nhắn tin.
+          {/* Right: Chat Window */}
+          <div className="lg:col-span-8 bg-white rounded-[44px] shadow-2xl shadow-orange-100/30 border border-gray-50 flex flex-col overflow-hidden relative">
+            {!activePartnerId ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-10 bg-[#FDFCFB]/50">
+                <div className="w-24 h-24 bg-white rounded-[40px] shadow-2xl shadow-orange-100 flex items-center justify-center mb-8 animate-bounce duration-[2000ms]">
+                  <MessageCircle className="w-12 h-12 text-orange-200" />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">
+                  Chọn cuộc hội thoại
+                </h3>
+                <p className="text-gray-400 font-medium max-w-xs">
+                  Chọn một người bán từ danh sách bên trái để bắt đầu trao đổi
+                  chi tiết về sản phẩm.
                 </p>
               </div>
-            ) : isFetchingMessages && messages.length === 0 ? (
-              <p className="text-center text-gray-500 py-10">
-                Đang tải tin nhắn...
-              </p>
-            ) : messages.length === 0 ? (
-              <p className="text-center text-gray-400 py-10 bg-white border border-gray-100 rounded-xl">
-                Chưa có tin nhắn nào.
-              </p>
             ) : (
-              <div className="space-y-4">
-                {messages.map((msg: any, idx: number) => {
-                  const isMine =
-                    msg.senderId !== activeSellerId &&
-                    msg.sender !== activeSellerId;
-                  const fileUrl = msg.fileUrl
-                    ? resolvePublicFileUrl(String(msg.fileUrl))
-                    : '';
-                  const isImage =
-                    fileUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(fileUrl);
-                  return (
-                    <div
-                      key={idx}
-                      className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMine ? 'bg-[#f57224] text-white rounded-tr-sm shadow-sm shadow-[#f57224]/10' : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm'}`}
-                      >
-                        {msg.bikeId &&
-                          !isMine &&
-                          msg.bikeId !== activeBikeId && (
-                            <div className="text-[10px] opacity-70 mb-1 border-b border-white/20 pb-1 font-mono">
-                              Tham chiếu xe: #
-                              {msg.bikeId.substring(0, 8).toUpperCase()}
-                            </div>
-                          )}
-                        <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
-                          {msg.content ?? msg.message}
+              <>
+                {/* Chat Header */}
+                <div className="px-8 py-6 border-b border-gray-50 flex items-center gap-5 justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-400 overflow-hidden shadow-inner">
+                      {activeConv?.partner.avatar ? (
+                        <img
+                          src={activeConv.partner.avatar}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-7 h-7" />
+                      )}
+                    </div>
+                    <div>
+                      <h2 className="font-black text-xl text-gray-900 leading-tight">
+                        {activeConv?.partner.name || 'Người bán'}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 opacity-70">
+                          Đang trực tuyến
                         </p>
-                        {fileUrl &&
-                          (isImage ? (
-                            <a
-                              href={fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`mt-2 block ${isMine ? 'text-white/90' : ''}`}
-                            >
-                              <img
-                                src={fileUrl}
-                                alt="Đính kèm"
-                                className="max-h-48 rounded-lg object-cover border border-white/20"
-                              />
-                            </a>
-                          ) : (
-                            <a
-                              href={fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`mt-2 inline-flex items-center gap-1 text-sm underline ${isMine ? 'text-white/90' : 'text-[#f57224]'}`}
-                            >
-                              <Paperclip className="w-3.5 h-3.5 shrink-0" />
-                              Tệp đính kèm
-                            </a>
-                          ))}
-                        {msg.createdAt && (
-                          <p
-                            className={`text-[10px] mt-1 text-right ${isMine ? 'text-white/80' : 'text-gray-400'}`}
-                          >
-                            {new Date(msg.createdAt).toLocaleString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              day: '2-digit',
-                              month: '2-digit',
-                            })}
-                          </p>
-                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  </div>
 
-          {/* Input Area */}
-          <div className="p-4 bg-white border-t border-gray-100 space-y-2">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <label className="inline-flex items-center gap-1 cursor-pointer shrink-0">
-                <Paperclip className="w-4 h-4" />
-                <span>Đính kèm</span>
-                <input
-                  type="file"
-                  className="sr-only"
-                  accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
-                  disabled={!activeSellerId || conversationClosed}
-                  onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
-                />
-              </label>
-              {attachment && (
-                <span className="truncate text-gray-700">
-                  {attachment.name}
-                </span>
-              )}
-            </div>
-            <form onSubmit={handleSend} className="flex gap-2">
-              <input
-                type="text"
-                className="flex-1 border border-gray-200 rounded-full px-5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
-                placeholder={
-                  activeSellerId
-                    ? 'Nhập tin nhắn...'
-                    : 'Vui lòng chọn hội thoại trước'
-                }
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                disabled={!activeSellerId || loading || conversationClosed}
-              />
-              <button
-                type="submit"
-                disabled={
-                  !activeSellerId ||
-                  !message.trim() ||
-                  loading ||
-                  conversationClosed
-                }
-                className="w-11 h-11 flex-shrink-0 bg-[#f57224] text-white rounded-full flex items-center justify-center hover:bg-[#e0651a] disabled:opacity-50 transition-colors shadow-sm"
-              >
-                <Send className="w-5 h-5 ml-0.5" />
-              </button>
-            </form>
-            {error && (
-              <p className="text-red-500 text-xs mt-2 text-center">{error}</p>
+                  {activeBikeId && (
+                    <div className="hidden sm:flex items-center gap-3 bg-gray-50 py-2 px-4 rounded-2xl border border-gray-100">
+                      <Bike className="w-4 h-4 text-[#f57224]" />
+                      <p className="text-[11px] font-black text-gray-500 uppercase tracking-tight">
+                        Sản phẩm:{' '}
+                        <span className="text-gray-900">
+                          #{activeBikeId.slice(0, 8).toUpperCase()}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Messages Container */}
+                <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-[#FDFCFB] custom-scrollbar">
+                  {isThreadLoading && messages.length === 0 ? (
+                    <div className="py-20 flex justify-center grayscale opacity-30">
+                      <div className="w-10 h-10 border-4 border-[#f57224] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                    messages.map((msg, idx) => {
+                      const isMe = msg.senderId !== activePartnerId;
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-500`}
+                        >
+                          <div
+                            className={`relative max-w-[75%] rounded-[30px] px-6 py-4 shadow-xl shadow-gray-100/40 ${
+                              isMe
+                                ? 'bg-[#f57224] text-white rounded-tr-none shadow-orange-200/50'
+                                : 'bg-white border-2 border-gray-50 text-gray-800 rounded-tl-none shadow-gray-200/20'
+                            }`}
+                          >
+                            <p className="text-[15px] font-medium leading-relaxed break-words whitespace-pre-wrap">
+                              {msg.content}
+                            </p>
+                            <div
+                              className={`mt-2 flex items-center gap-2 justify-end opacity-60 text-[9px] font-black uppercase tracking-widest ${isMe ? 'text-white' : 'text-gray-400'}`}
+                            >
+                              <Clock className="w-3 h-3" />
+                              {new Date(msg.createdAt).toLocaleTimeString(
+                                'vi-VN',
+                                { hour: '2-digit', minute: '2-digit' },
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messageEndRef} />
+                </div>
+
+                {/* Chat Input */}
+                <div className="p-8 bg-white border-t border-gray-50">
+                  <form
+                    onSubmit={handleSend}
+                    className="flex gap-4 items-center"
+                  >
+                    <div className="flex-1 bg-gray-50 rounded-[28px] border-2 border-transparent focus-within:border-orange-100 focus-within:bg-white transition-all overflow-hidden p-1.5 flex items-center">
+                      <textarea
+                        rows={1}
+                        className="flex-1 bg-transparent px-6 py-3 text-[15px] font-bold focus:outline-none resize-none max-h-32"
+                        placeholder="Viết tin nhắn cho người bán..."
+                        value={message}
+                        onChange={(e) => {
+                          setMessage(e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend(e);
+                          }
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!message.trim() || sendMut.isPending}
+                      className="w-16 h-16 bg-[#f57224] text-white rounded-3xl flex items-center justify-center hover:bg-[#e0651a] hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-orange-200 disabled:grayscale disabled:opacity-30 disabled:scale-100"
+                    >
+                      <Send className="w-7 h-7" />
+                    </button>
+                  </form>
+                </div>
+              </>
             )}
           </div>
         </div>

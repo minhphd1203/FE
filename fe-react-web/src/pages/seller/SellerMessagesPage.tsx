@@ -1,38 +1,46 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, MessageCircle } from 'lucide-react';
-import { useSellerMessageThreadsQuery } from '../../hooks/seller/useSellerQueries';
-import { asRecord, pickStr, unwrapApiList } from '../../utils/unwrapApiList';
+import { ChevronLeft, MessageCircle, User } from 'lucide-react';
+import { useConversationsQuery } from '../../hooks/useMessageQueries';
 
 export const SellerMessagesPage: React.FC = () => {
-  const { data, isLoading, error, refetch } = useSellerMessageThreadsQuery();
-  const rows = useMemo(() => unwrapApiList(data), [data]);
+  const { data, isLoading, error, refetch } = useConversationsQuery();
+  const conversations = data?.data || [];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 pb-12">
       <Link
         to="/seller"
-        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#f57224] mb-6"
+        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#f57224] mb-6 font-medium"
       >
         <ChevronLeft className="w-4 h-4" />
         Về kênh bán
       </Link>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-        <MessageCircle className="w-7 h-7 text-[#f57224]" />
-        Hội thoại với người mua
+      <h1 className="text-3xl font-black text-gray-900 mb-1 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-[#f57224]">
+          <MessageCircle className="w-7 h-7" />
+        </div>
+        Tin nhắn khách hàng
       </h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Tương tác trực tiếp với người mua về các vấn đề trao đổi, hỏi đáp xung
-        quanh sản phẩm.
+      <p className="text-gray-500 font-medium mb-8">
+        Quản lý tất cả cuộc hội thoại và giải đáp thắc mắc của người mua xe.
       </p>
 
-      {isLoading && <p className="text-gray-500 text-sm">Đang tải…</p>}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
+          <div className="w-10 h-10 border-4 border-[#f57224] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">
+            Đang tải hội thoại...
+          </p>
+        </div>
+      )}
+
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm px-4 py-3">
-          Không tải được hội thoại.{' '}
+        <div className="rounded-3xl border-2 border-red-100 bg-red-50/50 text-red-700 p-6 flex flex-col items-center text-center">
+          <p className="font-bold mb-4">Không thể kết nối máy chủ tin nhắn.</p>
           <button
             type="button"
-            className="underline font-medium"
+            className="px-6 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all"
             onClick={() => void refetch()}
           >
             Thử lại
@@ -40,58 +48,63 @@ export const SellerMessagesPage: React.FC = () => {
         </div>
       )}
 
-      {!isLoading && !error && rows.length === 0 && (
-        <p className="text-gray-500 text-sm py-8 text-center border border-dashed rounded-xl">
-          Chưa có cuộc hội thoại.
-        </p>
+      {!isLoading && !error && conversations.length === 0 && (
+        <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[32px] bg-gray-50/30">
+          <MessageCircle className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+          <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">
+            Chưa có tin nhắn nào
+          </p>
+        </div>
       )}
 
-      <ul className="space-y-2">
-        {rows.map((item, idx) => {
-          const r = asRecord(item) ?? {};
-          const partner = asRecord(r.partner) ?? {};
-          const partnerId =
-            pickStr(r, ['partnerId', 'buyerId', 'userId', 'id']) ||
-            pickStr(partner, ['id']);
-          const partnerName = String(
-            pickStr(partner, ['name', 'email']) ||
-              partnerId ||
-              'Người mua ẩn danh',
-          );
+      <ul className="space-y-4">
+        {conversations.map((conv, idx) => {
+          const { partner, lastMessage, unreadCount } = conv;
+          const bikeId = lastMessage.bikeId;
 
-          const bike = asRecord(r.bike) ?? r;
-          const bikeId =
-            pickStr(r, ['bikeId', 'bike_id']) || pickStr(bike, ['id']);
-
-          const lastMsg = asRecord(r.lastMessage) ?? r;
-          const preview = pickStr(lastMsg, [
-            'content',
-            'preview',
-            'lastMessage',
-          ]);
-
-          if (!partnerId) return null;
-          const q = bikeId ? `?bikeId=${encodeURIComponent(bikeId)}` : '';
           return (
-            <li key={`${partnerId}-${idx}`}>
+            <li key={`${partner.id}-${idx}`}>
               <Link
-                to={`/seller/tin-nhan/${partnerId}${q}`}
-                className="block rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-[#f57224]/40"
+                to={`/seller/tin-nhan/${partner.id}${bikeId ? `?bikeId=${bikeId}` : ''}`}
+                className="group block rounded-[24px] border-2 border-gray-50 bg-white p-5 shadow-sm hover:border-[#f57224]/30 hover:shadow-xl hover:shadow-orange-100/50 transition-all"
               >
-                <p className="text-sm font-semibold text-gray-900">
-                  Phía mua:{' '}
-                  <span className="text-[#f57224]">{partnerName}</span>
-                </p>
-                {bikeId && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Sản phẩm tham chiếu: {String(bike?.title || bikeId)}
-                  </p>
-                )}
-                {preview && (
-                  <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {String(preview)}
-                  </p>
-                )}
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden flex-shrink-0 flex items-center justify-center text-gray-400 group-hover:bg-orange-50 group-hover:text-[#f57224] transition-colors">
+                    {partner.avatar ? (
+                      <img
+                        src={partner.avatar}
+                        alt={partner.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-7 h-7" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="font-black text-gray-900 group-hover:text-[#f57224] transition-colors truncate">
+                        {partner.name || 'Khách hàng'}
+                      </h3>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase">
+                        {new Date(lastMessage.createdAt).toLocaleDateString(
+                          'vi-VN',
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-medium text-gray-500 line-clamp-1">
+                        {lastMessage.content}
+                      </p>
+                      {unreadCount > 0 && (
+                        <span className="bg-[#f57224] text-white text-[10px] font-black px-2 py-1 rounded-full min-w-[20px] text-center shadow-lg shadow-orange-200">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </Link>
             </li>
           );
