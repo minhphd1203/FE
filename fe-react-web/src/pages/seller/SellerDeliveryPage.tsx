@@ -87,7 +87,6 @@ export const SellerDeliveryPage: React.FC = () => {
     bike,
     buyer,
     amount,
-    deliveryUpdatedAt,
     address,
     shippingAddress,
     fullName: transactionFullName,
