@@ -11,6 +11,9 @@ import {
   ExternalLink,
   CalendarDays,
   MapPin,
+  AlertTriangle,
+  RotateCcw,
+  X,
 } from 'lucide-react';
 import {
   useFulfillmentDetailQuery,
@@ -22,6 +25,10 @@ import {
   useBuyerTransactionDetailQuery,
   useBuyerCreatePaymentUrlMutation,
   useBuyerCreateRemainingPaymentUrlMutation,
+  useBuyerReportReasonsQuery,
+  useBuyerReportViolationMutation,
+  useBuyerMyReportsQuery,
+  useBuyerRefundMutation,
 } from '../hooks/buyer/useBuyerQueries';
 import { useAppSelector } from '../redux/hooks';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
@@ -55,6 +62,74 @@ export const BuyerTransactionDetailPage: React.FC = () => {
   const handleOpenPaymentModal = (type: 'initial' | 'remaining') => {
     setPaymentType(type);
     setShowPaymentModal(true);
+  };
+
+  const reportMut = useBuyerReportViolationMutation();
+  const refundMut = useBuyerRefundMutation();
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReasonId, setReportReasonId] = useState('');
+  const [reportReasonText, setReportReasonText] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [modalFeedback, setModalFeedback] = useState<{
+    type: 'success' | 'error';
+    msg: string;
+  } | null>(null);
+
+  const { data: reportReasons = [], isLoading: reasonsLoading } =
+    useBuyerReportReasonsQuery({
+      enabled: showReportModal,
+    });
+
+  const { data: myReports = [], refetch: refetchReports } =
+    useBuyerMyReportsQuery();
+
+  const handleOpenReportModal = () => {
+    setShowReportModal(true);
+    setModalFeedback(null);
+    setReportReasonId('');
+    setReportReasonText('');
+    setReportDetails('');
+  };
+
+  const handleSendReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalFeedback(null);
+    if (!id) return;
+    if (!reportReasonId) {
+      setModalFeedback({ type: 'error', msg: 'Vui lòng chọn lý do.' });
+      return;
+    }
+    try {
+      await reportMut.mutateAsync({
+        transactionId: id,
+        reasonId: reportReasonId,
+        reasonText: reportReasonId === 'others' ? reportReasonText : undefined,
+        description: reportDetails,
+      });
+      setModalFeedback({ type: 'success', msg: 'Gửi báo cáo thành công!' });
+      void refetchReports();
+      setTimeout(() => setShowReportModal(false), 1500);
+    } catch (err: any) {
+      setModalFeedback({
+        type: 'error',
+        msg: err?.response?.data?.message || 'Lỗi gửi báo cáo',
+      });
+    }
+  };
+
+  const handleRefund = async (reportId?: string) => {
+    if (!id) return;
+    if (!window.confirm('Xác nhận yêu cầu hoàn tiền cho đơn hàng này?')) return;
+    try {
+      await refundMut.mutateAsync({ transactionId: id, reportId });
+      toast.success('Đang xử lý hoàn tiền. Vui lòng kiểm tra lại sau ít phút.');
+      void refetchTransaction();
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || 'Không thể thực hiện hoàn tiền.',
+      );
+    }
   };
 
   const handleConfirmReceipt = async () => {
@@ -299,6 +374,47 @@ export const BuyerTransactionDetailPage: React.FC = () => {
                     Thanh toán số dư
                   </button>
                 )}
+
+                {isCompleted &&
+                  (() => {
+                    const report = myReports.find(
+                      (r) => r.transactionId === id,
+                    );
+                    if (!report) {
+                      return (
+                        <button
+                          onClick={handleOpenReportModal}
+                          className="shrink-0 whitespace-nowrap px-6 py-3 bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold hover:bg-red-100 transition-all flex items-center gap-2"
+                        >
+                          <AlertTriangle className="w-5 h-5" />
+                          Báo cáo vi phạm
+                        </button>
+                      );
+                    }
+                    if (report.status === 'pending') {
+                      return (
+                        <div className="px-6 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 font-medium text-sm text-center">
+                          Đang chờ duyệt báo cáo
+                        </div>
+                      );
+                    }
+                    if (
+                      report.status === 'resolved' &&
+                      report.resolution === 'refund'
+                    ) {
+                      return (
+                        <button
+                          onClick={() => handleRefund(report.id)}
+                          disabled={refundMut.isPending}
+                          className="shrink-0 whitespace-nowrap px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-md shadow-red-600/20 transition-all flex items-center gap-2"
+                        >
+                          <RotateCcw className="w-5 h-5" />
+                          Hoàn tiền
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
               </div>
             )}
 
@@ -381,14 +497,26 @@ export const BuyerTransactionDetailPage: React.FC = () => {
                     Địa chỉ giao hàng
                   </p>
                   <p className="text-sm text-gray-800 leading-relaxed">
-                    {fullName ? (
+                    {fullName || transaction.fullName ? (
                       <>
                         <span className="font-medium">Người nhận: </span>
-                        {fullName}
+                        {fullName || transaction.fullName}
                         <br />
                       </>
                     ) : null}
                     {deliveryAddress}
+                  </p>
+                </div>
+              )}
+
+              {fullData?.data?.deliveryNotes && (
+                <div className="mt-4 bg-orange-50 p-4 rounded-xl border border-orange-100">
+                  <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Truck className="w-3.5 h-3.5" />
+                    Ghi chú giao hàng từ người bán
+                  </p>
+                  <p className="text-sm text-orange-800 font-medium">
+                    {fullData.data.deliveryNotes}
                   </p>
                 </div>
               )}
@@ -530,6 +658,100 @@ export const BuyerTransactionDetailPage: React.FC = () => {
         }}
         onAfterPaymentCreated={() => void refetchTransaction()}
       />
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <button
+              onClick={() => setShowReportModal(false)}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Báo cáo đơn hàng
+              </h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-5 ml-13">
+              Mô tả vấn đề bạn gặp phải với đơn hàng này để Admin hỗ trợ.
+            </p>
+            <form onSubmit={handleSendReport} className="space-y-4">
+              <div>
+                <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                  Lý do báo cáo
+                </label>
+                <select
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-colors bg-white"
+                  value={reportReasonId}
+                  onChange={(e) => setReportReasonId(e.target.value)}
+                  required
+                  disabled={reasonsLoading}
+                >
+                  <option value="">
+                    {reasonsLoading ? 'Đang tải…' : 'Chọn lý do'}
+                  </option>
+                  {reportReasons.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {reportReasonId === 'others' && (
+                <div>
+                  <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                    Mô tả lý do (Khác) *
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none transition-colors"
+                    value={reportReasonText}
+                    onChange={(e) => setReportReasonText(e.target.value)}
+                    rows={2}
+                    placeholder="Nêu rõ lý do…"
+                    required
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                  Mô tả chi tiết *
+                </label>
+                <textarea
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none transition-colors"
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  rows={3}
+                  placeholder="Mô tả chi tiết để hỗ trợ Admin xử lý…"
+                  required
+                />
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  {modalFeedback && (
+                    <span
+                      className={`text-sm font-medium ${modalFeedback.type === 'success' ? 'text-emerald-600' : 'text-red-500'}`}
+                    >
+                      {modalFeedback.msg}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={reportMut.isPending}
+                  className="bg-red-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-red-700 disabled:opacity-60 flex items-center gap-2 shadow-md shadow-red-600/20 transition-all"
+                >
+                  {reportMut.isPending ? 'Đang gửi...' : 'Gửi báo cáo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

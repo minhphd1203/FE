@@ -116,6 +116,7 @@ export type BuyerReport = {
   reportedUser?: { name: string; email?: string };
   reportedBike?: { title: string };
   reason?: { name: string; description?: string };
+  transactionId?: string;
 };
 
 export type ReportReason = {
@@ -295,6 +296,7 @@ export async function reportViolation(data: {
   description: string;
   reportedUserId?: string;
   reportedBikeId?: string;
+  transactionId?: string;
 }) {
   const response = await apiClient.post('/buyer/v1/reports', data);
   return response.data;

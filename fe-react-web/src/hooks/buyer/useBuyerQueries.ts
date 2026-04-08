@@ -29,6 +29,7 @@ import {
   createTransaction,
   getPaymentStatus,
   getVnpayReturnResult,
+  refundTransaction,
   type CreateTransactionRequest,
 } from '../../apis/paymentApi';
 import { getBikeDetail, type SellerBikeDetail } from '../../apis/sellerApi';
@@ -252,7 +253,26 @@ export function useBuyerReportViolationMutation() {
       description: string;
       reportedUserId?: string;
       reportedBikeId?: string;
+      transactionId?: string;
     }) => reportViolation(data),
+  });
+}
+
+export function useBuyerRefundMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      transactionId: string;
+      reason?: string;
+      reportId?: string;
+    }) =>
+      refundTransaction(data.transactionId, {
+        reason: data.reason,
+        reportId: data.reportId,
+      }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['buyer', 'transactions'] });
+    },
   });
 }
 

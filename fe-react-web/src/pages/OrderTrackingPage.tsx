@@ -13,7 +13,9 @@ import {
   Bike,
 } from 'lucide-react';
 import { useBuyerTransactionDetailQuery } from '../hooks/buyer/useBuyerQueries';
+import { useFulfillmentDetailQuery } from '../hooks/useFulfillmentQueries';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
+import { Info } from 'lucide-react';
 
 const StatusStep = ({
   icon: Icon,
@@ -22,6 +24,7 @@ const StatusStep = ({
   isActive,
   isCompleted,
   isLast,
+  notes,
 }: {
   icon: any;
   label: string;
@@ -29,6 +32,7 @@ const StatusStep = ({
   isActive: boolean;
   isCompleted: boolean;
   isLast?: boolean;
+  notes?: string | null;
 }) => (
   <div className="relative flex gap-4 pb-8 group">
     {!isLast && (
@@ -62,6 +66,11 @@ const StatusStep = ({
       >
         {description}
       </p>
+      {notes && isActive && (
+        <div className="mt-2 p-3 bg-orange-50 border border-orange-100 rounded-lg text-xs text-orange-800 font-medium">
+          <Info className="w-3 h-3 inline-block mr-1 mb-0.5" /> {notes}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -69,7 +78,12 @@ const StatusStep = ({
 export const OrderTrackingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: transaction, isLoading } = useBuyerTransactionDetailQuery(id);
+  const { data: transaction, isLoading: isTxLoading } =
+    useBuyerTransactionDetailQuery(id);
+  const { data: fullData, isLoading: isFullLoading } =
+    useFulfillmentDetailQuery(id);
+
+  const isLoading = isTxLoading || isFullLoading;
 
   if (isLoading) {
     return (
@@ -116,6 +130,10 @@ export const OrderTrackingPage: React.FC = () => {
     amount,
     transactionType,
   } = transaction as any;
+
+  const deliveryStatus = fullData?.data?.deliveryStatus;
+  const deliveryNotes = fullData?.data?.deliveryNotes;
+
   const deliveryLine =
     (typeof address === 'string' && address.trim()) ||
     (typeof shippingAddress === 'string' && shippingAddress.trim()) ||
@@ -141,7 +159,7 @@ export const OrderTrackingPage: React.FC = () => {
       id: 'approved',
       icon: Package,
       label: 'Đã xác nhận',
-      description: 'Người bán đã chấp nhận yêu cầu và đang chuẩn bị xe.',
+      description: 'Người bán đã chấp nhận yêu cầu.',
       isCompleted: [
         'approved',
         'completed',
@@ -155,28 +173,39 @@ export const OrderTrackingPage: React.FC = () => {
       id: 'paid',
       icon: CreditCard,
       label: 'Thanh toán',
-      description: 'Giao dịch đã được thanh toán (cọc hoặc toàn bộ).',
+      description: 'Giao dịch đã được thanh toán.',
       isCompleted: ['completed', 'paid', 'shipping', 'delivered'].includes(
         status,
       ),
-      isActive: ['completed', 'paid'].includes(status),
+      isActive: ['completed', 'paid'].includes(status) && !deliveryStatus,
+    },
+    {
+      id: 'preparing',
+      icon: Package,
+      label: 'Đang chuẩn bị hàng',
+      description: 'Người bán đang đóng gói xe để bàn giao.',
+      isCompleted: ['delivering', 'delivered'].includes(deliveryStatus || ''),
+      isActive: deliveryStatus === 'preparing',
+      notes: deliveryNotes,
     },
     {
       id: 'shipping',
       icon: Truck,
       label: 'Đang vận chuyển',
-      description: 'Xe đang được vận chuyển đến địa chỉ của bạn.',
-      isCompleted: ['shipping', 'delivered'].includes(status),
-      isActive: status === 'shipping',
+      description: 'Xe đang trên đường đến với bạn.',
+      isCompleted: deliveryStatus === 'delivered',
+      isActive: deliveryStatus === 'delivering',
+      notes: deliveryNotes,
     },
     {
       id: 'received',
       icon: CheckCircle2,
-      label: 'Đã nhận xe',
-      description: 'Giao dịch hoàn tất và xe đã về tay chủ mới.',
-      isCompleted: status === 'delivered',
-      isActive: status === 'delivered',
+      label: 'Đã giao hàng',
+      description: 'Đơn hàng đã được giao đến địa chỉ của bạn.',
+      isCompleted: status === 'completed',
+      isActive: deliveryStatus === 'delivered' && status !== 'completed',
       isLast: true,
+      notes: deliveryStatus === 'delivered' ? deliveryNotes : undefined,
     },
   ];
 
@@ -199,7 +228,7 @@ export const OrderTrackingPage: React.FC = () => {
               Mã đơn hàng
             </p>
             <p className="text-sm font-black text-gray-900">
-              #{id?.slice(0, 8).toUpperCase()}
+              #{(id || '').slice(0, 8).toUpperCase()}
             </p>
           </div>
         </div>

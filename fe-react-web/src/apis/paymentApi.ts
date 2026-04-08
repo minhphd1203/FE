@@ -11,6 +11,9 @@ export interface CreateTransactionRequest {
   /** Địa chỉ giao hàng — một số BE dùng `address` (cột DB), một số dùng `shippingAddress` */
   address?: string;
   shippingAddress?: string;
+  fullName?: string;
+  buyerPhone?: string;
+  buyerEmail?: string;
 }
 
 export interface CreateTransactionResponse {
@@ -128,4 +131,15 @@ export const createRemainingPaymentUrl = async (
     payload || {},
   );
   return unwrapPaymentCreateResponse(res.data);
+};
+// POST /api/payment/v1/refund/{transactionId}
+export const refundTransaction = async (
+  transactionId: string,
+  payload?: { reason?: string; reportId?: string },
+) => {
+  const res = await apiClient.post<ApiEnvelope<{ refundId: string }>>(
+    `/payment/v1/refund/${transactionId}`,
+    payload || {},
+  );
+  return res.data;
 };

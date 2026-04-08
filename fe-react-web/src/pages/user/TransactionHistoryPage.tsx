@@ -122,11 +122,12 @@ export const TransactionHistoryPage: React.FC = () => {
                 transactions.map((trx) => {
                   const type = normalizeType(trx);
                   const status = normalizeStatus(trx.status);
-                  const isIncome = type === 'deposit';
+                  const isIncome = type === 'deposit' || type === 'refund';
                   const statusIsSuccess = [
                     'success',
                     'paid',
                     'completed',
+                    'refunded',
                   ].includes(status);
                   const canPay = canPayRemaining(trx);
 
@@ -151,7 +152,11 @@ export const TransactionHistoryPage: React.FC = () => {
                               <ArrowUpRight className="w-4 h-4" />
                             </div>
                           )}
-                          {isIncome ? 'Nạp tiền' : 'Chi tiêu'}
+                          {type === 'refund'
+                            ? 'Hoàn tiền'
+                            : isIncome
+                              ? 'Nạp tiền'
+                              : 'Chi tiêu'}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
@@ -170,7 +175,11 @@ export const TransactionHistoryPage: React.FC = () => {
                         đ
                       </td>
                       <td className="px-6 py-4 text-center">
-                        {statusIsSuccess ? (
+                        {status === 'refunded' ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            Đã hoàn tiền
+                          </span>
+                        ) : statusIsSuccess ? (
                           <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                             Thành công
                           </span>

@@ -149,6 +149,9 @@ export const CheckoutPage: React.FC = () => {
         paymentMethod: method === 'cod' ? null : 'vnpay',
         address: addressLine,
         shippingAddress: addressLine,
+        fullName: formData.fullName,
+        buyerPhone: formData.phone,
+        buyerEmail: formData.email,
       });
       setIsSuccess(true);
     } catch (err: unknown) {

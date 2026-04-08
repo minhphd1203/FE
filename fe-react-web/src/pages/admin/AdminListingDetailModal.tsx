@@ -187,16 +187,6 @@ export const AdminListingDetailModal: React.FC<
                       {bike.category?.name ?? 'Chưa phân loại'}
                     </dd>
                   </div>
-                  {extra.mileage != null && (
-                    <div className="rounded-lg bg-gray-50 px-3 py-2">
-                      <dt className="text-xs font-medium text-gray-500">
-                        Số km
-                      </dt>
-                      <dd className="mt-0.5 font-medium text-gray-900">
-                        {extra.mileage.toLocaleString('vi-VN')} km
-                      </dd>
-                    </div>
-                  )}
                   {extra.color && (
                     <div className="rounded-lg bg-gray-50 px-3 py-2">
                       <dt className="text-xs font-medium text-gray-500">

@@ -159,12 +159,6 @@ export const SellerBikeDetailPage: React.FC = () => {
             <dt className="text-gray-500">Màu</dt>
             <dd className="font-medium text-gray-900">{bike.color || '—'}</dd>
           </div>
-          <div>
-            <dt className="text-gray-500">Số km</dt>
-            <dd className="font-medium text-gray-900">
-              {bike.mileage != null ? String(bike.mileage) : '—'}
-            </dd>
-          </div>
           <div className="sm:col-span-2">
             <dt className="text-gray-500">Tạo / Cập nhật</dt>
             <dd className="text-gray-900">
