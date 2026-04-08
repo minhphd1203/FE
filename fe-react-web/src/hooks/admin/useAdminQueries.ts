@@ -55,10 +55,29 @@ export function useAdminReportsQuery(
   return useQuery({
     queryKey: queryKeys.admin.reports(sk),
     queryFn: async (): Promise<AdminReport[]> => {
-      const res = await adminApi.getReports({
-        status: filterStatus === 'all' ? undefined : filterStatus,
-      });
-      return res.data ?? [];
+      try {
+        console.log(
+          '[useAdminReportsQuery] Fetching reports with filter:',
+          filterStatus,
+        );
+        const res = await adminApi.getReports({
+          status: filterStatus === 'all' ? undefined : filterStatus,
+        });
+        console.log('[useAdminReportsQuery] Response:', res);
+        if (!res.success) {
+          console.error(
+            '[useAdminReportsQuery] API returned success:false',
+            res,
+          );
+          throw new Error(res.message || 'Failed to fetch reports');
+        }
+        const data = res.data ?? [];
+        console.log('[useAdminReportsQuery] Returning', data.length, 'reports');
+        return data;
+      } catch (error) {
+        console.error('[useAdminReportsQuery] Error:', error);
+        throw error;
+      }
     },
   });
 }

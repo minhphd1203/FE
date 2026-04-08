@@ -88,10 +88,26 @@ export const SellerDashboardPage: React.FC = () => {
     );
   };
 
+  // Log for debugging
+  React.useEffect(() => {
+    console.log('[SellerDashboard] Query State:', {
+      isLoading,
+      isFetching,
+      data: data ? 'exists' : 'null',
+      error: error?.message || (error ? 'unknown error' : 'none'),
+    });
+  }, [isLoading, isFetching, data, error]);
+
   if (isLoading && !data) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8 text-gray-500">
-        Đang tải tổng quan kênh bán...
+      <div className="max-w-5xl mx-auto px-4 py-8 bg-blue-50 border border-blue-200 rounded p-4">
+        <p className="text-blue-900 font-semibold">
+          Đang tải tổng quan kênh bán...
+        </p>
+        <p className="text-blue-700 text-sm mt-2">
+          Nếu lâu quá, vui lòng kiểm tra DevTools Network tab hoặc nhấn F5 để
+          refresh.
+        </p>
       </div>
     );
   }
@@ -114,6 +130,61 @@ export const SellerDashboardPage: React.FC = () => {
   }
 
   const { bikes, transactions, reputation } = data!;
+
+  // Defensive checks to ensure stats are numbers
+  if (!bikes || typeof bikes.total !== 'number') {
+    console.error('[SellerDashboard] Invalid bikes data:', bikes);
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+          Lỗi: Dữ liệu dashboard không hợp lệ. Vui lòng{' '}
+          <button
+            type="button"
+            className="underline font-medium"
+            onClick={() => window.location.reload()}
+          >
+            refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!transactions || typeof transactions.total !== 'number') {
+    console.error('[SellerDashboard] Invalid transactions data:', transactions);
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+          Lỗi: Dữ liệu giao dịch không hợp lệ. Vui lòng{' '}
+          <button
+            type="button"
+            className="underline font-medium"
+            onClick={() => window.location.reload()}
+          >
+            refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!reputation || typeof reputation.totalReviews !== 'number') {
+    console.error('[SellerDashboard] Invalid reputation data:', reputation);
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+          Lỗi: Dữ liệu uy tín không hợp lệ. Vui lòng{' '}
+          <button
+            type="button"
+            className="underline font-medium"
+            onClick={() => window.location.reload()}
+          >
+            refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const dismissPostSuccess = () => {
     navigate(location.pathname, { replace: true, state: {} });
@@ -413,14 +484,19 @@ export const SellerDashboardPage: React.FC = () => {
                         </td>
                         <td className="px-3 py-2">
                           <p className="font-medium text-gray-900">
-                            {row.title}
+                            {typeof row.title === 'string' ? row.title : 'N/A'}
                           </p>
                           <p className="text-gray-500 text-xs">
-                            {row.brand} · {row.model} · {row.year}
+                            {typeof row.brand === 'string' ? row.brand : 'N/A'}{' '}
+                            ·{' '}
+                            {typeof row.model === 'string' ? row.model : 'N/A'}{' '}
+                            · {row.year || 'N/A'}
                           </p>
                         </td>
                         <td className="px-3 py-2 text-gray-700">
-                          {row.category?.name ?? 'Chưa phân loại'}
+                          {typeof row.category?.name === 'string'
+                            ? row.category.name
+                            : 'Chưa phân loại'}
                         </td>
                         <td className="px-3 py-2 font-medium tabular-nums">
                           {row.price.toLocaleString('vi-VN')} đ

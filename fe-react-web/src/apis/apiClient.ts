@@ -23,6 +23,36 @@ apiClient.interceptors.request.use(
     } else if (config.skipAuth && config.headers.Authorization) {
       delete config.headers.Authorization;
     }
+
+    // Log report requests - DETAILED
+    if (config.url?.includes('/reports')) {
+      console.log('[API Interceptor] ===== REPORT REQUEST =====');
+      console.log('[API Interceptor] URL:', config.url);
+      console.log('[API Interceptor] Method:', config.method);
+      console.log('[API Interceptor] Data object:', config.data);
+      console.log(
+        '[API Interceptor] Data keys:',
+        config.data ? Object.keys(config.data) : 'NO DATA',
+      );
+      console.log(
+        '[API Interceptor] reportedUserId in data:',
+        config.data?.reportedUserId,
+        'type:',
+        typeof config.data?.reportedUserId,
+      );
+      console.log(
+        '[API Interceptor] reportedBikeId in data:',
+        config.data?.reportedBikeId,
+        'type:',
+        typeof config.data?.reportedBikeId,
+      );
+      console.log(
+        '[API Interceptor] Data as JSON string:',
+        JSON.stringify(config.data),
+      );
+      console.log('[API Interceptor] ===== END REPORT REQUEST =====');
+    }
+
     return config;
   },
   (error) => {

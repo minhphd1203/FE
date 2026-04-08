@@ -298,7 +298,27 @@ export async function reportViolation(data: {
   reportedBikeId?: string;
   transactionId?: string;
 }) {
+  console.log('[reportViolation] === ENTRY ===');
+  console.log('[reportViolation] data parameter:', data);
+  console.log('[reportViolation] data keys:', Object.keys(data));
+  console.log(
+    '[reportViolation] reportedUserId:',
+    data.reportedUserId,
+    'type:',
+    typeof data.reportedUserId,
+  );
+  console.log(
+    '[reportViolation] reportedBikeId:',
+    data.reportedBikeId,
+    'type:',
+    typeof data.reportedBikeId,
+  );
+  console.log('[reportViolation] Data JSON string:', JSON.stringify(data));
+
   const response = await apiClient.post('/buyer/v1/reports', data);
+
+  console.log('[reportViolation] === RESPONSE ===');
+  console.log('[reportViolation] Response:', response.data);
   return response.data;
 }
 
@@ -313,7 +333,27 @@ export async function reviewSeller(data: {
   return response.data;
 }
 
-// 11. Send message to seller (JSON hoặc multipart có attachment)
+// 11. Request refund for a transaction
+export async function refundTransaction(
+  transactionId: string,
+  options?: { reason?: string; reportId?: string },
+) {
+  const payload = {
+    reason: options?.reason || 'Buyer requested refund',
+    reportId: options?.reportId,
+  };
+  console.log('[refundTransaction] Sending refund request:', {
+    endpoint: `/payment/v1/refund/${transactionId}`,
+    payload,
+  });
+  const response = await apiClient.post(
+    `/payment/v1/refund/${transactionId}`,
+    payload,
+  );
+  return response.data;
+}
+
+// 12. Send message to seller (JSON hoặc multipart có attachment)
 export async function sendMessageToSeller(
   sellerId: string,
   data: { content: string; bikeId?: string } | FormData,
@@ -351,7 +391,12 @@ export async function getTransactionDetail(transactionId: string) {
   );
   const raw = response.data;
   if (raw && typeof raw === 'object' && 'data' in raw) {
-    return (raw as ApiEnvelope<unknown>).data;
+    const data = (raw as ApiEnvelope<unknown>).data;
+    // Handle both single object and array responses
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0];
+    }
+    return data;
   }
   return raw;
 }

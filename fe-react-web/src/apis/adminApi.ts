@@ -84,7 +84,11 @@ export interface AdminTransaction {
 export interface AdminReport {
   id: string;
   status: 'pending' | 'resolved' | 'closed' | 'rejected';
-  reason?: string;
+  reason?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
   reasonId?: string | null;
   reasonText?: string | null;
   description?: string | null;

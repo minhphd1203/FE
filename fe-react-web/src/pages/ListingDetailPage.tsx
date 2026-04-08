@@ -144,14 +144,40 @@ export const ListingDetailPage: React.FC = () => {
       return;
     }
     try {
-      await reportMut.mutateAsync({
+      // Use direct fields first, fallback to nested objects if needed
+      const reportedUserIdValue = listing?.sellerId || listing?.seller?.id;
+      const reportedBikeIdValue = listing?.id;
+
+      console.log('[ListingReport] Full listing object:', listing);
+      console.log('[ListingReport] Bike data:', {
+        listing_id: listing?.id,
+        sellerId: listing?.sellerId,
+        seller_id_from_seller: listing?.seller?.id,
+        listing_keys: Object.keys(listing || {}),
+        listing_entire: JSON.stringify(listing),
+      });
+
+      if (!reportedBikeIdValue || !reportedUserIdValue) {
+        setModalFeedback({
+          type: 'error',
+          msg: `Không thể lấy thông tin xe hoặc người bán. BikeId: ${reportedBikeIdValue}, SellerId: ${reportedUserIdValue}. Vui lòng tải lại trang.`,
+        });
+        return;
+      }
+
+      const payload = {
         reasonId: reportReasonId,
         reasonText:
           reportReasonId === 'others' ? reportReasonText.trim() : undefined,
         description: desc,
-        reportedUserId: listing?.seller?.id,
-        reportedBikeId: listing?.id,
-      });
+        reportedUserId: reportedUserIdValue,
+        reportedBikeId: reportedBikeIdValue,
+      };
+
+      console.log('[ListingReport] Exact payload before API call:', payload);
+      console.log('[ListingReport] Payload JSON:', JSON.stringify(payload));
+
+      await reportMut.mutateAsync(payload);
       setModalFeedback({ type: 'success', msg: 'Đã gửi báo cáo vi phạm.' });
       setReportReasonId('');
       setReportReasonText('');

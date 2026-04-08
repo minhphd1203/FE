@@ -91,7 +91,40 @@ export const SellerDeliveryPage: React.FC = () => {
     shippingAddress,
     fullName: transactionFullName,
     createdAt,
+    transactionType,
   } = transaction;
+
+  // Only show delivery workflow for full_payment and remaining_payment
+  // For deposits, bike is only 'reserved', not 'sold', so no delivery yet
+  const isDeliveryEligible =
+    transactionType === 'full_payment' ||
+    transactionType === 'remaining_payment';
+
+  if (!isDeliveryEligible) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-gray-100">
+          <div className="w-20 h-20 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 mb-2">
+            Chưa thể xử lý giao hàng
+          </h1>
+          <p className="text-gray-500 mb-8 font-medium">
+            {transactionType === 'deposit'
+              ? 'Để bắt đầu giao hàng, người mua cần thanh toán phần còn lại để hoàn tất lần mua hàng.'
+              : 'Đơn hàng này chưa sẵn sàng cho giao hàng.'}
+          </p>
+          <button
+            onClick={() => navigate('/seller/don-hang')}
+            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-all shadow-lg"
+          >
+            Quay lại Đơn hàng
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const fullName = transactionFullName || buyer.fullName || buyer.name;
   const deliveryAddress =
@@ -533,7 +566,7 @@ export const SellerDeliveryPage: React.FC = () => {
                     Tổng giá trị
                   </span>
                   <span className="text-gray-900">
-                    {Number(amount || 0).toLocaleString('vi-VN')} đ
+                    {Number(bike?.price || 0).toLocaleString('vi-VN')} đ
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-bold">

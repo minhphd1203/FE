@@ -8,8 +8,12 @@ import {
   CheckCircle2,
   XCircle,
   ShoppingBag,
+  DollarSign,
 } from 'lucide-react';
-import { useSellerTransactionsQuery } from '../../hooks/seller/useSellerQueries';
+import {
+  useSellerTransactionsQuery,
+  useSellerRequestPayoutMutation,
+} from '../../hooks/seller/useSellerQueries';
 import { asRecord, pickStr, unwrapApiList } from '../../utils/unwrapApiList';
 import { resolveBikeMediaUrl } from '../../apis/sellerApi';
 
@@ -51,17 +55,120 @@ function getStatusInfo(st: string) {
 export const SellerTransactionsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
+  const [payoutInProgress, setPayoutInProgress] = useState<string | null>(null);
+  const [existingPayouts, setExistingPayouts] = useState<{
+    [txnId: string]: { status: string; reason: string };
+  }>({});
   const limit = 10;
   const { data, isLoading, error, refetch } = useSellerTransactionsQuery({
     page,
     limit,
     ...(status ? { status } : {}),
   });
+  const payoutMut = useSellerRequestPayoutMutation();
 
   const rows = useMemo(() => {
     const raw = data?.data;
     return unwrapApiList(raw ?? data);
   }, [data]);
+
+  const handleRequestPayout = async (
+    transactionId: string,
+    transaction: any,
+  ) => {
+    // Pre-validate before API call
+    const validation = validatePayoutEligibility(transaction);
+    if (!validation.allowed) {
+      window.alert(`❌ ${validation.reason}`);
+      return;
+    }
+
+    setPayoutInProgress(transactionId);
+    try {
+      await payoutMut.mutateAsync(transactionId);
+      await refetch();
+      window.alert(
+        '✅ Yêu cầu thanh toán thành công! Bạn sẽ nhận được tiền trong thời gian sắp tới.',
+      );
+    } catch (err: unknown) {
+      const msg =
+        (err as any)?.response?.data?.message ||
+        'Có lỗi xảy ra khi yêu cầu thanh toán.';
+
+      // Check if this is an "already exists" error
+      const responseData = (err as any)?.response?.data;
+      if (
+        responseData?.message &&
+        responseData.message.includes('Payout đã tồn tại')
+      ) {
+        // Extract payout status from message if possible
+        const statusMatch = responseData.message.match(/\(trạng thái: (\w+)\)/);
+        const payoutStatus = statusMatch ? statusMatch[1] : 'unknown';
+        setExistingPayouts((prev) => ({
+          ...prev,
+          [transactionId]: {
+            status: payoutStatus,
+            reason: responseData.message,
+          },
+        }));
+      }
+
+      window.alert(`❌ Lỗi: ${msg}`);
+    } finally {
+      setPayoutInProgress(null);
+    }
+  };
+
+  const validatePayoutEligibility = (
+    transaction: any,
+  ): { allowed: boolean; reason?: string } => {
+    const transactionId = transaction?.id;
+
+    // Check for existing payout that's not failed
+    if (
+      existingPayouts[transactionId] &&
+      existingPayouts[transactionId].status !== 'failed'
+    ) {
+      return {
+        allowed: false,
+        reason: `Payout đã tồn tại (trạng thái: ${existingPayouts[transactionId].status}). Chỉ có thể tạo payout mới khi payout trước đó thất bại.`,
+      };
+    }
+
+    if (!transaction)
+      return { allowed: false, reason: 'Không có thông tin giao dịch' };
+
+    // 1. Transaction must be completed
+    if (transaction.status !== 'completed') {
+      return {
+        allowed: false,
+        reason: `Giao dịch chưa hoàn thành (${transaction.status})`,
+      };
+    }
+
+    // 2. Delivery must exist, be 'delivered', and be confirmed
+    const delivery = transaction.delivery || transaction.deliveryStatus;
+    if (!delivery) {
+      return { allowed: false, reason: 'Chưa có thông tin giao hàng' };
+    }
+
+    const deliveryStatus =
+      typeof delivery === 'string' ? delivery : delivery.deliveryStatus;
+    const receiptConfirmed =
+      typeof delivery === 'string' ? null : delivery.receiptConfirmedAt;
+
+    if (deliveryStatus !== 'delivered') {
+      return {
+        allowed: false,
+        reason: `Giao hàng chưa hoàn thành (${deliveryStatus})`,
+      };
+    }
+    if (!receiptConfirmed) {
+      return { allowed: false, reason: 'Người mua chưa xác nhận nhận hàng' };
+    }
+
+    return { allowed: true };
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 pb-12">
@@ -156,6 +263,11 @@ export const SellerTransactionsPage: React.FC = () => {
           const st = pickStr(r, ['status']);
           const amountStr = pickStr(r, ['amount', 'total']);
           const amountNum = amountStr ? Number(amountStr) : 0;
+          const deliveryStatus =
+            pickStr(r, ['delivery', 'deliveryStatus']) ||
+            pickStr(r, ['deliveryStatus']);
+          const isDeliveryComplete =
+            deliveryStatus === 'delivered' && st === 'completed';
 
           const bikeObj = asRecord(r.bike) ?? {};
           const bikeTitle =
@@ -180,81 +292,115 @@ export const SellerTransactionsPage: React.FC = () => {
 
           return (
             <li key={id}>
-              <Link
-                to={`/seller/don-hang/${id}`}
-                className="group flex flex-col h-full rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-[#f57224]/30 transition-all overflow-hidden"
-              >
-                <div className="p-5 flex-1 space-y-4">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 flex items-center justify-center border border-gray-200">
-                        {bikeImage ? (
-                          <img
-                            src={resolveBikeMediaUrl(bikeImage)}
-                            alt={bikeTitle}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Package className="w-6 h-6 text-gray-400" />
-                        )}
+              <div className="group flex flex-col h-full rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-[#f57224]/30 transition-all overflow-hidden">
+                <Link
+                  to={`/seller/don-hang/${id}`}
+                  className="flex flex-col h-full"
+                >
+                  <div className="p-5 flex-1 space-y-4">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 flex items-center justify-center border border-gray-200">
+                          {bikeImage ? (
+                            <img
+                              src={resolveBikeMediaUrl(bikeImage)}
+                              alt={bikeTitle}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="w-6 h-6 text-gray-400" />
+                          )}
+                        </div>
+                        <div>
+                          <h3
+                            className="font-semibold text-gray-900 line-clamp-1 group-hover:text-[#f57224] transition-colors"
+                            title={bikeTitle}
+                          >
+                            {bikeTitle}
+                          </h3>
+                          <p className="text-xs text-gray-500 font-mono mt-0.5">
+                            mã GD: #{id.split('-')[0]}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3
-                          className="font-semibold text-gray-900 line-clamp-1 group-hover:text-[#f57224] transition-colors"
-                          title={bikeTitle}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 group-hover:bg-amber-50/30 transition-colors">
+                        <p className="text-gray-500 text-xs mb-1 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5" /> Khách hàng
+                        </p>
+                        <p
+                          className="font-medium text-gray-900 line-clamp-1"
+                          title={buyerName}
                         >
-                          {bikeTitle}
-                        </h3>
-                        <p className="text-xs text-gray-500 font-mono mt-0.5">
-                          mã GD: #{id.split('-')[0]}
+                          {buyerName}
+                        </p>
+                      </div>
+
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 group-hover:bg-amber-50/30 transition-colors">
+                        <p className="text-gray-500 text-xs mb-1 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" /> Đặt lúc
+                        </p>
+                        <p className="font-medium text-gray-900">
+                          {dateStr || '—'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 group-hover:bg-amber-50/30 transition-colors">
-                      <p className="text-gray-500 text-xs mb-1 flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5" /> Khách hàng
-                      </p>
-                      <p
-                        className="font-medium text-gray-900 line-clamp-1"
-                        title={buyerName}
-                      >
-                        {buyerName}
-                      </p>
-                    </div>
+                  <div className="bg-gray-50 px-5 py-3.5 border-t border-gray-100 flex items-center justify-between">
+                    {amountNum > 0 ? (
+                      <span className="text-base font-bold text-[#f57224]">
+                        {amountNum.toLocaleString('vi-VN')} đ
+                      </span>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-500">
+                        Chưa có giá
+                      </span>
+                    )}
 
-                    <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 group-hover:bg-amber-50/30 transition-colors">
-                      <p className="text-gray-500 text-xs mb-1 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" /> Đặt lúc
-                      </p>
-                      <p className="font-medium text-gray-900">
-                        {dateStr || '—'}
-                      </p>
-                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${statusInfo.color}`}
+                    >
+                      {statusInfo.icon}
+                      {statusInfo.label}
+                    </span>
                   </div>
-                </div>
+                </Link>
 
-                <div className="bg-gray-50 px-5 py-3.5 border-t border-gray-100 flex items-center justify-between">
-                  {amountNum > 0 ? (
-                    <span className="text-base font-bold text-[#f57224]">
-                      {amountNum.toLocaleString('vi-VN')} đ
-                    </span>
-                  ) : (
-                    <span className="text-sm font-medium text-gray-500">
-                      Chưa có giá
-                    </span>
-                  )}
-
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${statusInfo.color}`}
-                  >
-                    {statusInfo.icon}
-                    {statusInfo.label}
-                  </span>
-                </div>
-              </Link>
+                {isDeliveryComplete && (
+                  <div className="px-5 py-3 bg-emerald-50 border-t border-emerald-100 flex gap-2">
+                    {(() => {
+                      const validation = validatePayoutEligibility(r);
+                      const isDisabled =
+                        !validation.allowed || payoutInProgress === id;
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            void handleRequestPayout(id, r);
+                          }}
+                          disabled={isDisabled}
+                          className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                          title={
+                            !validation.allowed
+                              ? validation.reason
+                              : 'Yêu cầu thanh toán'
+                          }
+                        >
+                          <DollarSign className="w-4 h-4" />
+                          {payoutInProgress === id
+                            ? 'Đang xử lý...'
+                            : 'Yêu cầu thanh toán'}
+                        </button>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             </li>
           );
         })}

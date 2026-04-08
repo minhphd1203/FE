@@ -12,10 +12,13 @@ import {
   CalendarDays,
   Truck,
   MapPin,
+  DollarSign,
 } from 'lucide-react';
 import {
   useSellerTransactionDetailQuery,
   useSellerUpdateTransactionMutation,
+  useSellerRequestPayoutMutation,
+  useSellerPayoutByTransactionQuery,
 } from '../../hooks/seller/useSellerQueries';
 import { useAppSelector } from '../../redux/hooks';
 import { getBikeImage, handleBikeImageError } from '../../utils/bikeImage';
@@ -26,11 +29,18 @@ export const SellerTransactionDetailPage: React.FC = () => {
   const { data, isLoading, error, refetch } =
     useSellerTransactionDetailQuery(id);
   const updateMut = useSellerUpdateTransactionMutation();
+  const payoutMut = useSellerRequestPayoutMutation();
+  const { data: payoutData } = useSellerPayoutByTransactionQuery(
+    id,
+    !!id && !!data?.data,
+  );
 
   const [notes, setNotes] = useState('');
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [payoutError, setPayoutError] = useState<string | null>(null);
 
   const transaction = data?.data;
+  const payoutInfo = payoutData?.data;
 
   const handleUpdateStatus = async (
     statusArg: 'approved' | 'completed' | 'cancelled',
@@ -52,6 +62,121 @@ export const SellerTransactionDetailPage: React.FC = () => {
       );
     }
   };
+
+  const handleRequestPayout = async () => {
+    if (!id) return;
+    setPayoutError(null);
+    try {
+      console.log('[SellerTransactionDetailPage] Requesting payout for:', id);
+      await payoutMut.mutateAsync(id);
+      await refetch();
+      window.alert(
+        '✅ Yêu cầu thanh toán thành công! Bạn sẽ nhận được tiền trong thời gian sắp tới.',
+      );
+    } catch (err: unknown) {
+      const msg =
+        (err as any)?.response?.data?.message ||
+        (err as any)?.message ||
+        'Có lỗi xảy ra khi yêu cầu thanh toán.';
+      console.error('[SellerTransactionDetailPage] Payout error:', err);
+      setPayoutError(msg);
+    }
+  };
+
+  // Validate payout eligibility
+  const canRequestPayout = (): { allowed: boolean; reason?: string } => {
+    // Check for existing payout that's not failed
+    if (payoutInfo && payoutInfo.status !== 'failed') {
+      return {
+        allowed: false,
+        reason: `Payout đã tồn tại (trạng thái: ${payoutInfo.status}). Chỉ có thể tạo payout mới khi payout trước đó thất bại.`,
+      };
+    }
+
+    if (!transaction)
+      return { allowed: false, reason: 'Chưa tải thông tin giao dịch' };
+
+    const txn = transaction as any;
+
+    // 1. Transaction must be completed
+    if (txn.status !== 'completed') {
+      return {
+        allowed: false,
+        reason: `Giao dịch chưa hoàn thành (${txn.status})`,
+      };
+    }
+
+    // 2. Delivery must exist, be 'delivered', and be confirmed
+    const delivery = txn.delivery;
+    if (!delivery) {
+      return { allowed: false, reason: 'Chưa có thông tin giao hàng' };
+    }
+    if (delivery.deliveryStatus !== 'delivered') {
+      return {
+        allowed: false,
+        reason: `Giao hàng chưa hoàn thành (${delivery.deliveryStatus})`,
+      };
+    }
+    if (!delivery.receiptConfirmedAt) {
+      return { allowed: false, reason: 'Người mua chưa xác nhận nhận hàng' };
+    }
+
+    return { allowed: true };
+  };
+
+  const payoutValidation = canRequestPayout();
+
+  // Determine payout button state
+  const getPayoutButtonState = () => {
+    if (!payoutInfo) {
+      // No payout yet - normal request state
+      return {
+        show: true,
+        label: payoutMut.isPending ? 'Đang xử lý...' : 'Yêu cầu thanh toán',
+        disabled: payoutMut.isPending || !payoutValidation.allowed,
+        variant: 'primary' as const,
+        color: 'emerald',
+      };
+    }
+
+    if (payoutInfo.status === 'completed') {
+      // Payout completed - hide button, show success
+      return { show: false, status: 'completed' as const };
+    }
+
+    if (payoutInfo.status === 'failed') {
+      // Payout failed - show retry button
+      return {
+        show: true,
+        label: payoutMut.isPending ? 'Đang xử lý...' : 'Thử lại yêu cầu',
+        disabled: payoutMut.isPending,
+        variant: 'danger' as const,
+        color: 'red',
+      };
+    }
+
+    if (payoutInfo.status === 'pending') {
+      // Payout pending - show loading state
+      return {
+        show: true,
+        label: 'Đang xử lý thanh toán...',
+        disabled: true,
+        variant: 'pending' as const,
+        color: 'amber',
+      };
+    }
+
+    // Default
+    return {
+      show: true,
+      label: payoutMut.isPending ? 'Đang xử lý...' : 'Yêu cầu thanh toán',
+      disabled: payoutMut.isPending || !payoutValidation.allowed,
+      variant: 'primary' as const,
+      color: 'emerald',
+    };
+  };
+
+  const payoutButtonState = getPayoutButtonState();
 
   if (!authed) {
     return (
@@ -258,7 +383,7 @@ export const SellerTransactionDetailPage: React.FC = () => {
               </div>
             )}
 
-            {(status === 'completed' || status === 'paid') && (
+            {(status === 'completed' || status === 'paid') && !isDeposit && (
               <div className="p-6 rounded-2xl border border-orange-100 bg-orange-50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-orange-900 mb-1 flex items-center gap-2">
@@ -277,6 +402,226 @@ export const SellerTransactionDetailPage: React.FC = () => {
                 </Link>
               </div>
             )}
+
+            {isDeposit && status === 'completed' && (
+              <div className="p-6 rounded-2xl border border-blue-100 bg-blue-50 shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <CreditCard className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-blue-900 mb-2">
+                      Chờ thanh toán phần còn lại
+                    </h3>
+                    <p className="text-sm text-blue-800/80 mb-4">
+                      Người mua đã thanh toán đặt cọc thành công. Họ cần thanh
+                      toán phần còn lại để hoàn tất giao dịch và bắt đầu quy
+                      trình giao hàng.
+                    </p>
+                    <div className="bg-white rounded-lg p-4 mb-4 border border-blue-100">
+                      <p className="text-xs text-blue-600 font-bold uppercase mb-1">
+                        Số tiền còn lại
+                      </p>
+                      <p className="text-2xl font-black text-blue-900">
+                        {remainingBalance
+                          ? Number(remainingBalance).toLocaleString('vi-VN')
+                          : '0'}{' '}
+                        đ
+                      </p>
+                    </div>
+                    <p className="text-xs text-blue-700 font-medium">
+                      Sau khi người mua thanh toán xong, bạn sẽ có thể truy cập
+                      chức năng "Xử lý giao hàng" để tiến hành giao xe.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {status === 'completed' &&
+              (transaction as any)?.delivery?.deliveryStatus === 'delivered' &&
+              payoutButtonState.show && (
+                <>
+                  {/* Payout Completed - Success Message */}
+                  {payoutInfo?.status === 'completed' && (
+                    <div className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-emerald-900 mb-2">
+                            Thanh toán hoàn thành
+                          </h3>
+                          <p className="text-sm text-emerald-800/80 mb-4">
+                            Yêu cầu rút tiền của bạn đã được xử lý thành công.
+                            Tiền sẽ được chuyển vào tài khoản ngân hàng của bạn
+                            trong thời gian sắp tới.
+                          </p>
+                          <div className="bg-white rounded-lg p-4 border border-emerald-100">
+                            <p className="text-xs text-emerald-600 font-bold uppercase mb-1">
+                              Số tiền rút
+                            </p>
+                            <p className="text-2xl font-black text-emerald-900">
+                              {Number(payoutInfo.amount || 0).toLocaleString(
+                                'vi-VN',
+                              )}{' '}
+                              đ
+                            </p>
+                            {payoutInfo.completedAt && (
+                              <p className="text-xs text-emerald-700 mt-3">
+                                Hoàn thành lúc:{' '}
+                                {new Date(
+                                  payoutInfo.completedAt,
+                                ).toLocaleString('vi-VN')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payout Pending - Loading State */}
+                  {payoutInfo?.status === 'pending' && (
+                    <div className="p-6 rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 animate-spin">
+                          <Clock className="w-6 h-6 text-amber-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-amber-900 mb-2">
+                            Đang xử lý thanh toán
+                          </h3>
+                          <p className="text-sm text-amber-800/80 mb-4">
+                            Yêu cầu rút tiền của bạn đang được xử lý. Vui lòng
+                            đợi trong lúc này. Thời gian xử lý thường từ 2-7
+                            giây.
+                          </p>
+                          <div className="bg-white rounded-lg p-4 border border-amber-100">
+                            <p className="text-xs text-amber-600 font-bold uppercase mb-1">
+                              Số tiền rút
+                            </p>
+                            <p className="text-2xl font-black text-amber-900">
+                              {Number(payoutInfo.amount || 0).toLocaleString(
+                                'vi-VN',
+                              )}{' '}
+                              đ
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payout Failed - Retry Button */}
+                  {payoutInfo?.status === 'failed' && (
+                    <div className="p-6 rounded-2xl border border-red-200 bg-red-50 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                          <XCircle className="w-6 h-6 text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-red-900 mb-2">
+                            Rút tiền thất bại
+                          </h3>
+                          <p className="text-sm text-red-800/80 mb-3">
+                            Yêu cầu rút tiền của bạn không thành công. Vui lòng
+                            thử lại hoặc liên hệ với hỗ trợ khách hàng.
+                          </p>
+                          {payoutInfo.failureReason && (
+                            <p className="text-xs text-red-700 mb-4 font-medium">
+                              Lý do: {payoutInfo.failureReason}
+                            </p>
+                          )}
+                          <div className="bg-white rounded-lg p-4 mb-4 border border-red-100">
+                            <p className="text-xs text-red-600 font-bold uppercase mb-1">
+                              Số tiền rút
+                            </p>
+                            <p className="text-2xl font-black text-red-900">
+                              {Number(payoutInfo.amount || 0).toLocaleString(
+                                'vi-VN',
+                              )}{' '}
+                              đ
+                            </p>
+                          </div>
+                          <button
+                            onClick={handleRequestPayout}
+                            disabled={payoutMut.isPending}
+                            className="w-full px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-200"
+                          >
+                            <DollarSign className="w-5 h-5" />
+                            {payoutMut.isPending
+                              ? 'Đang xử lý...'
+                              : 'Thử lại yêu cầu'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Normal Request - New Payout */}
+                  {!payoutInfo && (
+                    <div className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                          <DollarSign className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-emerald-900 mb-2">
+                            Giao hàng hoàn thành - Yêu cầu thanh toán
+                          </h3>
+                          <p className="text-sm text-emerald-800/80 mb-4">
+                            Xe đã được giao thành công cho người mua. Bạn có thể
+                            yêu cầu thanh toán tiền bán hàng ngay bây giờ.
+                          </p>
+                          <div className="bg-white rounded-lg p-4 mb-4 border border-emerald-100">
+                            <p className="text-xs text-emerald-600 font-bold uppercase mb-1">
+                              Số tiền sẽ nhận
+                            </p>
+                            <p className="text-2xl font-black text-emerald-900">
+                              {Number(amount || 0).toLocaleString('vi-VN')} đ
+                            </p>
+                          </div>
+                          {payoutError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                              <p className="text-sm text-red-700">
+                                {payoutError}
+                              </p>
+                            </div>
+                          )}
+                          {!payoutValidation.allowed && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <p className="text-sm text-amber-700">
+                                {payoutValidation.reason}
+                              </p>
+                            </div>
+                          )}
+                          <button
+                            onClick={handleRequestPayout}
+                            disabled={
+                              payoutMut.isPending || !payoutValidation.allowed
+                            }
+                            className="w-full px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+                            title={
+                              !payoutValidation.allowed
+                                ? payoutValidation.reason
+                                : 'Yêu cầu thanh toán'
+                            }
+                          >
+                            <DollarSign className="w-5 h-5" />
+                            {payoutMut.isPending
+                              ? 'Đang xử lý...'
+                              : 'Yêu cầu thanh toán'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100 flex items-center gap-2">

@@ -37,6 +37,9 @@ interface SellerDashboardApiResponse {
 }
 
 function parseSellerDashboardPayload(payload: unknown): SellerDashboardData {
+  console.log('[parseSellerDashboardPayload] Input:', payload);
+
+  // Pattern 1: Direct structure { bikes, transactions, reputation }
   if (
     payload &&
     typeof payload === 'object' &&
@@ -44,10 +47,19 @@ function parseSellerDashboardPayload(payload: unknown): SellerDashboardData {
     'transactions' in payload &&
     'reputation' in payload
   ) {
-    return payload as SellerDashboardData;
+    const p = payload as Record<string, unknown>;
+    const result = {
+      bikes: p.bikes as SellerDashboardBikesStats,
+      transactions: p.transactions as SellerDashboardTransactionsStats,
+      reputation: p.reputation as SellerDashboardReputation,
+    };
+    console.log('[parseSellerDashboardPayload] Parsed (direct):', result);
+    return result;
   }
+
+  // Pattern 2: Wrapped structure { data: { bikes, transactions, reputation } }
   if (payload && typeof payload === 'object' && 'data' in payload) {
-    const inner = (payload as { data: unknown }).data;
+    const inner = (payload as Record<string, unknown>).data;
     if (
       inner &&
       typeof inner === 'object' &&
@@ -55,10 +67,24 @@ function parseSellerDashboardPayload(payload: unknown): SellerDashboardData {
       'transactions' in inner &&
       'reputation' in inner
     ) {
-      return inner as SellerDashboardData;
+      const i = inner as Record<string, unknown>;
+      const result = {
+        bikes: i.bikes as SellerDashboardBikesStats,
+        transactions: i.transactions as SellerDashboardTransactionsStats,
+        reputation: i.reputation as SellerDashboardReputation,
+      };
+      console.log('[parseSellerDashboardPayload] Parsed (wrapped):', result);
+      return result;
     }
   }
-  throw new Error('Invalid seller dashboard response');
+
+  console.error(
+    '[parseSellerDashboardPayload] Invalid payload structure:',
+    payload,
+  );
+  throw new Error(
+    `Invalid seller dashboard response: ${JSON.stringify(payload)}`,
+  );
 }
 
 /** Trích id xe từ nhiều dạng response BE thường dùng */
@@ -709,13 +735,84 @@ export async function getSellerReviews(
 }
 
 export const getMyDashboard = async (): Promise<SellerDashboardData> => {
+  console.log('[getMyDashboard] Starting API call...');
   const res = await apiClient.get<
     SellerDashboardApiResponse | SellerDashboardData
   >('/seller/v1/dashboard');
-  return parseSellerDashboardPayload(res.data);
+  console.log('[getMyDashboard] API Response:', res.data);
+  const parsed = parseSellerDashboardPayload(res.data);
+  console.log('[getMyDashboard] Parsed data:', parsed);
+  return parsed;
 };
 
 export const getSalesStats = async () => {
   const res = await apiClient.get('/seller/v1/stats/sales');
   return res.data;
 };
+
+// --- PAYOUT SYSTEM ---
+
+export interface PayoutResponse {
+  success: boolean;
+  data?: {
+    id: string;
+    transactionId: string;
+    sellerId: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  message?: string;
+}
+
+/**
+ * GET /api/payment/v1/payout/by-transaction/:transactionId
+ * Get payout status for a specific transaction
+ */
+export async function getPayoutByTransactionId(
+  transactionId: string,
+): Promise<PayoutResponse> {
+  console.log(
+    '[getPayoutByTransactionId] Getting payout for transaction:',
+    transactionId,
+  );
+  const res = await apiClient.get<PayoutResponse>(
+    `/payment/v1/payout/by-transaction/${transactionId}`,
+  );
+  console.log('[getPayoutByTransactionId] Response:', res.data);
+  return res.data;
+}
+
+/**
+ * GET /api/payment/v1/payout/status/:payoutId
+ * Get payout status for a specific payout
+ */
+export async function getPayoutStatus(
+  payoutId: string,
+): Promise<PayoutResponse> {
+  console.log('[getPayoutStatus] Getting payout status:', payoutId);
+  const res = await apiClient.get<PayoutResponse>(
+    `/payment/v1/payout/status/${payoutId}`,
+  );
+  console.log('[getPayoutStatus] Response:', res.data);
+  return res.data;
+}
+
+/**
+ * POST /api/payment/v1/payout/create/:transactionId
+ * Seller initiates payout after delivery confirmed.
+ */
+export async function requestPayout(
+  transactionId: string,
+): Promise<PayoutResponse> {
+  console.log(
+    '[requestPayout] Initiating payout for transaction:',
+    transactionId,
+  );
+  const res = await apiClient.post<PayoutResponse>(
+    `/payment/v1/payout/create/${transactionId}`,
+  );
+  console.log('[requestPayout] Response:', res.data);
+  return res.data;
+}

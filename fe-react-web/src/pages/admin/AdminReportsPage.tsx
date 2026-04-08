@@ -33,7 +33,9 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 function reportReasonSummary(report: AdminReport): string {
   const t =
     report.reasonText?.trim() ||
-    report.reason?.trim() ||
+    (typeof report.reason === 'string'
+      ? report.reason.trim()
+      : report.reason?.description?.trim()) ||
     report.description?.trim();
   if (t) return t.length > 120 ? `${t.slice(0, 120)}…` : t;
   return report.reasonId?.trim() || '—';
@@ -455,6 +457,7 @@ export const AdminReportsPage: React.FC = () => {
   const {
     data: reports = [],
     isLoading,
+    error,
     refetch,
   } = useAdminReportsQuery(filterStatus);
   const resolveMut = useAdminResolveReportMutation();
@@ -465,8 +468,12 @@ export const AdminReportsPage: React.FC = () => {
     const term = searchTerm.trim().toLowerCase();
     return reports.filter((report) => {
       if (!term) return true;
+      const reasonStr =
+        typeof report.reason === 'string'
+          ? report.reason
+          : report.reason?.name || report.reason?.description || '';
       const hay = [
-        report.reason,
+        reasonStr,
         report.reasonText,
         report.description,
         report.reasonId,
@@ -752,7 +759,28 @@ export const AdminReportsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
+              {error ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-red-600 font-semibold">
+                        Lỗi tải báo cáo
+                      </p>
+                      <p className="text-sm text-red-500">
+                        {error instanceof Error
+                          ? error.message
+                          : 'Có lỗi xảy ra'}
+                      </p>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-2 rounded-lg bg-red-50 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-100"
+                      >
+                        Thử lại
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : isLoading ? (
                 <tr>
                   <td
                     colSpan={6}

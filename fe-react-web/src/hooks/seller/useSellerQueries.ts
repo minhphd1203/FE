@@ -19,6 +19,8 @@ import {
   updateBike,
   toggleSellerBikeVisibility,
   resubmitSellerBike,
+  requestPayout,
+  getPayoutByTransactionId,
   type SellerDashboardData,
   type SellerBikesListParams,
   type SellerBikeDetailApiResponse,
@@ -34,6 +36,7 @@ import {
   type SellerSendMessageResponse,
   type SellerReviewsResponse,
   type SellerTransactionUpdateBody,
+  type PayoutResponse,
 } from '../../apis/sellerApi';
 import { queryKeys } from '../query-keys';
 import { buildMessageFormData } from '../../utils/messageFormData';
@@ -278,5 +281,41 @@ export function useSellerSalesStatsQuery() {
   return useQuery({
     queryKey: queryKeys.seller.salesStats(),
     queryFn: () => getSalesStats(),
+  });
+}
+
+export function useSellerRequestPayoutMutation() {
+  const qc = useQueryClient();
+  return useMutation<PayoutResponse, unknown, string>({
+    mutationFn: (transactionId: string) => requestPayout(transactionId),
+    onSuccess: (data, transactionId) => {
+      // Immediately start polling the payout status after successful creation
+      // This ensures we catch the webhook callback within 1 second
+      void qc.invalidateQueries({
+        queryKey: ['seller', 'payout', transactionId],
+      });
+    },
+    onSettled: () => {
+      // Invalidate transactions to refresh payout status
+      void qc.invalidateQueries({ queryKey: ['seller', 'transactions'] });
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.dashboard() });
+    },
+  });
+}
+
+export function useSellerPayoutByTransactionQuery(
+  transactionId: string | undefined,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ['seller', 'payout', transactionId] as const,
+    queryFn: () => {
+      if (!transactionId) throw new Error('Transaction ID is required');
+      return getPayoutByTransactionId(transactionId);
+    },
+    enabled: enabled && !!transactionId,
+    staleTime: 0, // No caching - always consider data stale for real-time updates
+    refetchInterval: 1000, // Poll every 1 second to catch webhook callback (typical mock latency: 0.5-2s)
+    gcTime: 30 * 1000, // Keep in cache for 30s (was cacheTime)
   });
 }

@@ -18,6 +18,7 @@ export function useFulfillmentDetailQuery(transactionId: string | undefined) {
     queryKey: FULFILLMENT_QUERY_KEYS.detail(transactionId ?? ''),
     queryFn: () => getFulfillmentDetail(transactionId as string),
     enabled: Boolean(transactionId),
+    refetchInterval: 5000, // Poll every 5 seconds for delivery status updates
   });
 }
 
@@ -31,11 +32,14 @@ export function useUpdateDeliveryStatusMutation() {
       transactionId: string;
       body: UpdateDeliveryStatusBody;
     }) => updateDeliveryStatus(transactionId, body),
-    onSettled: (_data, _err, { transactionId }) => {
+    onSuccess: (_data, { transactionId }) => {
+      // Refetch immediately to get the latest data with delivery status
       void qc.invalidateQueries({
         queryKey: FULFILLMENT_QUERY_KEYS.detail(transactionId),
       });
-      // Also invalidate historical transaction queries if relevant
+    },
+    onSettled: (_data, _err, { transactionId }) => {
+      // Also invalidate historical transaction queries
       void qc.invalidateQueries({ queryKey: ['seller', 'transactions'] });
       void qc.invalidateQueries({ queryKey: ['buyer', 'transactions'] });
     },
@@ -46,10 +50,13 @@ export function useConfirmReceiptMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (transactionId: string) => confirmReceipt(transactionId),
-    onSettled: (_data, _err, transactionId) => {
+    onSuccess: (_data, transactionId) => {
+      // Refetch immediately
       void qc.invalidateQueries({
         queryKey: FULFILLMENT_QUERY_KEYS.detail(transactionId),
       });
+    },
+    onSettled: (_data, _err, transactionId) => {
       void qc.invalidateQueries({ queryKey: ['buyer', 'transactions'] });
     },
   });
