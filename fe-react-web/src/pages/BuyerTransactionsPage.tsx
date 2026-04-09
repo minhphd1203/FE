@@ -121,9 +121,21 @@ export const BuyerTransactionsPage: React.FC = () => {
       setModalFeedback({ type: 'error', msg: 'Vui lòng chọn lý do.' });
       return;
     }
+    const transaction = transactions.find(
+      (t: any) => t.id === reportingTransactionId,
+    );
+    if (!transaction?.bike?.id) {
+      setModalFeedback({
+        type: 'error',
+        msg: 'Không tìm thấy xe để báo cáo.',
+      });
+      return;
+    }
     try {
       await reportMut.mutateAsync({
         transactionId: reportingTransactionId!,
+        reportedBikeId: transaction.bike.id,
+        reportedUserId: transaction.seller?.id,
         reasonId: reportReasonId,
         reasonText: reportReasonId === 'others' ? reportReasonText : undefined,
         description: reportDetails,
@@ -139,13 +151,22 @@ export const BuyerTransactionsPage: React.FC = () => {
     }
   };
 
-  const handleRefund = async (transactionId: string, reportId?: string) => {
+  const handleRefund = async (
+    transactionId: string,
+    reportId?: string,
+    reportDescription?: string,
+  ) => {
     if (!window.confirm('Xác nhận yêu cầu hoàn tiền cho đơn hàng này?')) return;
     setError('');
     setSuccess('');
     try {
-      await refundMut.mutateAsync({ transactionId, reportId });
+      await refundMut.mutateAsync({
+        transactionId,
+        reportId,
+        reason: reportDescription,
+      });
       setSuccess('Đang xử lý hoàn tiền. Vui lòng kiểm tra lại sau ít phút.');
+      // The mutation's onSettled will refetch transactions automatically
     } catch (err: any) {
       setError(
         err?.response?.data?.message || 'Không thể thực hiện hoàn tiền.',
@@ -230,6 +251,15 @@ export const BuyerTransactionsPage: React.FC = () => {
                 item.status === 'completed' || item.status === 'paid';
               const isDeposit = item.transactionType === 'deposit';
 
+              // Check if there's a resolved refund report for this transaction
+              const report = myReports.find((r) => r.transactionId === item.id);
+              const hasRefundApproved =
+                report &&
+                report.status === 'resolved' &&
+                (report.reason?.autoResolveAction === 'refund' ||
+                  report.reason?.name?.toLowerCase().includes('refund') ||
+                  report.reason?.description?.toLowerCase().includes('refund'));
+
               const needsInitialPay =
                 isApproved && item.paymentMethod === 'vnpay';
               const needsRemainingPay =
@@ -249,6 +279,11 @@ export const BuyerTransactionsPage: React.FC = () => {
                       {isDeposit && (
                         <span className="px-2.5 py-1 text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200 rounded-md">
                           Mua đặt cọc
+                        </span>
+                      )}
+                      {item.refundAmount && Number(item.refundAmount) > 0 && (
+                        <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md">
+                          Đã hoàn tiền
                         </span>
                       )}
                       <span className="text-xs text-gray-400 font-mono">
@@ -274,6 +309,15 @@ export const BuyerTransactionsPage: React.FC = () => {
                             {Number(item.remainingBalance).toLocaleString(
                               'vi-VN',
                             )}
+                            đ
+                          </span>
+                        </p>
+                      )}
+                      {item.refundAmount && Number(item.refundAmount) > 0 && (
+                        <p>
+                          Hoàn tiền:{' '}
+                          <span className="font-bold text-emerald-600">
+                            +{Number(item.refundAmount).toLocaleString('vi-VN')}
                             đ
                           </span>
                         </p>
@@ -348,9 +392,59 @@ export const BuyerTransactionsPage: React.FC = () => {
 
                     {isCompleted &&
                       (() => {
-                        const report = myReports.find(
-                          (r) => r.transactionId === item.id,
-                        );
+                        if (hasRefundApproved) {
+                          return (
+                            <button
+                              type="button"
+                              className="px-4 py-2 text-sm font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/30 transition-colors flex items-center gap-1.5"
+                              onClick={() =>
+                                item.id &&
+                                handleRefund(
+                                  item.id,
+                                  report?.id,
+                                  report?.description,
+                                )
+                              }
+                              disabled={refundMut.isPending}
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                              {refundMut.isPending
+                                ? 'Đang xử lý...'
+                                : 'Yêu cầu hoàn tiền'}
+                            </button>
+                          );
+                        }
+
+                        const hasPendingReport =
+                          report && report.status === 'pending';
+                        if (hasPendingReport) {
+                          return (
+                            <span className="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 rounded-xl border border-gray-100">
+                              Đang chờ duyệt báo cáo
+                            </span>
+                          );
+                        }
+
+                        const hasResolvedReport =
+                          report && report.status === 'resolved';
+                        if (hasResolvedReport && !hasRefundApproved) {
+                          return (
+                            <span className="px-4 py-2 text-xs font-medium text-amber-700 bg-amber-50 rounded-xl border border-amber-100">
+                              Báo cáo đã xử lý
+                            </span>
+                          );
+                        }
+
+                        const hasRejectedReport =
+                          report && report.status === 'rejected';
+                        if (hasRejectedReport) {
+                          return (
+                            <span className="px-4 py-2 text-xs font-medium text-red-700 bg-red-50 rounded-xl border border-red-100">
+                              Báo cáo từ chối
+                            </span>
+                          );
+                        }
+
                         if (!report) {
                           return (
                             <button
@@ -362,31 +456,6 @@ export const BuyerTransactionsPage: React.FC = () => {
                             >
                               <AlertTriangle className="w-4 h-4" />
                               Báo cáo
-                            </button>
-                          );
-                        }
-                        if (report.status === 'pending') {
-                          return (
-                            <span className="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 rounded-xl border border-gray-100">
-                              Đang chờ duyệt báo cáo
-                            </span>
-                          );
-                        }
-                        if (
-                          report.status === 'resolved' &&
-                          report.resolution === 'refund'
-                        ) {
-                          return (
-                            <button
-                              type="button"
-                              className="px-4 py-2 text-sm font-bold rounded-xl text-white bg-red-600 hover:bg-red-700 shadow-sm shadow-red-600/30 transition-colors flex items-center gap-1.5"
-                              onClick={() =>
-                                item.id && handleRefund(item.id, report.id)
-                              }
-                              disabled={refundMut.isPending}
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                              Hoàn tiền
                             </button>
                           );
                         }

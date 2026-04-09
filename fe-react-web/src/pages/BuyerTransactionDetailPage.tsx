@@ -100,9 +100,15 @@ export const BuyerTransactionDetailPage: React.FC = () => {
       setModalFeedback({ type: 'error', msg: 'Vui lòng chọn lý do.' });
       return;
     }
+    if (!bike?.id) {
+      setModalFeedback({ type: 'error', msg: 'Không tìm thấy xe để báo cáo.' });
+      return;
+    }
     try {
       await reportMut.mutateAsync({
         transactionId: id,
+        reportedBikeId: bike.id,
+        reportedUserId: seller?.id,
         reasonId: reportReasonId,
         reasonText: reportReasonId === 'others' ? reportReasonText : undefined,
         description: reportDetails,
@@ -118,11 +124,18 @@ export const BuyerTransactionDetailPage: React.FC = () => {
     }
   };
 
-  const handleRefund = async (reportId?: string) => {
+  const handleRefund = async (
+    reportId?: string,
+    reportDescription?: string,
+  ) => {
     if (!id) return;
     if (!window.confirm('Xác nhận yêu cầu hoàn tiền cho đơn hàng này?')) return;
     try {
-      await refundMut.mutateAsync({ transactionId: id, reportId });
+      await refundMut.mutateAsync({
+        transactionId: id,
+        reportId,
+        reason: reportDescription,
+      });
       toast.success('Đang xử lý hoàn tiền. Vui lòng kiểm tra lại sau ít phút.');
       void refetchTransaction();
     } catch (err: any) {
@@ -226,18 +239,35 @@ export const BuyerTransactionDetailPage: React.FC = () => {
   const canPayRemaining =
     isCompleted && isDeposit && Number(remainingBalance) > 0;
 
-  // Xác nhận nhận hàng: Khi status là completed/paid VÀ deliveryStatus là delivered
+  // Xác nhận nhận hàng: Khi status là completed/paid VÀ deliveryStatus là delivering VÀ chưa xác nhận
   const canConfirmReceipt =
-    isCompleted && deliveryStatus === 'delivered' && status !== 'completed'; // Giả sử completed là trạng thái cuối cùng sau khi confirm receipt
+    isCompleted &&
+    deliveryStatus === 'delivering' &&
+    !fullData?.data?.receiptConfirmedAt;
 
   const getStatusBadge = () => {
-    // Override badge if delivered but not confirmed
-    if (deliveryStatus === 'delivered' && isCompleted) {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold">
-          <Truck className="w-4 h-4" /> Đã giao hàng (Chờ xác nhận)
-        </span>
-      );
+    // Show appropriate badge based on delivery status for completed transactions
+    if (isCompleted) {
+      if (
+        deliveryStatus === 'delivering' &&
+        !fullData?.data?.receiptConfirmedAt
+      ) {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold">
+            <Truck className="w-4 h-4" /> Đã giao hàng (Chờ xác nhận)
+          </span>
+        );
+      }
+      if (
+        deliveryStatus === 'delivered' &&
+        fullData?.data?.receiptConfirmedAt
+      ) {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-semibold">
+            <CheckCircle2 className="w-4 h-4" /> Đã nhận hàng
+          </span>
+        );
+      }
     }
 
     switch (status) {
@@ -345,16 +375,6 @@ export const BuyerTransactionDetailPage: React.FC = () => {
                   </p>
                 </div>
 
-                {canConfirmReceipt && (
-                  <button
-                    onClick={handleConfirmReceipt}
-                    className="shrink-0 whitespace-nowrap px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    Xác nhận đã nhận hàng
-                  </button>
-                )}
-
                 {canPayInitial && (
                   <button
                     onClick={() => handleOpenPaymentModal('initial')}
@@ -400,21 +420,73 @@ export const BuyerTransactionDetailPage: React.FC = () => {
                     }
                     if (
                       report.status === 'resolved' &&
-                      report.resolution === 'refund'
+                      (report.reason?.autoResolveAction === 'refund' ||
+                        report.reason?.name?.toLowerCase().includes('refund') ||
+                        report.reason?.description
+                          ?.toLowerCase()
+                          .includes('refund'))
                     ) {
                       return (
                         <button
-                          onClick={() => handleRefund(report.id)}
+                          onClick={() =>
+                            handleRefund(report.id, report.description)
+                          }
                           disabled={refundMut.isPending}
-                          className="shrink-0 whitespace-nowrap px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-md shadow-red-600/20 transition-all flex items-center gap-2"
+                          className="shrink-0 whitespace-nowrap px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2"
                         >
                           <RotateCcw className="w-5 h-5" />
-                          Hoàn tiền
+                          {refundMut.isPending
+                            ? 'Đang xử lý...'
+                            : 'Yêu cầu hoàn tiền'}
                         </button>
+                      );
+                    }
+                    if (
+                      report.status === 'resolved' &&
+                      report.resolution !== 'refund'
+                    ) {
+                      return (
+                        <div className="px-6 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-medium text-sm text-center">
+                          Báo cáo đã được xử lý
+                        </div>
+                      );
+                    }
+                    if (report.status === 'rejected') {
+                      return (
+                        <div className="px-6 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 font-medium text-sm text-center">
+                          Báo cáo đã bị từ chối
+                        </div>
                       );
                     }
                     return null;
                   })()}
+              </div>
+            )}
+
+            {/* Delivery confirmation section */}
+            {canConfirmReceipt && (
+              <div className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50 flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-4 shadow-sm">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-1 text-emerald-900">
+                    Đã giao hàng
+                  </h3>
+                  <p className="text-sm text-emerald-800/80">
+                    Đơn hàng của bạn đã được giao. Vui lòng xác nhận khi bạn đã
+                    nhận được hàng.
+                  </p>
+                </div>
+                <button
+                  onClick={handleConfirmReceipt}
+                  disabled={confirmReceiptMut.isPending}
+                  className="shrink-0 whitespace-nowrap px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2"
+                >
+                  {confirmReceiptMut.isPending ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5" />
+                  )}
+                  Xác nhận đã nhận hàng
+                </button>
               </div>
             )}
 

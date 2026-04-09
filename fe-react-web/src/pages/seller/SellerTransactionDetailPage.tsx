@@ -34,10 +34,16 @@ export const SellerTransactionDetailPage: React.FC = () => {
     useSellerTransactionDetailQuery(id);
   const updateMut = useSellerUpdateTransactionMutation();
   const payoutMut = useSellerRequestPayoutMutation();
-  const { data: payoutData } = useSellerPayoutByTransactionQuery(
-    id,
-    !!id && !!data?.data,
-  );
+  const { data: payoutData, isLoading: isLoadingPayout } =
+    useSellerPayoutByTransactionQuery(
+      id,
+      // Enable payout query when transaction is completed AND delivery is marked as delivered
+      // Don't require receiptConfirmedAt because we want to query status regardless
+      !!id &&
+        !!data?.data &&
+        data.data.status === 'completed' &&
+        data.data.delivery?.deliveryStatus === 'delivered',
+    );
 
   const [notes, setNotes] = useState('');
   const [updateError, setUpdateError] = useState<string | null>(null);
@@ -454,9 +460,23 @@ export const SellerTransactionDetailPage: React.FC = () => {
             )}
 
             {status === 'completed' &&
-              (transaction as any)?.delivery?.deliveryStatus === 'delivered' &&
-              payoutButtonState.show && (
+              (transaction as any)?.delivery?.deliveryStatus ===
+                'delivered' && (
                 <>
+                  {/* Payout Section - Show in ANY status (completed, pending, failed, or no payout) */}
+
+                  {/* Loading State - Only show when actually loading, not when data is null */}
+                  {isLoadingPayout && !payoutData && (
+                    <div className="p-6 rounded-2xl border border-gray-200 bg-gray-50 shadow-sm flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-4 border-[#f57224] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-gray-500 text-sm">
+                          Đang tải thông tin rút tiền...
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Payout Completed - Success Message */}
                   {payoutInfo?.status === 'completed' && (
                     <div className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm">

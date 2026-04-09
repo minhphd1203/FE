@@ -39,11 +39,19 @@ export const SellerDeliveryPage: React.FC = () => {
   const transaction = data?.data;
 
   // Derive current step from deliveryStatus
-  // null -> 1 (Packing)
-  // preparing -> 2 (Shipping)
-  // delivering/delivered -> 3 (Timeline/Done)
+  // null -> 1 (Packing - preparing shipment)
+  // preparing -> 2 (Arrange shipping)
+  // delivering -> 3 (In transit - waiting for buyer confirmation)
+  // delivered -> 4 (Buyer confirmed - delivery complete)
   const currentStatus = transaction?.deliveryStatus;
-  const step = !currentStatus ? 1 : currentStatus === 'preparing' ? 2 : 3;
+  const receiptConfirmed = transaction?.receiptConfirmedAt;
+  const step = !currentStatus
+    ? 1
+    : currentStatus === 'preparing'
+      ? 2
+      : currentStatus === 'delivering'
+        ? 3
+        : 4; // delivered
 
   if (isLoading) {
     return (
@@ -401,6 +409,64 @@ export const SellerDeliveryPage: React.FC = () => {
 
           {step === 3 && (
             <div className="space-y-6 animate-in zoom-in-95 duration-300">
+              <div className="bg-white p-10 rounded-[40px] shadow-2xl shadow-blue-100/50 border-2 border-blue-50 text-center relative overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-2 bg-blue-500 rounded-b-full shadow-lg shadow-blue-200" />
+
+                <div className="w-24 h-24 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-blue-50/50">
+                  <Truck className="w-12 h-12 animate-bounce" />
+                </div>
+
+                <h2 className="text-3xl font-black text-gray-900 mb-3">
+                  Đang Giao Hàng
+                </h2>
+                <p className="text-gray-500 font-medium mb-8 max-w-sm mx-auto">
+                  Đơn hàng của bạn đang trên đường đến người mua. Chờ khách xác
+                  nhận đã nhận hàng.
+                </p>
+
+                <div className="bg-gray-50 border-2 border-gray-100 rounded-3xl p-8 mb-8 max-w-md mx-auto">
+                  <div className="text-left">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      Mã vận đơn
+                    </p>
+                    <p className="text-lg font-black text-[#f57224]">
+                      CXD2024{id?.slice(0, 4).toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => window.print()}
+                    className="py-4 px-6 bg-gray-900 text-white rounded-2xl font-black hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02]"
+                  >
+                    <Printer className="w-5 h-5" /> In phiếu giao hàng
+                  </button>
+                  <button
+                    onClick={() => navigate('/seller/don-hang')}
+                    className="py-4 px-6 bg-white border-2 border-gray-100 text-gray-900 rounded-2xl font-black hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    Xem đơn hàng khác
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary for buyer view sync */}
+              <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex items-start gap-4">
+                <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0" />
+                <div className="text-sm text-blue-900/80 font-medium">
+                  <p className="font-bold mb-1 uppercase tracking-tight">
+                    Chờ xác nhận từ Người Mua:
+                  </p>
+                  Người mua sẽ nhấn nút "Xác nhận đã nhận hàng" sau khi nhận
+                  được đơn hàng.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-6 animate-in zoom-in-95 duration-300">
               <div className="bg-white p-10 rounded-[40px] shadow-2xl shadow-orange-100/50 border-2 border-emerald-50 text-center relative overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-2 bg-emerald-500 rounded-b-full shadow-lg shadow-emerald-200" />
 
@@ -412,8 +478,8 @@ export const SellerDeliveryPage: React.FC = () => {
                   Xác nhận Thành công!
                 </h2>
                 <p className="text-gray-500 font-medium mb-8 max-w-sm mx-auto">
-                  Quy trình chuẩn bị hàng đã hoàn tất. Đơn vị vận chuyển sẽ sớm
-                  liên lạc với bạn.
+                  Người mua đã xác nhận đã nhận hàng. Bạn có thể tiến hành yêu
+                  cầu thanh toán.
                 </p>
 
                 <div className="bg-gray-50 border-2 border-gray-100 rounded-3xl p-8 mb-8 max-w-md mx-auto grid grid-cols-2 gap-4">
@@ -430,10 +496,14 @@ export const SellerDeliveryPage: React.FC = () => {
                   </div>
                   <div className="col-span-2 pt-4 border-t border-gray-200/50 text-left">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                      Ngày dự kiến lấy hàng
+                      Ngày xác nhận
                     </p>
                     <p className="text-sm font-black text-gray-900">
-                      Sáng mai, từ 08:00 - 11:30
+                      {transaction?.receiptConfirmedAt
+                        ? new Date(
+                            transaction.receiptConfirmedAt,
+                          ).toLocaleString('vi-VN')
+                        : 'Chưa có'}
                     </p>
                   </div>
                 </div>
@@ -459,13 +529,10 @@ export const SellerDeliveryPage: React.FC = () => {
                 <ShieldCheck className="w-6 h-6 text-amber-600 shrink-0" />
                 <div className="text-sm text-amber-900/80 font-medium">
                   <p className="font-bold mb-1 uppercase tracking-tight">
-                    Hệ thống đã cập nhật tới Người Mua:
+                    Giao hàng hoàn tất:
                   </p>
-                  Trạng thái đơn hàng trên trang của Buyer đã chuyển sang{' '}
-                  <span className="font-black text-emerald-600">
-                    "Đang chuẩn bị hàng"
-                  </span>
-                  . Họ sẽ nhận được thông báo khi mã vận đơn được kích hoạt.
+                  Bạn có thể lấy lịch sử giao dịch hoặc yêu cầu thanh toán từ
+                  tài khoản của bạn.
                 </div>
               </div>
             </div>

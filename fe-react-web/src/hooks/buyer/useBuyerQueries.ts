@@ -291,6 +291,8 @@ export function useBuyerMyReportsQuery() {
   return useQuery({
     queryKey: ['buyer', 'reports'],
     queryFn: () => getMyReports(),
+    refetchInterval: 5000, // Poll every 5 seconds to check report status updates
+    refetchIntervalInBackground: true, // Continue polling in background
   });
 }
 

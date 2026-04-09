@@ -13,6 +13,7 @@ export interface FulfillmentDetailResponse {
     status: 'pending' | 'approved' | 'completed' | 'cancelled';
     deliveryStatus: 'preparing' | 'delivering' | 'delivered' | null;
     deliveryNotes: string | null;
+    receiptConfirmedAt: string | null;
     createdAt: string;
     address?: string | null;
     shippingAddress?: string | null;

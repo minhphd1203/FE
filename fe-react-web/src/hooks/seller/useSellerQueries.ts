@@ -305,6 +305,21 @@ export function useSellerPayoutByTransactionQuery(
   transactionId: string | undefined,
   enabled = true,
 ) {
+  const queryClient = useQueryClient();
+
+  // Get the current cached data to check if polling should be paused
+  const cachedData = queryClient.getQueryData([
+    'seller',
+    'payout',
+    transactionId,
+  ] as const);
+  const payoutStatus = (cachedData as any)?.data?.status;
+
+  // Stop polling when payout reaches a terminal state
+  // Always poll initially (even if no cached data), but pause once status is terminal
+  const shouldPausePoll =
+    !!cachedData && (payoutStatus === 'completed' || payoutStatus === 'failed');
+
   return useQuery({
     queryKey: ['seller', 'payout', transactionId] as const,
     queryFn: () => {
@@ -313,7 +328,7 @@ export function useSellerPayoutByTransactionQuery(
     },
     enabled: enabled && !!transactionId,
     staleTime: 0, // No caching - always consider data stale for real-time updates
-    refetchInterval: 1000, // Poll every 1 second to catch webhook callback (typical mock latency: 0.5-2s)
+    refetchInterval: shouldPausePoll ? false : 1000, // ✅ Use false (not undefined) to stop, 1000 to continue
     gcTime: 30 * 1000, // Keep in cache for 30s (was cacheTime)
   });
 }
