@@ -8,19 +8,20 @@ import {
   useBuyerSearchBikesQuery,
 } from '../hooks/buyer/useBuyerQueries';
 
+const FRAME_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
+
 export const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
 
-  // Fetch all categories from API
   const { data: allCategories = [], isLoading: categoriesLoading } =
     useBuyerCategoriesQuery();
 
-  // Find category from API data
   const category = allCategories.find((c) => c.slug === slug);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = searchParams.get('sortOrder') || 'desc';
+  const frameSize = searchParams.get('frameSize') || '';
 
   const {
     data: searchResult,
@@ -29,6 +30,7 @@ export const CategoryPage: React.FC = () => {
   } = useBuyerSearchBikesQuery(
     {
       categoryId: category?.id ?? '',
+      frameSize: frameSize || undefined,
       sortBy,
       sortOrder,
       page: 1,
@@ -59,6 +61,16 @@ export const CategoryPage: React.FC = () => {
       newParams.set('sortOrder', 'desc');
     }
 
+    setSearchParams(newParams);
+  };
+
+  const handleFrameSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (e.target.value) {
+      newParams.set('frameSize', e.target.value);
+    } else {
+      newParams.delete('frameSize');
+    }
     setSearchParams(newParams);
   };
 
@@ -102,7 +114,20 @@ export const CategoryPage: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <select
+            value={frameSize}
+            onChange={handleFrameSizeChange}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f57224]/50 focus:border-[#f57224] bg-white cursor-pointer"
+          >
+            <option value="">Kích thước khung</option>
+            {FRAME_SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
           <label
             htmlFor="sort-select"
             className="text-sm text-gray-600 font-medium shrink-0"

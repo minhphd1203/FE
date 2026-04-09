@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
   MoreVertical,
   Eye,
   Trash2,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
   UserPlus,
@@ -15,6 +14,8 @@ import {
   useAdminUsersQuery,
   useDeleteAdminUserMutation,
 } from '../../hooks/admin/useAdminQueries';
+
+const LIMIT = 20;
 
 const getRoleBadge = (role: string) => {
   switch (role) {
@@ -52,17 +53,40 @@ const getRoleBadge = (role: string) => {
 };
 
 export const AdminUsersPage: React.FC = () => {
-  const {
-    data: rawUsers = [],
-    isLoading: loading,
-    error: queryError,
-  } = useAdminUsersQuery();
-  const deleteUserMutation = useDeleteAdminUserMutation();
-
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [page, setPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+
+  const deleteUserMutation = useDeleteAdminUserMutation();
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const apiParams = {
+    search: searchTerm || undefined,
+    role: filterRole === 'all' ? undefined : filterRole,
+    page,
+    limit: LIMIT,
+  };
+
+  const {
+    data: result,
+    isLoading: loading,
+    error: queryError,
+  } = useAdminUsersQuery(apiParams);
+
+  const users = result?.items ?? [];
+  const meta = result?.meta ?? { page: 1, limit: LIMIT, total: 0 };
+  const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
 
   const error =
     queryError instanceof Error
@@ -70,22 +94,6 @@ export const AdminUsersPage: React.FC = () => {
       : queryError
         ? 'Không thể tải danh sách người dùng.'
         : null;
-
-  const users = useMemo(() => {
-    let list = [...rawUsers];
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      list = list.filter(
-        (u) =>
-          u.name?.toLowerCase().includes(q) ||
-          u.email?.toLowerCase().includes(q),
-      );
-    }
-    if (filterRole !== 'all') {
-      list = list.filter((u) => u.role === filterRole);
-    }
-    return list;
-  }, [rawUsers, searchTerm, filterRole]);
 
   const handleDeleteUser = async (userId: string) => {
     if (!window.confirm('Bạn có chắc muốn xóa tài khoản này?')) return;
@@ -115,6 +123,9 @@ export const AdminUsersPage: React.FC = () => {
     );
   };
 
+  const startIdx = (meta.page - 1) * meta.limit + 1;
+  const endIdx = Math.min(meta.page * meta.limit, meta.total);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -132,15 +143,16 @@ export const AdminUsersPage: React.FC = () => {
         </button>
       </div>
 
+      {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên, email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm kiếm theo tên, email, SĐT..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224]"
             />
           </div>
@@ -148,7 +160,10 @@ export const AdminUsersPage: React.FC = () => {
             <Filter className="w-5 h-5 text-gray-400" />
             <select
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
+              onChange={(e) => {
+                setFilterRole(e.target.value);
+                setPage(1);
+              }}
               className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f57224]/20 focus:border-[#f57224] bg-white"
             >
               <option value="all">Tất cả vai trò</option>
@@ -168,6 +183,7 @@ export const AdminUsersPage: React.FC = () => {
         </div>
       )}
 
+      {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -296,19 +312,55 @@ export const AdminUsersPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-        {!loading && users.length > 0 && (
+
+        {/* Pagination */}
+        {!loading && meta.total > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
             <p className="text-sm text-gray-500">
-              Hiển thị 1-{users.length} trong tổng số {users.length} người dùng
+              Hiển thị {startIdx}–{endIdx} trong tổng số {meta.total} người dùng
             </p>
-            <div className="flex items-center gap-2">
-              <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+            <div className="flex items-center gap-1">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button className="px-3 py-1.5 bg-[#f57224] text-white text-sm font-medium rounded-lg">
-                1
-              </button>
-              <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1,
+                )
+                .reduce<(number | 'gap')[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                    acc.push('gap');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === 'gap' ? (
+                    <span key={`gap-${idx}`} className="px-2 text-gray-400">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setPage(item)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
+                        item === page
+                          ? 'bg-[#f57224] text-white'
+                          : 'border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

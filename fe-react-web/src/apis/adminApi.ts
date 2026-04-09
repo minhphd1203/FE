@@ -14,6 +14,54 @@ interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;
+  meta?: { page: number; limit: number; total: number };
+}
+
+/** Dashboard aggregate data from GET /admin/v1/dashboard */
+export interface DashboardData {
+  users: {
+    total: number;
+    buyers: number;
+    sellers: number;
+    inspectors: number;
+    admins: number;
+  };
+  bikes: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    hidden: number;
+    reserved: number;
+    sold: number;
+  };
+  transactions: {
+    total: number;
+    pending: number;
+    approved: number;
+    completed: number;
+    cancelled: number;
+    totalRevenue: number;
+    totalSystemFees: number;
+  };
+  reports: {
+    total: number;
+    pending: number;
+    resolved: number;
+    rejected: number;
+  };
+  inspections: {
+    total: number;
+    passed: number;
+    failed: number;
+    inProgress: number;
+  };
+  monthlyRevenue: {
+    month: string;
+    revenue: number;
+    fees: number;
+    count: number;
+  }[];
 }
 
 /** User từ BE */
@@ -38,7 +86,7 @@ export interface AdminBike {
   year: number;
   price: number;
   condition: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'hidden' | 'reserved' | 'sold';
   images: string[];
   sellerId: string;
   categoryId: string | null;
@@ -57,6 +105,8 @@ export interface AdminTransaction {
   id: string;
   status: 'pending' | 'completed' | 'cancelled';
   amount: number;
+  systemFee?: number | null;
+  sellerNetAmount?: number | null;
   createdAt: string;
   updatedAt: string;
   notes?: string | null;
@@ -120,14 +170,18 @@ export interface AdminReport {
 /** Query params cho getBikes */
 export interface GetBikesParams {
   search?: string;
-  status?: 'pending' | 'approved' | 'rejected';
-  sort?: 'newest' | 'oldest';
+  status?: 'pending' | 'approved' | 'rejected' | 'hidden' | 'reserved' | 'sold';
+  sort?: 'price_asc' | 'price_desc' | 'oldest';
+  page?: number;
+  limit?: number;
 }
 
 /** Query params cho getUsers */
 export interface GetUsersParams {
   search?: string;
   role?: string;
+  page?: number;
+  limit?: number;
 }
 
 /** Thread từ GET /admin/v1/conversations */
@@ -149,6 +203,14 @@ export interface AdminConversationThread {
 }
 
 export const adminApi = {
+  /** GET /api/admin/v1/dashboard */
+  getDashboard: async (): Promise<ApiResponse<DashboardData>> => {
+    const { data } = await apiClient.get<ApiResponse<DashboardData>>(
+      '/admin/v1/dashboard',
+    );
+    return data;
+  },
+
   /** GET /api/admin/v1/bike - Lấy danh sách xe đạp */
   getBikes: async (
     params?: GetBikesParams,
@@ -234,7 +296,11 @@ export const adminApi = {
   /** PUT /api/admin/v1/transaction/:id - Cập nhật trạng thái giao dịch */
   updateTransaction: async (
     transactionId: string,
-    body: { status?: 'pending' | 'completed' | 'cancelled'; notes?: string },
+    body: {
+      status?: 'pending' | 'completed' | 'cancelled';
+      notes?: string;
+      systemFee?: number;
+    },
   ): Promise<ApiResponse<AdminTransaction>> => {
     const { data } = await apiClient.put<ApiResponse<AdminTransaction>>(
       `/admin/v1/transaction/${transactionId}`,
@@ -275,7 +341,7 @@ export const adminApi = {
     formData: FormData,
   ): Promise<ApiResponse<unknown>> => {
     const { data } = await apiClient.post<ApiResponse<unknown>>(
-      `/admin/v1/messages/${userId}`,
+      `/messages/${userId}`,
       formData,
     );
     return data;
@@ -283,8 +349,8 @@ export const adminApi = {
 
   /** POST đóng hội thoại với đối tác */
   closeConversation: async (userId: string): Promise<ApiResponse<unknown>> => {
-    const { data } = await apiClient.post<ApiResponse<unknown>>(
-      `/admin/v1/conversations/${userId}/close`,
+    const { data } = await apiClient.delete<ApiResponse<unknown>>(
+      `/messages/${userId}/close`,
     );
     return data;
   },

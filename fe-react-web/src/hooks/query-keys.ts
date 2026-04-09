@@ -8,8 +8,11 @@ type SellerPartnerMessagesKeyParams = {
 
 export const queryKeys = {
   admin: {
-    bikes: () => ['admin', 'bikes'] as const,
-    users: () => ['admin', 'users'] as const,
+    dashboard: () => ['admin', 'dashboard'] as const,
+    bikes: (p?: Record<string, unknown>) =>
+      ['admin', 'bikes', p ?? {}] as const,
+    users: (p?: Record<string, unknown>) =>
+      ['admin', 'users', p ?? {}] as const,
     reports: (status: string) => ['admin', 'reports', status] as const,
     transactions: (status: string) =>
       ['admin', 'transactions', status] as const,

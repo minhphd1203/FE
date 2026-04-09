@@ -131,8 +131,10 @@ export const OrderTrackingPage: React.FC = () => {
     transactionType,
   } = transaction as any;
 
-  const deliveryStatus = fullData?.data?.deliveryStatus;
+  const ds = fullData?.data?.deliveryStatus || '';
   const deliveryNotes = fullData?.data?.deliveryNotes;
+  const receiptConfirmedAt = fullData?.data?.receiptConfirmedAt;
+  const isPaid = ['completed', 'paid'].includes(status);
 
   const deliveryLine =
     (typeof address === 'string' && address.trim()) ||
@@ -145,14 +147,7 @@ export const OrderTrackingPage: React.FC = () => {
       icon: Clock,
       label: 'Đã đặt hàng',
       description: 'Yêu cầu mua xe của bạn đã được gửi đi thành công.',
-      isCompleted: [
-        'pending',
-        'approved',
-        'completed',
-        'paid',
-        'shipping',
-        'delivered',
-      ].includes(status),
+      isCompleted: status !== 'pending',
       isActive: status === 'pending',
     },
     {
@@ -160,13 +155,7 @@ export const OrderTrackingPage: React.FC = () => {
       icon: Package,
       label: 'Đã xác nhận',
       description: 'Người bán đã chấp nhận yêu cầu.',
-      isCompleted: [
-        'approved',
-        'completed',
-        'paid',
-        'shipping',
-        'delivered',
-      ].includes(status),
+      isCompleted: isPaid,
       isActive: status === 'approved',
     },
     {
@@ -174,38 +163,44 @@ export const OrderTrackingPage: React.FC = () => {
       icon: CreditCard,
       label: 'Thanh toán',
       description: 'Giao dịch đã được thanh toán.',
-      isCompleted: ['completed', 'paid', 'shipping', 'delivered'].includes(
-        status,
-      ),
-      isActive: ['completed', 'paid'].includes(status) && !deliveryStatus,
+      isCompleted: isPaid && !!ds,
+      isActive: isPaid && !ds,
     },
     {
       id: 'preparing',
       icon: Package,
       label: 'Đang chuẩn bị hàng',
       description: 'Người bán đang đóng gói xe để bàn giao.',
-      isCompleted: ['delivering', 'delivered'].includes(deliveryStatus || ''),
-      isActive: deliveryStatus === 'preparing',
-      notes: deliveryNotes,
+      isCompleted: ['delivering', 'delivered'].includes(ds),
+      isActive: ds === 'preparing',
+      notes: ds === 'preparing' ? deliveryNotes : undefined,
     },
     {
       id: 'shipping',
       icon: Truck,
       label: 'Đang vận chuyển',
       description: 'Xe đang trên đường đến với bạn.',
-      isCompleted: deliveryStatus === 'delivered',
-      isActive: deliveryStatus === 'delivering',
-      notes: deliveryNotes,
+      isCompleted: ds === 'delivered',
+      isActive: ds === 'delivering',
+      notes: ds === 'delivering' ? deliveryNotes : undefined,
     },
     {
       id: 'received',
       icon: CheckCircle2,
       label: 'Đã giao hàng',
       description: 'Đơn hàng đã được giao đến địa chỉ của bạn.',
-      isCompleted: status === 'completed',
-      isActive: deliveryStatus === 'delivered' && status !== 'completed',
+      isCompleted: ds === 'delivered' && !!receiptConfirmedAt,
+      isActive: ds === 'delivered' && !receiptConfirmedAt,
+      notes: ds === 'delivered' ? deliveryNotes : undefined,
+    },
+    {
+      id: 'confirmed',
+      icon: CheckCircle2,
+      label: 'Đã xác nhận nhận hàng',
+      description: 'Bạn đã xác nhận nhận xe thành công.',
+      isCompleted: !!receiptConfirmedAt,
+      isActive: false,
       isLast: true,
-      notes: deliveryStatus === 'delivered' ? deliveryNotes : undefined,
     },
   ];
 

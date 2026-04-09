@@ -6,24 +6,19 @@ export async function sendInspectorMessage(
   userId: string,
   formData: FormData,
 ): Promise<unknown> {
-  const res = await apiClient.post(
-    `/inspector/v1/messages/${userId}`,
-    formData,
-  );
+  const res = await apiClient.post(`/messages/${userId}`, formData);
   return res.data;
 }
 
 export async function closeInspectorConversation(
   userId: string,
 ): Promise<unknown> {
-  const res = await apiClient.put(
-    `/inspector/v1/conversations/${userId}/close`,
-  );
+  const res = await apiClient.delete(`/messages/${userId}/close`);
   return res.data;
 }
 
 export async function getInspectorConversationsList(): Promise<unknown> {
-  const res = await apiClient.get('/inspector/v1/conversations');
+  const res = await apiClient.get('/messages/conversations');
   return res.data;
 }
 
@@ -31,7 +26,7 @@ export async function getInspectorConversationMessages(
   userId: string,
   params?: { bikeId?: string; page?: number; limit?: number },
 ): Promise<unknown> {
-  const res = await apiClient.get(`/inspector/v1/conversations/${userId}`, {
+  const res = await apiClient.get(`/messages/${userId}`, {
     params,
   });
   return res.data;

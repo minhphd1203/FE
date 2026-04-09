@@ -7,19 +7,33 @@ import {
 import {
   Search,
   Filter,
-  MoreVertical,
   CheckCircle,
   XCircle,
   DollarSign,
+  ChevronDown,
+  ChevronUp,
+  Save,
+  Loader2,
 } from 'lucide-react';
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700' },
-  approved: { label: 'Đã duyệt (Chờ TT)', color: 'bg-blue-100 text-blue-700' },
+  approved: {
+    label: 'Đã duyệt (Chờ TT)',
+    color: 'bg-blue-100 text-blue-700',
+  },
   completed: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-700' },
   cancelled: { label: 'Đã hủy', color: 'bg-red-100 text-red-700' },
   paid: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-700' },
 };
+
+const fmtVND = (n: number | null | undefined) =>
+  n != null
+    ? new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(n)
+    : '—';
 
 export const AdminTransactionsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +41,9 @@ export const AdminTransactionsPage: React.FC = () => {
     'all' | 'pending' | 'completed' | 'cancelled'
   >('all');
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [feeInput, setFeeInput] = useState('');
+  const [feeSaving, setFeeSaving] = useState(false);
 
   const {
     data: transactions = [],
@@ -62,6 +79,30 @@ export const AdminTransactionsPage: React.FC = () => {
       // ignore
     } finally {
       setActiveId(null);
+    }
+  };
+
+  const handleSaveFee = async (txId: string) => {
+    const parsed = Number(feeInput);
+    if (isNaN(parsed) || parsed < 0) return;
+    setFeeSaving(true);
+    try {
+      await updateTxMut.mutateAsync({ id: txId, systemFee: parsed });
+      await refetch();
+      setExpandedId(null);
+    } catch {
+      // ignore
+    } finally {
+      setFeeSaving(false);
+    }
+  };
+
+  const toggleExpand = (tx: AdminTransaction) => {
+    if (expandedId === tx.id) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(tx.id);
+      setFeeInput(tx.systemFee != null ? String(tx.systemFee) : '');
     }
   };
 
@@ -126,6 +167,9 @@ export const AdminTransactionsPage: React.FC = () => {
                   Số tiền
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Phí HT
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -137,7 +181,7 @@ export const AdminTransactionsPage: React.FC = () => {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-8 text-center text-gray-500"
                   >
                     Đang tải...
@@ -146,7 +190,7 @@ export const AdminTransactionsPage: React.FC = () => {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-8 text-center text-gray-500"
                   >
                     Không tìm thấy giao dịch
@@ -158,63 +202,123 @@ export const AdminTransactionsPage: React.FC = () => {
                     label: tx.status,
                     color: 'bg-gray-100 text-gray-700',
                   };
+                  const isExpanded = expandedId === tx.id;
 
                   return (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-4 py-4 text-sm font-medium font-mono text-[#f57224]">
-                        #{tx.id.substring(0, 8).toUpperCase()}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-700">
-                        {tx.bike?.title ?? '—'}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-700">
-                        {tx.buyer?.name ?? '—'}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-700">
-                        {tx.seller?.name ?? '—'}
-                      </td>
-                      <td className="px-4 py-4 text-sm font-semibold text-[#f57224]">
-                        {tx.amount?.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${status.color}`}
-                        >
-                          {status.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            disabled={
-                              tx.status !== 'pending' || activeId === tx.id
-                            }
-                            onClick={() =>
-                              handleUpdateStatus(tx.id, 'completed')
-                            }
-                            className="px-3 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-medium hover:bg-green-100 disabled:opacity-50"
+                    <React.Fragment key={tx.id}>
+                      <tr className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4 text-sm font-medium font-mono text-[#f57224]">
+                          #{tx.id.substring(0, 8).toUpperCase()}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">
+                          {tx.bike?.title ?? '—'}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">
+                          {tx.buyer?.name ?? '—'}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">
+                          {tx.seller?.name ?? '—'}
+                        </td>
+                        <td className="px-4 py-4 text-sm font-semibold text-[#f57224]">
+                          {fmtVND(tx.amount)}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-600">
+                          {fmtVND(tx.systemFee)}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${status.color}`}
                           >
-                            <CheckCircle className="w-4 h-4 inline" />
-                            <span className="ml-1">Hoàn thành</span>
-                          </button>
-                          <button
-                            disabled={
-                              tx.status !== 'pending' || activeId === tx.id
-                            }
-                            onClick={() =>
-                              handleUpdateStatus(tx.id, 'cancelled')
-                            }
-                            className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 disabled:opacity-50"
-                          >
-                            <XCircle className="w-4 h-4 inline" />
-                            <span className="ml-1">Hủy</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              disabled={
+                                tx.status !== 'pending' || activeId === tx.id
+                              }
+                              onClick={() =>
+                                handleUpdateStatus(tx.id, 'completed')
+                              }
+                              className="px-3 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-medium hover:bg-green-100 disabled:opacity-50"
+                            >
+                              <CheckCircle className="w-4 h-4 inline" />
+                              <span className="ml-1">Hoàn thành</span>
+                            </button>
+                            <button
+                              disabled={
+                                tx.status !== 'pending' || activeId === tx.id
+                              }
+                              onClick={() =>
+                                handleUpdateStatus(tx.id, 'cancelled')
+                              }
+                              className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 disabled:opacity-50"
+                            >
+                              <XCircle className="w-4 h-4 inline" />
+                              <span className="ml-1">Hủy</span>
+                            </button>
+                            <button
+                              onClick={() => toggleExpand(tx)}
+                              className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100"
+                              title="Chỉnh phí hệ thống"
+                            >
+                              <DollarSign className="w-4 h-4 inline" />
+                              {isExpanded ? (
+                                <ChevronUp className="w-3 h-3 inline ml-0.5" />
+                              ) : (
+                                <ChevronDown className="w-3 h-3 inline ml-0.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr className="bg-indigo-50/40">
+                          <td colSpan={8} className="px-6 py-4">
+                            <div className="flex flex-col sm:flex-row sm:items-end gap-4 max-w-xl">
+                              <div className="flex-1">
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                                  Phí hệ thống (VND)
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={feeInput}
+                                  onChange={(e) => setFeeInput(e.target.value)}
+                                  placeholder="Nhập phí hệ thống"
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-sm"
+                                />
+                                {tx.sellerNetAmount != null && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Người bán nhận:{' '}
+                                    <span className="font-semibold">
+                                      {fmtVND(tx.sellerNetAmount)}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                disabled={
+                                  feeSaving ||
+                                  feeInput === '' ||
+                                  isNaN(Number(feeInput))
+                                }
+                                onClick={() => handleSaveFee(tx.id)}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                              >
+                                {feeSaving ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Save className="w-4 h-4" />
+                                )}
+                                Lưu
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })
               )}

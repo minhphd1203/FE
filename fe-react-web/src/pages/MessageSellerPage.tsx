@@ -4,6 +4,7 @@ import {
   useMessageThreadQuery,
   useSendMessageMutation,
 } from '../hooks/useMessageQueries';
+import type { Message } from '../apis/messageApi';
 import {
   MessageCircle,
   Send,
@@ -13,8 +14,38 @@ import {
   ChevronRight,
   Search,
   MessageSquare,
+  ShieldCheck,
+  ClipboardCheck,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const RoleBadge: React.FC<{ role: string; size?: 'sm' | 'md' }> = ({
+  role,
+  size = 'sm',
+}) => {
+  if (role === 'admin') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full bg-red-50 text-red-700 font-bold ${size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+      >
+        <ShieldCheck className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+        Quản trị viên
+      </span>
+    );
+  }
+  if (role === 'inspector') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 font-bold ${size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+      >
+        <ClipboardCheck className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+        Kiểm định viên
+      </span>
+    );
+  }
+  return null;
+};
 
 export const MessageSellerPage: React.FC = () => {
   const [activePartnerId, setActivePartnerId] = useState('');
@@ -30,7 +61,12 @@ export const MessageSellerPage: React.FC = () => {
   // 2. Fetch thread detail
   const { data: threadData, isLoading: isThreadLoading } =
     useMessageThreadQuery(activePartnerId, activeBikeId);
-  const messages = threadData?.data || [];
+  const rawThread = threadData?.data;
+  const messages: Message[] = Array.isArray(rawThread)
+    ? rawThread
+    : Array.isArray((rawThread as any)?.messages)
+      ? (rawThread as any).messages
+      : [];
 
   const sendMut = useSendMessageMutation();
 
@@ -58,7 +94,7 @@ export const MessageSellerPage: React.FC = () => {
   const activeConv = conversations.find(
     (c) =>
       c.partner.id === activePartnerId &&
-      String(c.lastMessage.bikeId) === String(activeBikeId),
+      String(c.lastMessage.bikeId || c.bike?.id || '') === String(activeBikeId),
   );
 
   return (
@@ -108,15 +144,17 @@ export const MessageSellerPage: React.FC = () => {
                 </div>
               ) : (
                 conversations.map((conv, idx) => {
+                  const convBikeId =
+                    conv.lastMessage.bikeId || conv.bike?.id || '';
                   const isActive =
                     activePartnerId === conv.partner.id &&
-                    activeBikeId === (conv.lastMessage.bikeId || '');
+                    activeBikeId === convBikeId;
                   return (
                     <button
                       key={idx}
                       onClick={() => {
                         setActivePartnerId(conv.partner.id);
-                        setActiveBikeId(conv.lastMessage.bikeId || '');
+                        setActiveBikeId(convBikeId);
                       }}
                       className={`w-full text-left p-4 rounded-[28px] transition-all flex gap-4 items-center group
                         ${isActive ? 'bg-orange-50/50 ring-2 ring-orange-100 shadow-lg shadow-orange-100/20' : 'hover:bg-gray-50'}`}
@@ -134,13 +172,16 @@ export const MessageSellerPage: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center mb-1">
-                          <p
-                            className={`font-black text-[15px] truncate ${isActive ? 'text-[#f57224]' : 'text-gray-900'}`}
-                          >
-                            {conv.partner.name}
-                          </p>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p
+                              className={`font-black text-[15px] truncate ${isActive ? 'text-[#f57224]' : 'text-gray-900'}`}
+                            >
+                              {conv.partner.name}
+                            </p>
+                            <RoleBadge role={conv.partner.role} size="sm" />
+                          </div>
                           {conv.unreadCount > 0 && (
-                            <span className="w-5 h-5 bg-[#f57224] text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg shadow-orange-200">
+                            <span className="w-5 h-5 bg-[#f57224] text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg shadow-orange-200 shrink-0">
                               {conv.unreadCount}
                             </span>
                           )}
@@ -190,9 +231,14 @@ export const MessageSellerPage: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <h2 className="font-black text-xl text-gray-900 leading-tight">
-                        {activeConv?.partner.name || 'Người bán'}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-black text-xl text-gray-900 leading-tight">
+                          {activeConv?.partner.name || 'Người bán'}
+                        </h2>
+                        {activeConv && (
+                          <RoleBadge role={activeConv.partner.role} size="md" />
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200" />
                         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 opacity-70">
@@ -258,37 +304,53 @@ export const MessageSellerPage: React.FC = () => {
 
                 {/* Chat Input */}
                 <div className="p-8 bg-white border-t border-gray-50">
-                  <form
-                    onSubmit={handleSend}
-                    className="flex gap-4 items-center"
-                  >
-                    <div className="flex-1 bg-gray-50 rounded-[28px] border-2 border-transparent focus-within:border-orange-100 focus-within:bg-white transition-all overflow-hidden p-1.5 flex items-center">
-                      <textarea
-                        rows={1}
-                        className="flex-1 bg-transparent px-6 py-3 text-[15px] font-bold focus:outline-none resize-none max-h-32"
-                        placeholder="Viết tin nhắn cho người bán..."
-                        value={message}
-                        onChange={(e) => {
-                          setMessage(e.target.value);
-                          e.target.style.height = 'auto';
-                          e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSend(e);
-                          }
-                        }}
-                      />
+                  {activeConv?.status === 'closed' ? (
+                    <div className="flex items-center gap-3 justify-center py-4 px-6 bg-gray-50 rounded-[28px] border border-gray-100">
+                      <Lock className="w-5 h-5 text-gray-400 shrink-0" />
+                      <p className="text-sm font-bold text-gray-500">
+                        Cuộc trò chuyện đã đóng. Vui lòng chờ quản trị viên mở
+                        lại.
+                      </p>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={!message.trim() || sendMut.isPending}
-                      className="w-16 h-16 bg-[#f57224] text-white rounded-3xl flex items-center justify-center hover:bg-[#e0651a] hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-orange-200 disabled:grayscale disabled:opacity-30 disabled:scale-100"
+                  ) : (
+                    <form
+                      onSubmit={handleSend}
+                      className="flex gap-4 items-center"
                     >
-                      <Send className="w-7 h-7" />
-                    </button>
-                  </form>
+                      <div className="flex-1 bg-gray-50 rounded-[28px] border-2 border-transparent focus-within:border-orange-100 focus-within:bg-white transition-all overflow-hidden p-1.5 flex items-center">
+                        <textarea
+                          rows={1}
+                          className="flex-1 bg-transparent px-6 py-3 text-[15px] font-bold focus:outline-none resize-none max-h-32"
+                          placeholder={
+                            activeConv?.partner.role === 'admin'
+                              ? 'Trả lời quản trị viên...'
+                              : activeConv?.partner.role === 'inspector'
+                                ? 'Trả lời kiểm định viên...'
+                                : 'Viết tin nhắn cho người bán...'
+                          }
+                          value={message}
+                          onChange={(e) => {
+                            setMessage(e.target.value);
+                            e.target.style.height = 'auto';
+                            e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSend(e);
+                            }
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!message.trim() || sendMut.isPending}
+                        className="w-16 h-16 bg-[#f57224] text-white rounded-3xl flex items-center justify-center hover:bg-[#e0651a] hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-orange-200 disabled:grayscale disabled:opacity-30 disabled:scale-100"
+                      >
+                        <Send className="w-7 h-7" />
+                      </button>
+                    </form>
+                  )}
                 </div>
               </>
             )}

@@ -97,7 +97,11 @@ export const InspectionListPage: React.FC = () => {
                     <p className="text-sm text-gray-500 mt-1">
                       Người bán:{' '}
                       <span className="font-medium">
-                        {vehicle.sellerName || vehicle.seller || '-'}
+                        {vehicle.sellerName ||
+                          (typeof vehicle.seller === 'string'
+                            ? vehicle.seller
+                            : vehicle.seller?.name) ||
+                          '-'}
                       </span>
                     </p>
                   </div>

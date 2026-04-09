@@ -147,6 +147,8 @@ export type BikeListingCoreMultipartFields = {
   condition: string;
   /** UUID danh mục — lấy từ GET /api/seller/v1/categories; bỏ qua nếu không gửi */
   categoryId?: string;
+  brandId?: string;
+  modelId?: string;
   mileage?: string;
   color?: string;
   video?: string;
@@ -166,6 +168,12 @@ function appendBikeListingCoreToFormData(
   const cat = fields.categoryId?.trim();
   if (cat) {
     fd.append('categoryId', cat);
+  }
+  if (fields.brandId?.trim()) {
+    fd.append('brandId', fields.brandId.trim());
+  }
+  if (fields.modelId?.trim()) {
+    fd.append('modelId', fields.modelId.trim());
   }
   if (fields.mileage != null && fields.mileage !== '') {
     fd.append('mileage', fields.mileage);
@@ -652,7 +660,7 @@ export interface SellerConversationsResponse {
 
 export async function getSellerConversations(): Promise<SellerConversationsResponse> {
   const res = await apiClient.get<SellerConversationsResponse>(
-    '/seller/v1/messages',
+    '/messages/conversations',
   );
   return res.data;
 }
@@ -686,7 +694,7 @@ export async function getSellerPartnerMessages(
     query.bikeId = params.bikeId;
   }
   const res = await apiClient.get<SellerPartnerMessagesResponse>(
-    `/seller/v1/messages/${partnerId}`,
+    `/messages/${partnerId}`,
     { params: query },
   );
   return res.data;
@@ -708,7 +716,7 @@ export async function sendSellerMessage(
   body: SellerSendMessageBody | FormData,
 ): Promise<SellerSendMessageResponse> {
   const res = await apiClient.post<SellerSendMessageResponse>(
-    `/seller/v1/messages/${partnerId}`,
+    `/messages/${partnerId}`,
     body,
   );
   return res.data;

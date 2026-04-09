@@ -3,20 +3,34 @@ import {
   Users,
   Bike,
   DollarSign,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
-  Eye,
-  ShoppingCart,
-  Clock,
+  ShieldCheck,
+  AlertTriangle,
+  ClipboardList,
   CheckCircle,
+  Clock,
   XCircle,
 } from 'lucide-react';
-import { AdminBike, AdminUser } from '../../apis/adminApi';
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+import {
+  useAdminDashboardQuery,
   useAdminBikesQuery,
   useAdminUsersQuery,
 } from '../../hooks/admin/useAdminQueries';
+
+const fmtVND = (n: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+    n,
+  );
+const fmtNum = (n: number) => n.toLocaleString('vi-VN');
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -87,105 +101,171 @@ const getRoleBadge = (role: string) => {
   }
 };
 
+const revenueTooltipFormatter = (value: number) => fmtVND(value);
+
 export const AdminDashboardPage: React.FC = () => {
+  const { data: dashboard, isLoading: dashLoading } = useAdminDashboardQuery();
+
   const {
-    data: bikes = [],
+    data: bikesData,
     isLoading: bikesLoading,
     error: bikesError,
-  } = useAdminBikesQuery();
+  } = useAdminBikesQuery({ limit: 5 });
 
   const {
-    data: users = [],
+    data: usersData,
     isLoading: usersLoading,
     error: usersError,
-  } = useAdminUsersQuery();
+  } = useAdminUsersQuery({ limit: 4 });
 
-  const statData = [
+  const recentListings = bikesData?.items ?? [];
+  const recentUsers = usersData?.items ?? [];
+
+  const d = dashboard;
+
+  const statCards = [
     {
       label: 'Tổng người dùng',
-      value: users.length.toLocaleString(),
-      change: '+0%',
-      trend: 'up',
+      value: d ? fmtNum(d.users.total) : '—',
+      sub: d
+        ? `${d.users.buyers} buyer · ${d.users.sellers} seller · ${d.users.inspectors} inspector`
+        : '',
       icon: Users,
       color: 'bg-blue-500',
     },
     {
       label: 'Tin đăng',
-      value: bikes.length.toLocaleString(),
-      change: '+0%',
-      trend: 'up',
+      value: d ? fmtNum(d.bikes.total) : '—',
+      sub: d
+        ? `${d.bikes.pending} chờ duyệt · ${d.bikes.approved} đang hiển`
+        : '',
       icon: Bike,
       color: 'bg-green-500',
     },
     {
-      label: 'Doanh thu (tạm ẩn)',
-      value: '---',
-      change: '+0%',
-      trend: 'up',
+      label: 'Tổng doanh thu',
+      value: d ? fmtVND(d.transactions.totalRevenue) : '—',
+      sub: d ? `Phí hệ thống: ${fmtVND(d.transactions.totalSystemFees)}` : '',
       icon: DollarSign,
       color: 'bg-[#f57224]',
     },
     {
-      label: 'Lượt truy cập',
-      value: '---',
-      change: '-0%',
-      trend: 'down',
-      icon: TrendingUp,
-      color: 'bg-purple-500',
+      label: 'Giao dịch',
+      value: d ? fmtNum(d.transactions.total) : '—',
+      sub: d
+        ? `${d.transactions.completed} hoàn thành · ${d.transactions.pending} chờ xử lý`
+        : '',
+      icon: ClipboardList,
+      color: 'bg-indigo-500',
+    },
+    {
+      label: 'Báo cáo',
+      value: d ? fmtNum(d.reports.total) : '—',
+      sub: d ? `${d.reports.pending} chờ xử lý` : '',
+      icon: AlertTriangle,
+      color: 'bg-amber-500',
+    },
+    {
+      label: 'Kiểm định',
+      value: d ? fmtNum(d.inspections.total) : '—',
+      sub: d
+        ? `${d.inspections.passed} đạt · ${d.inspections.failed} không đạt`
+        : '',
+      icon: ShieldCheck,
+      color: 'bg-teal-500',
     },
   ];
 
-  const recentListings = bikes.slice(0, 5);
-  const recentUsers = users.slice(0, 4);
+  const chartData = (d?.monthlyRevenue ?? []).map((m) => ({
+    month: m.month,
+    'Doanh thu': m.revenue,
+    'Phí HT': m.fees,
+    'Số GD': m.count,
+  }));
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 mt-1">Tổng quan hoạt động của Chợ Xe Đạp</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statData.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-            >
-              <div className="flex items-center justify-between">
-                <div
-                  className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}
-                >
-                  <Icon className="w-6 h-6 text-white" />
+      {dashLoading ? (
+        <div className="text-center py-8 text-gray-500">
+          Đang tải thống kê...
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {statCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.label}
+                className="bg-white rounded-xl p-5 shadow-sm border border-gray-100"
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center shrink-0`}
+                  >
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                    <p className="text-sm text-gray-500">{stat.label}</p>
+                  </div>
                 </div>
-                <div
-                  className={`flex items-center gap-1 text-sm font-medium ${
-                    stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {stat.trend === 'up' ? (
-                    <ArrowUpRight className="w-4 h-4" />
-                  ) : (
-                    <ArrowDownRight className="w-4 h-4" />
-                  )}
-                  {stat.change}
-                </div>
+                {stat.sub && (
+                  <p className="text-xs text-gray-400 mt-3">{stat.sub}</p>
+                )}
               </div>
-              <div className="mt-4">
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Content Grid */}
+      {/* Monthly Revenue Chart */}
+      {chartData.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Doanh thu theo tháng
+          </h2>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis
+                yAxisId="left"
+                tickFormatter={(v: number) =>
+                  v >= 1_000_000
+                    ? `${(v / 1_000_000).toFixed(0)}M`
+                    : v.toLocaleString()
+                }
+              />
+              <YAxis yAxisId="right" orientation="right" />
+              <Tooltip formatter={revenueTooltipFormatter} />
+              <Legend />
+              <Bar
+                yAxisId="left"
+                dataKey="Doanh thu"
+                fill="#f57224"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="Phí HT"
+                fill="#6366f1"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Content Grid — recent listings + recent users */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Listings */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -236,7 +316,6 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Users */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">

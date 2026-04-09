@@ -52,8 +52,9 @@ export const AdminChatPage: React.FC = () => {
 
   const sendMut = useAdminSendMessageMutation();
   const closeMut = useAdminCloseConversationMutation();
-  const { data: adminUsers = [], isLoading: loadingInspectorsList } =
-    useAdminUsersQuery();
+  const { data: usersData, isLoading: loadingInspectorsList } =
+    useAdminUsersQuery({ limit: 9999 });
+  const adminUsers = usersData?.items ?? [];
   const inspectors = useMemo(
     () =>
       adminUsers.filter((u) => String(u.role).toLowerCase() === 'inspector'),

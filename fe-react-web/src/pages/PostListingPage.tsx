@@ -8,6 +8,10 @@ import {
   extractBikeIdFromPostResponse,
   type ListingCategoryOption,
 } from '../apis/sellerApi';
+import {
+  useBrandsQuery,
+  useModelsByBrandQuery,
+} from '../hooks/useBrandModelQueries';
 import { parseVndPriceInput } from '../utils/parseVndPrice';
 import { Camera, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +53,15 @@ export const PostListingPage: React.FC = () => {
 
   const categoriesLoadError =
     categoriesFetched && !categoriesLoading && !categoryOptions.length;
+
+  const { data: brandsData, isLoading: brandsLoading } = useBrandsQuery();
+  const brands = brandsData?.data || [];
+
+  const [selectedBrandId, setSelectedBrandId] = useState('');
+  const [selectedModelId, setSelectedModelId] = useState('');
+  const { data: modelsData, isLoading: modelsLoading } =
+    useModelsByBrandQuery(selectedBrandId);
+  const models = modelsData?.data || [];
 
   const [imageItems, setImageItems] = useState<ImageItem[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -118,6 +131,8 @@ export const PostListingPage: React.FC = () => {
       price: amount,
       condition: formData.condition,
       categoryId: catId,
+      brandId: selectedBrandId || undefined,
+      modelId: selectedModelId || undefined,
       color: formData.color.trim(),
       video: formData.video.trim(),
       imageFiles: imageItems.map((i) => i.file),
@@ -297,30 +312,66 @@ export const PostListingPage: React.FC = () => {
               <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Hãng <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 required
-                placeholder="Vd: Giant, Trek…"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#f57224] focus:ring-1 focus:ring-[#f57224]"
-                value={formData.brand}
-                onChange={(e) =>
-                  setFormData({ ...formData, brand: e.target.value })
-                }
-              />
+                className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-[#f57224] focus:ring-1 focus:ring-[#f57224]"
+                value={selectedBrandId}
+                disabled={brandsLoading}
+                onChange={(e) => {
+                  const brandId = e.target.value;
+                  const brandName =
+                    brands.find((b) => b.id === brandId)?.name || '';
+                  setSelectedBrandId(brandId);
+                  setSelectedModelId('');
+                  setFormData({
+                    ...formData,
+                    brand: brandName,
+                    model: '',
+                  });
+                }}
+              >
+                <option value="">
+                  {brandsLoading ? 'Đang tải…' : '-- Chọn hãng xe --'}
+                </option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Dòng xe / Model <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#f57224] focus:ring-1 focus:ring-[#f57224]"
-                value={formData.model}
-                onChange={(e) =>
-                  setFormData({ ...formData, model: e.target.value })
-                }
-              />
+                className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-[#f57224] focus:ring-1 focus:ring-[#f57224] disabled:bg-gray-50 disabled:text-gray-400"
+                value={selectedModelId}
+                disabled={!selectedBrandId || modelsLoading}
+                onChange={(e) => {
+                  const modelId = e.target.value;
+                  const modelName =
+                    models.find((m) => m.id === modelId)?.name || '';
+                  setSelectedModelId(modelId);
+                  setFormData({ ...formData, model: modelName });
+                }}
+              >
+                <option value="">
+                  {!selectedBrandId
+                    ? 'Chọn hãng trước'
+                    : modelsLoading
+                      ? 'Đang tải…'
+                      : models.length === 0
+                        ? 'Không có dòng xe nào cho hãng này'
+                        : '-- Chọn dòng xe --'}
+                </option>
+                {models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

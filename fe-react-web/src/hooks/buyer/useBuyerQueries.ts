@@ -85,6 +85,7 @@ export function useBuyerSearchBikesQuery(
     minPrice?: number;
     maxPrice?: number;
     condition?: string;
+    frameSize?: string;
     sortBy?: string;
     sortOrder?: string;
     page?: number;

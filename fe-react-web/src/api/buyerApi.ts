@@ -208,6 +208,7 @@ export async function searchBikes(params?: {
   minPrice?: number;
   maxPrice?: number;
   condition?: string;
+  frameSize?: string;
   sortBy?: string;
   sortOrder?: string;
   page?: number;
@@ -358,14 +359,15 @@ export async function sendMessageToSeller(
   sellerId: string,
   data: { content: string; bikeId?: string } | FormData,
 ) {
-  const response = await apiClient.post(`/buyer/v1/messages/${sellerId}`, data);
+  const response = await apiClient.post(`/messages/${sellerId}`, data);
   return response.data;
 }
 
 // 11.5 Get all conversations
 export async function getConversations(): Promise<any[]> {
-  const response =
-    await apiClient.get<ApiEnvelope<any[]>>('/buyer/v1/messages');
+  const response = await apiClient.get<ApiEnvelope<any[]>>(
+    '/messages/conversations',
+  );
   return unwrap<any[]>(response.data) || [];
 }
 
@@ -375,7 +377,7 @@ export async function getMessagesWithSeller(
   params?: { bikeId?: string; page?: number; limit?: number },
 ): Promise<BuyerMessage[]> {
   const response = await apiClient.get<ApiEnvelope<BuyerMessage[]>>(
-    `/buyer/v1/messages/${sellerId}`,
+    `/messages/${sellerId}`,
     {
       params: params ? stripParams(params as Record<string, unknown>) : {},
     },

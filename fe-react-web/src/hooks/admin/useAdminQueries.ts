@@ -7,6 +7,9 @@ import {
   type AdminReport,
   type AdminTransaction,
   type AdminUser,
+  type DashboardData,
+  type GetBikesParams,
+  type GetUsersParams,
 } from '../../apis/adminApi';
 import { queryKeys } from '../query-keys';
 import {
@@ -22,28 +25,36 @@ const adminTxStatusKey = (
   filter: 'all' | 'pending' | 'completed' | 'cancelled',
 ) => (filter === 'all' ? 'all' : filter);
 
-export function useAdminBikesQuery() {
+export function useAdminDashboardQuery() {
   return useQuery({
-    queryKey: queryKeys.admin.bikes(),
-    queryFn: async (): Promise<AdminBike[]> => {
-      const res = await adminApi.getBikes();
-      if (res.success && res.data) {
-        return Array.isArray(res.data) ? res.data : [];
-      }
-      return [];
+    queryKey: queryKeys.admin.dashboard(),
+    queryFn: async (): Promise<DashboardData | null> => {
+      const res = await adminApi.getDashboard();
+      return res.success ? res.data : null;
     },
   });
 }
 
-export function useAdminUsersQuery() {
+export function useAdminBikesQuery(params?: GetBikesParams) {
   return useQuery({
-    queryKey: queryKeys.admin.users(),
-    queryFn: async (): Promise<AdminUser[]> => {
-      const res = await adminApi.getUsers();
-      if (res.success && res.data) {
-        return Array.isArray(res.data) ? res.data : [];
-      }
-      return [];
+    queryKey: queryKeys.admin.bikes(params as Record<string, unknown>),
+    queryFn: async () => {
+      const res = await adminApi.getBikes(params);
+      const items = res.success && Array.isArray(res.data) ? res.data : [];
+      const meta = res.meta ?? { page: 1, limit: 20, total: items.length };
+      return { items, meta };
+    },
+  });
+}
+
+export function useAdminUsersQuery(params?: GetUsersParams) {
+  return useQuery({
+    queryKey: queryKeys.admin.users(params as Record<string, unknown>),
+    queryFn: async () => {
+      const res = await adminApi.getUsers(params);
+      const items = res.success && Array.isArray(res.data) ? res.data : [];
+      const meta = res.meta ?? { page: 1, limit: 20, total: items.length };
+      return { items, meta };
     },
   });
 }
@@ -211,10 +222,12 @@ export function useAdminUpdateTransactionMutation() {
     mutationFn: ({
       id,
       status,
+      systemFee,
     }: {
       id: string;
-      status: 'completed' | 'cancelled';
-    }) => adminApi.updateTransaction(id, { status }),
+      status?: 'completed' | 'cancelled';
+      systemFee?: number;
+    }) => adminApi.updateTransaction(id, { status, systemFee }),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['admin', 'transactions'] });
     },

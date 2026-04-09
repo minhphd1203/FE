@@ -11,14 +11,23 @@ export interface Message {
 }
 
 export interface Conversation {
+  threadId?: string;
+  status?: 'open' | 'closed';
   partner: {
     id: string;
     name: string;
     avatar: string | null;
     role: string;
   };
+  bike?: {
+    id: string;
+    title: string;
+    images?: string[];
+  };
   lastMessage: Message;
   unreadCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** GET /api/messages/conversations */
@@ -40,11 +49,19 @@ export async function getMessageThread(partnerId: string, bikeId: string) {
 /** POST /api/messages/{partnerId} */
 export async function sendMessage(
   partnerId: string,
-  data: { content: string; bikeId?: string },
+  data: { content: string; bikeId?: string; attachment?: File | null },
 ) {
+  const fd = new FormData();
+  fd.append('content', data.content);
+  if (data.bikeId?.trim()) {
+    fd.append('bikeId', data.bikeId.trim());
+  }
+  if (data.attachment) {
+    fd.append('attachment', data.attachment);
+  }
   const res = await apiClient.post<{ success: boolean; data: Message }>(
     `/messages/${partnerId}`,
-    data,
+    fd,
   );
   return res.data;
 }

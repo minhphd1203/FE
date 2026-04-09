@@ -224,7 +224,13 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
                         </p>
                       )}
                       {report.reason && (
-                        <p className="whitespace-pre-wrap">{report.reason}</p>
+                        <p className="whitespace-pre-wrap">
+                          {typeof report.reason === 'string'
+                            ? report.reason
+                            : report.reason?.description ||
+                              report.reason?.name ||
+                              ''}
+                        </p>
                       )}
                       {report.description && (
                         <p className="whitespace-pre-wrap text-gray-700">
@@ -345,8 +351,16 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={!report.reporter?.id}
+                disabled={
+                  !report.reporter?.id ||
+                  !(report.reportedBike?.id || report.reportedBikeId)
+                }
                 onClick={() => onMessageUser(report, 'reporter')}
+                title={
+                  !(report.reportedBike?.id || report.reportedBikeId)
+                    ? 'Không thể nhắn tin — báo cáo không liên quan đến xe cụ thể'
+                    : undefined
+                }
                 className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
               >
                 <MessageSquare className="w-4 h-4" />
@@ -354,8 +368,16 @@ const ReportDetailsModal: React.FC<ReportDetailsModalProps> = ({
               </button>
               <button
                 type="button"
-                disabled={!report.reportedUser?.id}
+                disabled={
+                  !report.reportedUser?.id ||
+                  !(report.reportedBike?.id || report.reportedBikeId)
+                }
                 onClick={() => onMessageUser(report, 'reported')}
+                title={
+                  !(report.reportedBike?.id || report.reportedBikeId)
+                    ? 'Không thể nhắn tin — báo cáo không liên quan đến xe cụ thể'
+                    : undefined
+                }
                 className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 disabled:opacity-50"
               >
                 <MessageSquare className="w-4 h-4" />
@@ -642,43 +664,56 @@ export const AdminReportsPage: React.FC = () => {
                 </>
               )}
             </p>
-            <form onSubmit={handleSendAdminMessage} className="mt-4 space-y-3">
-              <textarea
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[100px]"
-                value={msgContent}
-                onChange={(e) => setMsgContent(e.target.value)}
-                placeholder="Nội dung (bắt buộc)…"
-                required
-              />
-              <div>
-                <label className="text-xs text-gray-600">
-                  Đính kèm (tuỳ chọn)
-                </label>
-                <input
-                  type="file"
-                  className="mt-1 block w-full text-sm"
-                  accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
-                  onChange={(e) => setMsgFile(e.target.files?.[0] ?? null)}
+            {!msgTarget?.bikeId ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <p className="font-semibold">Không thể gửi tin nhắn</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  Báo cáo này không liên quan đến xe cụ thể nào. Hệ thống yêu
+                  cầu bikeId để tạo thread hội thoại.
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSendAdminMessage}
+                className="mt-4 space-y-3"
+              >
+                <textarea
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[100px]"
+                  value={msgContent}
+                  onChange={(e) => setMsgContent(e.target.value)}
+                  placeholder="Nội dung (bắt buộc)…"
+                  required
                 />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Dialog.Close asChild>
+                <div>
+                  <label className="text-xs text-gray-600">
+                    Đính kèm (tuỳ chọn)
+                  </label>
+                  <input
+                    type="file"
+                    className="mt-1 block w-full text-sm"
+                    accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+                    onChange={(e) => setMsgFile(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Dialog.Close asChild>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
+                    >
+                      Huỷ
+                    </button>
+                  </Dialog.Close>
                   <button
-                    type="button"
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
+                    type="submit"
+                    disabled={sendMsgMut.isPending || !msgContent.trim()}
+                    className="rounded-lg bg-[#f57224] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
-                    Huỷ
+                    {sendMsgMut.isPending ? 'Đang gửi…' : 'Gửi'}
                   </button>
-                </Dialog.Close>
-                <button
-                  type="submit"
-                  disabled={sendMsgMut.isPending || !msgContent.trim()}
-                  className="rounded-lg bg-[#f57224] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {sendMsgMut.isPending ? 'Đang gửi…' : 'Gửi'}
-                </button>
-              </div>
-            </form>
+                </div>
+              </form>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

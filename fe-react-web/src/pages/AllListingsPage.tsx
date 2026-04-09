@@ -4,11 +4,14 @@ import type { BuyerBike } from '../api/buyerApi';
 import { getBikeImage, handleBikeImageError } from '../utils/bikeImage';
 import { useBuyerSearchBikesQuery } from '../hooks/buyer/useBuyerQueries';
 
+const FRAME_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
+
 export const AllListingsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const keyword = searchParams.get('keyword')?.trim() || undefined;
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = searchParams.get('sortOrder') || 'desc';
+  const frameSize = searchParams.get('frameSize') || '';
 
   const {
     data: searchResult,
@@ -18,6 +21,7 @@ export const AllListingsPage: React.FC = () => {
     keyword,
     brand: keyword,
     model: keyword,
+    frameSize: frameSize || undefined,
     sortBy,
     sortOrder,
     page: 1,
@@ -49,6 +53,16 @@ export const AllListingsPage: React.FC = () => {
     setSearchParams(newParams);
   };
 
+  const handleFrameSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (e.target.value) {
+      newParams.set('frameSize', e.target.value);
+    } else {
+      newParams.delete('frameSize');
+    }
+    setSearchParams(newParams);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -68,7 +82,20 @@ export const AllListingsPage: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <select
+            value={frameSize}
+            onChange={handleFrameSizeChange}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f57224]/50 focus:border-[#f57224] bg-white cursor-pointer"
+          >
+            <option value="">Kích thước khung</option>
+            {FRAME_SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
           <label
             htmlFor="sort-select"
             className="text-sm text-gray-600 font-medium shrink-0"

@@ -60,7 +60,7 @@ export const SellerMessagesPage: React.FC = () => {
       <ul className="space-y-4">
         {conversations.map((conv, idx) => {
           const { partner, lastMessage, unreadCount } = conv;
-          const bikeId = lastMessage.bikeId;
+          const bikeId = lastMessage.bikeId || conv.bike?.id || '';
 
           return (
             <li key={`${partner.id}-${idx}`}>

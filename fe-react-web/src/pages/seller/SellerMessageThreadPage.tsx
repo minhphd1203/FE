@@ -31,17 +31,31 @@ export const SellerMessageThreadPage: React.FC = () => {
   const [content, setContent] = useState('');
   const messageEndRef = useRef<HTMLDivElement>(null);
 
+  const { data: convsData } = useConversationsQuery();
+  const conversations = convsData?.data || [];
+
   useEffect(() => {
-    if (qpBike) setBikeId(qpBike);
-  }, [qpBike]);
+    if (qpBike) {
+      setBikeId(qpBike);
+      return;
+    }
+    if (!bikeId && partnerId && conversations.length > 0) {
+      const match = conversations.find((c) => c.partner.id === partnerId);
+      const fallback = match?.bike?.id || match?.lastMessage?.bikeId || '';
+      if (fallback) setBikeId(fallback);
+    }
+  }, [qpBike, partnerId, conversations, bikeId]);
 
   const { data: threadData, isLoading: isThreadLoading } =
     useMessageThreadQuery(partnerId || '', bikeId || '');
-  const { data: convsData } = useConversationsQuery();
   const sendMut = useSendMessageMutation();
 
-  const messages = threadData?.data || [];
-  const conversations = convsData?.data || [];
+  const rawData = threadData?.data;
+  const messages = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray((rawData as any)?.messages)
+      ? (rawData as any).messages
+      : [];
 
   useEffect(() => {
     if (messages.length > 0 && messageEndRef.current) {
