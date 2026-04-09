@@ -13,7 +13,11 @@ import {
   Truck,
   MapPin,
   DollarSign,
+  ArrowRight,
+  PartyPopper,
+  X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useSellerTransactionDetailQuery,
   useSellerUpdateTransactionMutation,
@@ -38,6 +42,7 @@ export const SellerTransactionDetailPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [payoutError, setPayoutError] = useState<string | null>(null);
+  const [showPayoutSuccess, setShowPayoutSuccess] = useState(false);
 
   const transaction = data?.data;
   const payoutInfo = payoutData?.data;
@@ -69,17 +74,27 @@ export const SellerTransactionDetailPage: React.FC = () => {
     try {
       console.log('[SellerTransactionDetailPage] Requesting payout for:', id);
       await payoutMut.mutateAsync(id);
-      await refetch();
-      window.alert(
-        '✅ Yêu cầu thanh toán thành công! Bạn sẽ nhận được tiền trong thời gian sắp tới.',
-      );
+      setShowPayoutSuccess(true);
+      toast.success('Yêu cầu thanh toán đã được gửi đi!');
     } catch (err: unknown) {
+      const respMsg = (err as any)?.response?.data?.message || '';
+
+      // If the error is simply because it already exists, don't show an error
+      // Instead, just let the refetch/polling handle it
+      if (respMsg.includes('tồn tại') || respMsg.includes('already exists')) {
+        console.log(
+          '[SellerTransactionDetailPage] Payout already exists, refreshing status...',
+        );
+        return;
+      }
+
       const msg =
-        (err as any)?.response?.data?.message ||
+        respMsg ||
         (err as any)?.message ||
         'Có lỗi xảy ra khi yêu cầu thanh toán.';
       console.error('[SellerTransactionDetailPage] Payout error:', err);
       setPayoutError(msg);
+      toast.error(msg);
     }
   };
 
@@ -604,17 +619,21 @@ export const SellerTransactionDetailPage: React.FC = () => {
                             disabled={
                               payoutMut.isPending || !payoutValidation.allowed
                             }
-                            className="w-full px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+                            className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 hover:scale-[1.02] active:scale-[0.98]"
                             title={
                               !payoutValidation.allowed
                                 ? payoutValidation.reason
                                 : 'Yêu cầu thanh toán'
                             }
                           >
-                            <DollarSign className="w-5 h-5" />
+                            {payoutMut.isPending ? (
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <DollarSign className="w-6 h-6" />
+                            )}
                             {payoutMut.isPending
                               ? 'Đang xử lý...'
-                              : 'Yêu cầu thanh toán'}
+                              : 'Yêu cầu Thanh toán Ngay'}
                           </button>
                         </div>
                       </div>
@@ -622,6 +641,79 @@ export const SellerTransactionDetailPage: React.FC = () => {
                   )}
                 </>
               )}
+
+            {/* Payout Success Modal */}
+            {showPayoutSuccess && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                <div
+                  className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 pointer-events-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-8 text-white relative text-center">
+                    <button
+                      onClick={() => setShowPayoutSuccess(false)}
+                      className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-white/10 animate-bounce cursor-default">
+                      <PartyPopper className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-black mb-2 tracking-tight">
+                      Thành Công!
+                    </h2>
+                    <p className="text-emerald-50 font-medium">
+                      Yêu cầu của bạn đã được tiếp nhận
+                    </p>
+                  </div>
+
+                  <div className="p-8 space-y-6">
+                    <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 flex flex-col items-center">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">
+                        Số tiền dự kiến nhận
+                      </p>
+                      <p className="text-3xl font-black text-gray-900">
+                        {Number(amount || 0).toLocaleString('vi-VN')}{' '}
+                        <span className="text-lg">đ</span>
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 mt-0.5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                          <CheckCircle2 className="w-3 h-3" />
+                        </div>
+                        <p className="text-sm text-gray-600 font-medium leading-snug">
+                          Hệ thống đã ghi nhận yêu cầu rút tiền cho đơn hàng #
+                          {id?.slice(0, 8).toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 mt-0.5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                          <CheckCircle2 className="w-3 h-3" />
+                        </div>
+                        <p className="text-sm text-gray-600 font-medium leading-snug">
+                          Tiền sẽ được xử lý và chuyển vào tài khoản định danh
+                          trong vòng 24-48h làm việc.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowPayoutSuccess(false)}
+                      className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-gray-800 transition-all shadow-xl flex items-center justify-center gap-2 group"
+                    >
+                      Đóng thông báo{' '}
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </button>
+
+                    <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Chợ Xe Đạp Marketplace
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100 flex items-center gap-2">

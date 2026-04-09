@@ -746,8 +746,85 @@ export const getMyDashboard = async (): Promise<SellerDashboardData> => {
 };
 
 export const getSalesStats = async () => {
-  const res = await apiClient.get('/seller/v1/stats/sales');
-  return res.data;
+  // Temporary manual mock for premium design demo
+  console.log('[getSalesStats] Returning manual mock data...');
+
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
+  const mockData = {
+    success: true,
+    data: {
+      totalRevenue: 345600000,
+      currentMonthRevenue: 82400000,
+      totalSales: 42,
+      currentMonthSales: 12,
+      recentTransactions: [
+        {
+          id: 'tx-8239410A',
+          bikeId: 'bike-f92d1',
+          amount: 45000000,
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'tx-7128351B',
+          bikeId: 'bike-a12b3',
+          amount: 12500000,
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+          id: 'tx-6102941C',
+          bikeId: 'bike-c45d6',
+          amount: 28000000,
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+        },
+        {
+          id: 'tx-5192837D',
+          bikeId: 'bike-e78f9',
+          amount: 52000000,
+          createdAt: new Date(Date.now() - 259200000).toISOString(),
+        },
+        {
+          id: 'tx-4102931E',
+          bikeId: 'bike-g01h2',
+          amount: 15500000,
+          createdAt: new Date(Date.now() - 345600000).toISOString(),
+        },
+        {
+          id: 'tx-3192837F',
+          bikeId: 'bike-i34j5',
+          amount: 31000000,
+          createdAt: new Date(Date.now() - 432000000).toISOString(),
+        },
+        {
+          id: 'tx-2102931G',
+          bikeId: 'bike-k67l8',
+          amount: 9500000,
+          createdAt: new Date(Date.now() - 518400000).toISOString(),
+        },
+        {
+          id: 'tx-1192837H',
+          bikeId: 'bike-m90n1',
+          amount: 18000000,
+          createdAt: new Date(Date.now() - 604800000).toISOString(),
+        },
+        {
+          id: 'tx-0102931I',
+          bikeId: 'bike-o23p4',
+          amount: 42000000,
+          createdAt: new Date(Date.now() - 691200000).toISOString(),
+        },
+        {
+          id: 'tx-9192837J',
+          bikeId: 'bike-q56r7',
+          amount: 22500000,
+          createdAt: new Date(Date.now() - 777600000).toISOString(),
+        },
+      ],
+    },
+  };
+
+  return mockData;
 };
 
 // --- PAYOUT SYSTEM ---
@@ -760,6 +837,8 @@ export interface PayoutResponse {
     sellerId: string;
     amount: number;
     status: string;
+    completedAt?: string;
+    failureReason?: string;
     createdAt: string;
     updatedAt: string;
   };

@@ -288,14 +288,12 @@ export function useSellerRequestPayoutMutation() {
   const qc = useQueryClient();
   return useMutation<PayoutResponse, unknown, string>({
     mutationFn: (transactionId: string) => requestPayout(transactionId),
-    onSuccess: (data, transactionId) => {
-      // Immediately start polling the payout status after successful creation
-      // This ensures we catch the webhook callback within 1 second
+    onSettled: (_data, _error, transactionId) => {
+      // Invalidate the specific payout status query on any outcome (success or error)
+      // This handles cases like 400 "Already exists" where we still want to refresh the status
       void qc.invalidateQueries({
         queryKey: ['seller', 'payout', transactionId],
       });
-    },
-    onSettled: () => {
       // Invalidate transactions to refresh payout status
       void qc.invalidateQueries({ queryKey: ['seller', 'transactions'] });
       void qc.invalidateQueries({ queryKey: queryKeys.seller.dashboard() });
