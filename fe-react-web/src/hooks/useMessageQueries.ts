@@ -36,11 +36,13 @@ export function useSendMessageMutation() {
       partnerId,
       content,
       bikeId,
+      attachment,
     }: {
       partnerId: string;
       content: string;
       bikeId?: string;
-    }) => sendMessage(partnerId, { content, bikeId }),
+      attachment?: File | null;
+    }) => sendMessage(partnerId, { content, bikeId, attachment }),
     onSuccess: (_, { partnerId, bikeId }) => {
       void qc.invalidateQueries({
         queryKey: MESSAGE_QUERY_KEYS.conversations(),

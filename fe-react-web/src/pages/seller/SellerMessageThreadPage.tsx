@@ -1,11 +1,19 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Send, MessageCircle } from 'lucide-react';
+import {
+  ChevronLeft,
+  Send,
+  MessageCircle,
+  Paperclip,
+  X,
+  Image as ImageIcon,
+} from 'lucide-react';
 import {
   useMessageThreadQuery,
   useSendMessageMutation,
   useConversationsQuery,
 } from '../../hooks/useMessageQueries';
+import { resolvePublicFileUrl } from '../../utils/publicFileUrl';
 import { toast } from 'sonner';
 
 const formatMessageTime = (dateString: string | undefined): string => {
@@ -29,6 +37,8 @@ export const SellerMessageThreadPage: React.FC = () => {
   const qpBike = searchParams.get('bikeId') || '';
   const [bikeId, setBikeId] = useState(qpBike);
   const [content, setContent] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   const { data: convsData } = useConversationsQuery();
@@ -72,15 +82,18 @@ export const SellerMessageThreadPage: React.FC = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partnerId || !bikeId || !content.trim()) return;
+    if (!partnerId || !bikeId || (!content.trim() && !file)) return;
 
     try {
       await sendMut.mutateAsync({
         partnerId,
         bikeId,
-        content: content.trim(),
+        content: content.trim() || (file ? `[${file.name}]` : ''),
+        attachment: file,
       });
       setContent('');
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       toast.error('Không thể gửi tin nhắn.');
     }
@@ -145,6 +158,11 @@ export const SellerMessageThreadPage: React.FC = () => {
         ) : (
           messages.map((m) => {
             const isMe = m.senderId !== partnerId;
+            const attachUrl = m.fileUrl
+              ? resolvePublicFileUrl(String(m.fileUrl))
+              : '';
+            const isImg =
+              attachUrl && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(attachUrl);
             return (
               <div
                 key={m.id}
@@ -160,6 +178,31 @@ export const SellerMessageThreadPage: React.FC = () => {
                   <div className="whitespace-pre-wrap text-[15px] font-medium leading-relaxed">
                     {m.content}
                   </div>
+                  {attachUrl &&
+                    (isImg ? (
+                      <a
+                        href={attachUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 block"
+                      >
+                        <img
+                          src={attachUrl}
+                          alt=""
+                          className="max-h-48 rounded-xl border border-white/20"
+                        />
+                      </a>
+                    ) : (
+                      <a
+                        href={attachUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`mt-2 inline-flex items-center gap-1.5 text-xs font-bold underline ${isMe ? 'text-white/90' : 'text-[#f57224]'}`}
+                      >
+                        <Paperclip className="w-3 h-3" />
+                        Tệp đính kèm
+                      </a>
+                    ))}
                   <div
                     className={`mt-2 self-end text-[9px] font-black uppercase tracking-widest ${
                       isMe ? 'text-orange-100' : 'text-gray-300'
@@ -177,33 +220,68 @@ export const SellerMessageThreadPage: React.FC = () => {
 
       {/* Input Area */}
       <div className="bg-white px-6 py-5 border-t border-gray-100">
-        <form className="flex items-center gap-4" onSubmit={handleSendMessage}>
-          <div className="flex-1 bg-gray-50 rounded-2xl border-2 border-transparent focus-within:border-[#f57224]/20 focus-within:bg-white transition-all overflow-hidden p-1">
-            <textarea
-              className="w-full resize-none bg-transparent px-4 py-3 text-[15px] font-medium focus:outline-none block min-h-[52px] max-h-32"
-              rows={1}
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
-              }}
-              placeholder="Nhập nội dung tư vấn..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
-              }}
+        <form className="space-y-3" onSubmit={handleSendMessage}>
+          {file && (
+            <div className="flex items-center gap-3 bg-orange-50 rounded-xl px-4 py-2.5 border border-orange-100">
+              <ImageIcon className="w-4 h-4 text-[#f57224] shrink-0" />
+              <span className="text-sm font-bold text-gray-700 truncate flex-1">
+                {file.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                className="w-6 h-6 rounded-full bg-white text-gray-400 hover:text-red-500 flex items-center justify-center shrink-0 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.txt"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-12 h-12 rounded-xl bg-gray-50 text-gray-400 hover:bg-orange-50 hover:text-[#f57224] flex items-center justify-center transition-all shrink-0"
+              title="Đính kèm ảnh / tệp"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
+            <div className="flex-1 bg-gray-50 rounded-2xl border-2 border-transparent focus-within:border-[#f57224]/20 focus-within:bg-white transition-all overflow-hidden p-1">
+              <textarea
+                className="w-full resize-none bg-transparent px-4 py-3 text-[15px] font-medium focus:outline-none block min-h-[52px] max-h-32"
+                rows={1}
+                value={content}
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+                }}
+                placeholder="Nhập nội dung tư vấn..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e);
+                  }
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={sendMut.isPending || (!content.trim() && !file)}
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f57224] text-white shadow-xl shadow-orange-200 disabled:grayscale disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+            >
+              <Send className="h-6 w-6" />
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={sendMut.isPending || !content.trim()}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f57224] text-white shadow-xl shadow-orange-200 disabled:grayscale disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
-          >
-            <Send className="h-6 w-6" />
-          </button>
         </form>
       </div>
     </div>

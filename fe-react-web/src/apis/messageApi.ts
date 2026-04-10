@@ -6,6 +6,7 @@ export interface Message {
   receiverId: string;
   bikeId: string | null;
   content: string;
+  fileUrl?: string | null;
   isRead: boolean;
   createdAt: string;
 }
